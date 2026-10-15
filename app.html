@@ -23,7 +23,7 @@
     .sub { color:var(--suave); margin:0 0 16px; font-size:14px; }
     .cartao { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:18px; margin-bottom:16px; }
     label { display:block; font-size:13px; font-weight:600; color:var(--suave); margin:12px 0 4px; }
-    input[type=text], input[type=email], input[type=password], input[type=date], select, textarea {
+    input[type=text], input[type=email], input[type=password], input[type=date], input[type=time], select, textarea {
       width:100%; font:inherit; padding:10px 12px; border:1px solid var(--borda); border-radius:8px; background:#fff; }
     input:focus, select:focus { outline:2px solid #8fb4e8; }
     button.principal { background:var(--azul); color:#fff; border:0; border-radius:8px; padding:10px 18px; font:inherit; font-weight:600; cursor:pointer; }
@@ -65,6 +65,23 @@
     .toast.erro { background:var(--vermelho); color:#fff; }
     .login-caixa { max-width:380px; margin:60px auto; }
     .vazio { color:var(--suave); padding:16px 0; }
+    .faixa { background:var(--azul-fundo); border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:14px; }
+    .faixa.alerta { background:var(--laranja-fundo); color:var(--laranja); }
+    .barra-filtros { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .chip { background:#fff; border:1px solid var(--borda); border-radius:18px; padding:7px 14px; font:inherit; cursor:pointer; }
+    .chip.ativo { background:var(--azul-escuro); color:#fff; border-color:var(--azul-escuro); }
+    .periodo { display:flex; align-items:center; gap:8px; }
+    .periodo label { margin:0; }
+    .periodo select { width:auto; padding:7px 10px; }
+    .tabela-rolagem { overflow-x:auto; background:#fff; border:1px solid var(--borda); border-radius:12px; }
+    #tabelaConf { border-collapse:collapse; width:100%; font-size:14px; }
+    #tabelaConf th { text-align:left; color:var(--suave); font-size:13px; padding:10px 12px; border-bottom:2px solid var(--borda); white-space:nowrap; }
+    #tabelaConf td { padding:10px 12px; border-bottom:1px solid #eef1f4; vertical-align:top; }
+    #tabelaConf tr.linha-pendente td { background:#fdf3f2; }
+    #tabelaConf .wo { font-weight:700; white-space:nowrap; }
+    .detalhe { display:block; color:var(--suave); font-size:12px; margin-top:3px; }
+    .a-vermelho { border-left-color:#d64545; }
   </style>
 </head>
 <body>
@@ -74,6 +91,7 @@
     <nav>
       <button data-tela="Registrar" class="ativo">Registrar</button>
       <button data-tela="Campo">Equipes em campo</button>
+      <button data-tela="Conferencia">Conferência</button>
     </nav>
     <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
   </header>
@@ -117,6 +135,20 @@
         <label for="campoData">Data da execução</label>
         <input id="campoData" type="date">
  
+        <label for="campoSituacaoInicial">Situação da equipe agora</label>
+        <select id="campoSituacaoInicial">
+          <option value="desloc">Em deslocamento</option>
+          <option value="site">Já está no site</option>
+        </select>
+ 
+        <label for="campoHoraAviso">Horário em que o técnico avisou no grupo (vazio = agora)</label>
+        <input id="campoHoraAviso" type="time">
+ 
+        <div id="blocoChegada" class="oculto">
+          <label for="campoHoraChegada">Horário em que chegou ao site (vazio = agora)</label>
+          <input id="campoHoraChegada" type="time">
+        </div>
+ 
         <div id="blocoWOs" class="oculto">
           <h2 class="secao" id="tituloWOs"></h2>
           <div id="listaWOs" class="lista-wo"></div>
@@ -136,6 +168,36 @@
       <div class="grade-cartoes" id="gradeCampo"></div>
       <h2 class="secao">Saíram hoje</h2>
       <div class="grade-cartoes" id="gradeSaidas"></div>
+    </section>
+ 
+    <!-- CONFERENCIA -->
+    <section id="telaConferencia" class="tela oculto">
+      <h1>Conferência de relatórios</h1>
+      <p class="sub">Cada WO das equipes que saíram do site é conferida na base do cliente.</p>
+      <div id="faixaBase" class="faixa"></div>
+      <div class="azulejos" id="azulejosConf"></div>
+      <div class="barra-filtros">
+        <div class="chips" id="chipsConf">
+          <button data-filtro="pendentes" class="chip ativo">Pendentes</button>
+          <button data-filtro="diferente" class="chip">Data diferente</button>
+          <button data-filtro="aguardando" class="chip">Aguardando base</button>
+          <button data-filtro="entregues" class="chip">Entregues</button>
+          <button data-filtro="todos" class="chip">Todos</button>
+        </div>
+        <div class="periodo">
+          <label for="periodoConf">Período</label>
+          <select id="periodoConf">
+            <option value="1">Hoje</option>
+            <option value="2">Últimos 2 dias</option>
+            <option value="7" selected>Últimos 7 dias</option>
+            <option value="30">Últimos 30 dias</option>
+          </select>
+          <button id="botaoAtualizarConf" class="secundario">Atualizar</button>
+        </div>
+      </div>
+      <div class="tabela-rolagem">
+        <table id="tabelaConf"></table>
+      </div>
     </section>
   </main>
  
@@ -160,7 +222,11 @@
     situacaoDeslocamento: "Em Deslocamento",
     situacaoNoSite: "No Site",
     situacaoSaiu: "Saiu do Site",
-    situacaoCancelado: "Cancelado"
+    situacaoCancelado: "Cancelado",
+ 
+    // --- Conferência ---
+    carenciaMinutos: 120,              // tempo após a saída antes de cobrar o relatório
+    horasBaseDesatualizada: 4          // avisa quando a base está mais velha que isso
   };
  
   // Tira espaços e deixa em maiúsculas: "grs riv" vira "GRSRIV".
@@ -206,6 +272,49 @@
     if (s === "aberta") return { texto: "Aberta", classe: "p-laranja" };
     if (s === "pendente") return { texto: "Pendente", classe: "p-cinza" };
     return { texto: linhaBase.status_final || "Sem status", classe: "p-cinza" };
+  }
+ 
+  // ---------------------------------------------------------------------------
+  // REGRA PRINCIPAL DA CONFERÊNCIA: decide o resultado de cada WO depois da saída.
+  //   woVisita         -> a WO conferida na visita
+  //   visita           -> a visita (tem data_execucao e hora_saida)
+  //   linhaBase        -> a linha dessa WO na base do cliente (ou undefined)
+  //   baseAtualizadaEm -> quando a base foi gravada pela última vez
+  //   agora            -> hora atual em milissegundos
+  // Devolve: { codigo, texto, classe, grupo }
+  //   grupo = pendente | diferente | aguardando | entregue
+  // ---------------------------------------------------------------------------
+  function avaliarWO(woVisita, visita, linhaBase, baseAtualizadaEm, agora) {
+    // 1) A WO nem está na base
+    if (!linhaBase) {
+      return { codigo: "sem_wo", texto: "WO não encontrada na base", classe: "p-vermelho", grupo: "pendente" };
+    }
+    const status = String(linhaBase.status_final || "").trim().toLowerCase();
+ 
+    // 2) Executada: confere se o relatório foi entregue no dia da execução
+    if (status === "executada") {
+      if (!linhaBase.data_fim) {
+        return { codigo: "executada_sem_data", texto: "Executada, sem data de relatório", classe: "p-laranja", grupo: "pendente" };
+      }
+      if (linhaBase.data_fim === visita.data_execucao) {
+        return { codigo: "entregue_dia", texto: "Entregue no dia", classe: "p-verde", grupo: "entregue" };
+      }
+      return { codigo: "data_diferente", texto: "Entregue em data diferente", classe: "p-laranja", grupo: "diferente" };
+    }
+ 
+    // 3) Ainda não executada na base: pode ser só demora de atualização?
+    const saida = new Date(visita.hora_saida).getTime();
+    const baseVelha = !baseAtualizadaEm || new Date(baseAtualizadaEm).getTime() < saida;
+    const dentroDaCarencia = (agora - saida) / 60000 < REGRAS.carenciaMinutos;
+    if (baseVelha || dentroDaCarencia) {
+      return { codigo: "aguardando", texto: "Aguardando base", classe: "p-azul", grupo: "aguardando" };
+    }
+ 
+    // 4) Passou a carência e a base já foi atualizada depois da saída
+    if (status === "aberta") {
+      return { codigo: "aberta", texto: "Aberta: iniciada e não finalizada", classe: "p-laranja", grupo: "pendente" };
+    }
+    return { codigo: "pendente", texto: "Pendente: risco de recusa", classe: "p-vermelho", grupo: "pendente" };
   }
  
   // ===========================================================================
@@ -259,11 +368,23 @@
     conferir(await banco.from("visitas").update(campos).eq("id", id));
   }
  
+  async function carregarParaConferencia(desdeIso) {
+    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
+      .eq("situacao", REGRAS.situacaoSaiu).in("atividade", REGRAS.atividadesComPreventiva)
+      .gte("hora_saida", desdeIso).order("hora_saida", { ascending: false }));
+  }
+ 
+  async function marcarCobrado(idWoVisita, quem) {
+    conferir(await banco.from("wos_visita")
+      .update({ cobrado: true, cobrado_por: quem, cobrado_em: new Date().toISOString() }).eq("id", idWoVisita));
+  }
+ 
   // ===========================================================================
   // 4) TELAS
   // ===========================================================================
   const $ = function (id) { return document.getElementById(id); };
-  const estado = { base: [], sites: [], porWO: {}, equipes: [], siteEscolhido: null, emCampo: [], pollId: null };
+  const estado = { base: [], sites: [], porWO: {}, equipes: [], siteEscolhido: null, emCampo: [], pollId: null,
+                   usuarioEmail: "", filtroConf: "pendentes", linhasConf: [] };
  
   function esc(texto) {
     return String(texto == null ? "" : texto).replace(/[&<>"']/g, function (c) {
@@ -310,6 +431,7 @@
   });
  
   async function iniciarSistema(usuario) {
+    estado.usuarioEmail = usuario.email;
     $("nomeUsuario").textContent = usuario.email;
     $("telaLogin").classList.add("oculto");
     $("topo").classList.remove("oculto");
@@ -352,7 +474,136 @@
       atualizarCampo();
       estado.pollId = setInterval(atualizarCampo, 30000);
     }
+    if (nome === "Conferencia") {
+      atualizarConferencia();
+      estado.pollId = setInterval(atualizarConferencia, 120000);
+    }
   }
+ 
+  // ---- tela CONFERENCIA -----------------------------------------------------
+  function formatarDataCurta(aaaaMmDd) {
+    if (!aaaaMmDd) return "—";
+    const p = String(aaaaMmDd).split("-");
+    return p[2] + "/" + p[1];
+  }
+  function formatarDataHora(iso) {
+    return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  }
+ 
+  async function atualizarConferencia() {
+    try {
+      const dias = Number($("periodoConf").value);
+      const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
+      const resultados = await Promise.all([carregarBase(), carregarParaConferencia(inicio.toISOString())]);
+      estado.base = resultados[0];
+      prepararBase();
+      montarLinhasConferencia(resultados[1]);
+      desenharConferencia();
+    } catch (e) {
+      mostrarAviso("Não consegui atualizar a conferência: " + e.message, "erro");
+    }
+  }
+ 
+  function montarLinhasConferencia(visitas) {
+    let baseAtualizadaEm = null;
+    estado.base.forEach(function (l) {
+      if (l.atualizado_em && (!baseAtualizadaEm || l.atualizado_em > baseAtualizadaEm)) baseAtualizadaEm = l.atualizado_em;
+    });
+    estado.baseAtualizadaEm = baseAtualizadaEm;
+    const agora = Date.now();
+    const linhas = [];
+    visitas.forEach(function (v) {
+      (v.wos_visita || []).forEach(function (w) {
+        linhas.push({ visita: v, wo: w, base: estado.porWO[w.wo],
+                      resultado: avaliarWO(w, v, estado.porWO[w.wo], baseAtualizadaEm, agora) });
+      });
+    });
+    const ordem = { pendente: 0, diferente: 1, aguardando: 2, entregue: 3 };
+    linhas.sort(function (a, b) {
+      const d = ordem[a.resultado.grupo] - ordem[b.resultado.grupo];
+      return d !== 0 ? d : (a.visita.hora_saida < b.visita.hora_saida ? 1 : -1);
+    });
+    estado.linhasConf = linhas;
+  }
+ 
+  function desenharConferencia() {
+    const linhas = estado.linhasConf;
+    const contar = function (grupo) { return linhas.filter(function (l) { return l.resultado.grupo === grupo; }).length; };
+    const cobradas = linhas.filter(function (l) { return l.resultado.grupo === "pendente" && l.wo.cobrado; }).length;
+ 
+    // faixa com a hora da última atualização da base
+    const faixa = $("faixaBase");
+    if (estado.baseAtualizadaEm) {
+      const horas = minutosDesde(estado.baseAtualizadaEm) / 60;
+      const velha = horas > REGRAS.horasBaseDesatualizada;
+      faixa.className = "faixa" + (velha ? " alerta" : "");
+      faixa.innerHTML = "Base atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>." +
+        (velha ? " <b>Atenção: a base está desatualizada há " + formatarDuracao(horas * 60) + ".</b>" : "") +
+        " Saídas com menos de " + (REGRAS.carenciaMinutos / 60) + " h, ou feitas depois da última atualização, aparecem como “Aguardando base”.";
+    } else {
+      faixa.className = "faixa alerta";
+      faixa.textContent = "A base está vazia. Suba a planilha na tela de atualizar a base.";
+    }
+ 
+    $("azulejosConf").innerHTML =
+      azulejo(contar("pendente"), "Pendentes · risco de recusa" + (cobradas ? " (" + cobradas + " já cobradas)" : ""), "a-vermelho") +
+      azulejo(contar("diferente"), "Entregue em data diferente", "a-laranja") +
+      azulejo(contar("aguardando"), "Aguardando base", "a-azul") +
+      azulejo(contar("entregue"), "Entregues no dia", "a-verde");
+ 
+    const filtro = estado.filtroConf;
+    const visiveis = linhas.filter(function (l) {
+      return filtro === "todos" || (filtro === "pendentes" && l.resultado.grupo === "pendente") ||
+        (filtro === "diferente" && l.resultado.grupo === "diferente") ||
+        (filtro === "aguardando" && l.resultado.grupo === "aguardando") ||
+        (filtro === "entregues" && l.resultado.grupo === "entregue");
+    });
+ 
+    if (visiveis.length === 0) {
+      $("tabelaConf").innerHTML = '<tr><td class="vazio">Nada para mostrar neste filtro.</td></tr>';
+      return;
+    }
+    $("tabelaConf").innerHTML =
+      "<tr><th>Site</th><th>Equipe</th><th>Saída</th><th>WO</th><th>Tipo</th><th>Resultado</th><th>Relatório</th><th></th></tr>" +
+      visiveis.map(function (l) {
+        const r = l.resultado;
+        const relatorio = !l.base ? "sem WO na base"
+          : (l.base.data_fim ? formatarDataCurta(l.base.data_fim) + (r.grupo === "diferente" ? " · execução " + formatarDataCurta(l.visita.data_execucao) : "")
+                             : "não consta");
+        const cobrado = l.wo.cobrado
+          ? '<span class="detalhe">Cobrado por ' + esc(l.wo.cobrado_por) + " às " + horaCurta(l.wo.cobrado_em) + "</span>" : "";
+        const acao = (r.grupo === "pendente" && !l.wo.cobrado)
+          ? '<button class="secundario" data-acao="cobrar" data-id="' + esc(l.wo.id) + '">Marcar cobrado</button>' : "";
+        return '<tr class="' + (r.grupo === "pendente" ? "linha-pendente" : "") + '"><td><b>' + esc(l.visita.site) + "</b></td><td>" +
+          esc(l.visita.equipe) + "</td><td>" + formatarDataHora(l.visita.hora_saida) + '</td><td class="wo">' + esc(l.wo.wo) +
+          "</td><td>" + esc(l.wo.tipo || "") + "</td><td>" + pill(r.texto, r.classe) + cobrado + "</td><td>" + esc(relatorio) +
+          "</td><td>" + acao + "</td></tr>";
+      }).join("");
+  }
+ 
+  $("chipsConf").addEventListener("click", function (e) {
+    const botao = e.target.closest("button[data-filtro]");
+    if (!botao) return;
+    estado.filtroConf = botao.dataset.filtro;
+    document.querySelectorAll("#chipsConf .chip").forEach(function (c) { c.classList.toggle("ativo", c === botao); });
+    desenharConferencia();
+  });
+  $("periodoConf").addEventListener("change", atualizarConferencia);
+  $("botaoAtualizarConf").addEventListener("click", atualizarConferencia);
+ 
+  $("tabelaConf").addEventListener("click", async function (e) {
+    const botao = e.target.closest("button[data-acao=cobrar]");
+    if (!botao) return;
+    botao.disabled = true;
+    try {
+      await marcarCobrado(botao.dataset.id, estado.usuarioEmail);
+      mostrarAviso("Marcado como cobrado.");
+      atualizarConferencia();
+    } catch (err) {
+      botao.disabled = false;
+      mostrarAviso("Erro ao gravar: " + err.message, "erro");
+    }
+  });
  
   // ---- tela REGISTRAR -------------------------------------------------------
   function prepararFormulario() {
@@ -406,6 +657,9 @@
   }
  
   $("campoAtividade").addEventListener("change", atualizarBlocos);
+  $("campoSituacaoInicial").addEventListener("change", function () {
+    $("blocoChegada").classList.toggle("oculto", $("campoSituacaoInicial").value !== "site");
+  });
  
   function atualizarBlocos() {
     const atividade = $("campoAtividade").value;
@@ -449,6 +703,32 @@
       if (!$("campoConferi").checked) { msg.innerHTML = '<span class="erro">Confirme que conferiu as WOs com o técnico.</span>'; return; }
     }
  
+    // Horários: o que a validadora informar vale; vazio significa "agora".
+    const dataExecucao = $("campoData").value || hoje();
+    const jaNoSite = $("campoSituacaoInicial").value === "site";
+    function horarioInformado(idCampo) {
+      const v = $(idCampo).value;                       // "HH:MM" ou ""
+      if (!v) return null;
+      const partes = v.split(":");
+      const d = new Date(dataExecucao + "T00:00:00");
+      d.setHours(Number(partes[0]), Number(partes[1]), 0, 0);
+      return d;
+    }
+    const agora = new Date();
+    let aviso = horarioInformado("campoHoraAviso");
+    let chegada = jaNoSite ? horarioInformado("campoHoraChegada") : null;
+    if (jaNoSite && !chegada) chegada = agora;
+    if (!aviso) aviso = (chegada && chegada < agora) ? chegada : agora;
+    if (aviso.getTime() > agora.getTime() + 60000) {
+      msg.innerHTML = '<span class="erro">O horário do aviso não pode estar no futuro.</span>'; return;
+    }
+    if (chegada && chegada.getTime() > agora.getTime() + 60000) {
+      msg.innerHTML = '<span class="erro">O horário de chegada não pode estar no futuro.</span>'; return;
+    }
+    if (chegada && chegada.getTime() < aviso.getTime() - 60000) {
+      msg.innerHTML = '<span class="erro">A chegada não pode ser antes do aviso.</span>'; return;
+    }
+ 
     $("botaoRegistrar").disabled = true;
     try {
       const abertas = await carregarEmCampo();
@@ -458,15 +738,20 @@
           "). Registre a saída ou cancele antes.</span>";
         return;
       }
-      await criarVisita({
+      const visita = {
         site: siteTexto, equipe: equipe.nome, equipe_id: equipe.id, atividade: atividade,
         atividade_detalhe: $("campoDetalhe").value.trim() || null,
-        data_execucao: $("campoData").value || hoje(), situacao: REGRAS.situacaoDeslocamento,
-        hora_aviso: new Date().toISOString()
-      }, wos);
-      mostrarAviso("Deslocamento registrado: " + siteTexto + " · " + equipe.nome);
+        data_execucao: dataExecucao,
+        situacao: jaNoSite ? REGRAS.situacaoNoSite : REGRAS.situacaoDeslocamento,
+        hora_aviso: aviso.toISOString()
+      };
+      if (jaNoSite) visita.hora_entrada = chegada.toISOString();
+      await criarVisita(visita, wos);
+      mostrarAviso((jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + siteTexto + " · " + equipe.nome);
       $("campoSite").value = ""; $("campoDetalhe").value = ""; $("campoConferi").checked = false;
       $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoData").value = hoje();
+      $("campoSituacaoInicial").value = "desloc"; $("campoHoraAviso").value = ""; $("campoHoraChegada").value = "";
+      $("blocoChegada").classList.add("oculto");
       limparSiteEscolhido();
       atualizarBlocos();
     } catch (e) {
