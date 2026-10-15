@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Controle de Preventivas</title>
+  <style>
+    :root { --azul-escuro:#12304f; --azul:#1f5fb4; --fundo:#eef1f5; --borda:#d5dbe2; --texto:#1b2733; --suave:#5b6b7b;
+            --verde:#17663a; --verde-fundo:#dff3e6; --laranja:#8a5a00; --laranja-fundo:#fdeec8;
+            --vermelho:#b3261e; --vermelho-fundo:#fbdcd9; --azul-fundo:#dbe8fb; --cinza-fundo:#e6e9ee; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--fundo); color:var(--texto); }
+    .oculto { display:none !important; }
+    header { background:var(--azul-escuro); color:#fff; display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; padding:10px 20px; }
+    header .marca { font-weight:700; font-size:18px; }
+    nav { display:flex; gap:6px; flex:1; flex-wrap:wrap; }
+    nav button { background:transparent; color:#cfdcec; border:0; padding:8px 14px; border-radius:8px; font:inherit; cursor:pointer; }
+    nav button.ativo { background:#fff; color:var(--azul-escuro); font-weight:600; }
+    .usuario { font-size:13px; text-align:right; }
+    .usuario button { background:transparent; border:1px solid #6f87a3; color:#fff; border-radius:6px; padding:3px 8px; margin-left:8px; cursor:pointer; }
+    main { max-width:1100px; margin:0 auto; padding:20px 16px 60px; }
+    h1 { font-size:22px; margin:6px 0 4px; }
+    .sub { color:var(--suave); margin:0 0 16px; font-size:14px; }
+    .cartao { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:18px; margin-bottom:16px; }
+    label { display:block; font-size:13px; font-weight:600; color:var(--suave); margin:12px 0 4px; }
+    input[type=text], input[type=email], input[type=password], input[type=date], select, textarea {
+      width:100%; font:inherit; padding:10px 12px; border:1px solid var(--borda); border-radius:8px; background:#fff; }
+    input:focus, select:focus { outline:2px solid #8fb4e8; }
+    button.principal { background:var(--azul); color:#fff; border:0; border-radius:8px; padding:10px 18px; font:inherit; font-weight:600; cursor:pointer; }
+    button.secundario { background:#fff; color:var(--azul); border:1px solid var(--azul); border-radius:8px; padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .linha-botoes { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .msg { margin-top:10px; font-size:14px; }
+    .ok { color:var(--verde); } .erro { color:var(--vermelho); } .aviso { color:var(--laranja); }
+    .sugestoes { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .sugestoes button { background:var(--azul-fundo); border:0; border-radius:16px; padding:6px 12px; font:inherit; cursor:pointer; }
+    .pill { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600; white-space:nowrap; }
+    .p-verde { background:var(--verde-fundo); color:var(--verde); }
+    .p-laranja { background:var(--laranja-fundo); color:var(--laranja); }
+    .p-vermelho { background:var(--vermelho-fundo); color:var(--vermelho); }
+    .p-azul { background:var(--azul-fundo); color:var(--azul-escuro); }
+    .p-cinza { background:var(--cinza-fundo); color:#3a4654; }
+    .lista-wo { margin:8px 0 0; }
+    .lista-wo .item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #e9edf1; flex-wrap:wrap; }
+    .lista-wo .item:last-child { border-bottom:0; }
+    .lista-wo .wo { font-weight:700; }
+    .lista-wo .tipo { color:var(--suave); flex:1; min-width:140px; }
+    .check { display:flex; align-items:center; gap:8px; font-weight:400; color:var(--texto); font-size:15px; margin:12px 0 0; }
+    .check input { width:18px; height:18px; }
+    .azulejos { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
+    .azulejo { background:#fff; border:1px solid var(--borda); border-left-width:5px; border-radius:10px; padding:12px 14px; }
+    .azulejo .num { font-size:26px; font-weight:700; }
+    .azulejo .rot { color:var(--suave); font-size:13px; }
+    .a-azul { border-left-color:#3b82d6; } .a-laranja { border-left-color:#e0a100; } .a-verde { border-left-color:#1f9d55; }
+    .grade-cartoes { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px; }
+    .equipe-cartao { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:14px; }
+    .equipe-cartao .topo { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .equipe-cartao .site { font-size:20px; font-weight:700; }
+    .equipe-cartao .nome { color:var(--suave); font-size:14px; }
+    .tempos { display:flex; justify-content:space-between; margin:12px 0 6px; font-size:13px; }
+    .tempos b { display:block; font-size:15px; }
+    .duracao { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #e9edf1; border-bottom:1px solid #e9edf1; font-size:14px; }
+    h2.secao { font-size:16px; margin:22px 0 10px; }
+    .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#1b2733; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:90vw; z-index:10; }
+    .toast.erro { background:var(--vermelho); color:#fff; }
+    .login-caixa { max-width:380px; margin:60px auto; }
+    .vazio { color:var(--suave); padding:16px 0; }
+  </style>
+</head>
+<body>
+ 
+  <header id="topo" class="oculto">
+    <span class="marca">Controle de Preventivas</span>
+    <nav>
+      <button data-tela="Registrar" class="ativo">Registrar</button>
+      <button data-tela="Campo">Equipes em campo</button>
+    </nav>
+    <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
+  </header>
+ 
+  <main>
+    <!-- ENTRAR -->
+    <section id="telaLogin" class="login-caixa">
+      <div class="cartao">
+        <h1>Controle de Preventivas</h1>
+        <p class="sub">Entre com o seu e-mail e senha.</p>
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="username">
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" autocomplete="current-password">
+        <div class="linha-botoes"><button id="botaoEntrar" class="principal">Entrar</button></div>
+        <div id="msgLogin" class="msg"></div>
+      </div>
+    </section>
+ 
+    <!-- REGISTRAR -->
+    <section id="telaRegistrar" class="tela oculto">
+      <h1>Registrar deslocamento</h1>
+      <p class="sub">Informe o site que o técnico avisou no grupo. O sistema traz as WOs sozinho.</p>
+      <div class="cartao">
+        <label for="campoSite">Site (pode digitar sem o "SM")</label>
+        <input id="campoSite" type="text" autocomplete="off" placeholder="ex.: moo27">
+        <div id="resultadoSite" class="msg"></div>
+        <div id="sugestoesSite" class="sugestoes"></div>
+ 
+        <label for="campoEquipe">Equipe</label>
+        <select id="campoEquipe"></select>
+ 
+        <label for="campoAtividade">Atividade</label>
+        <select id="campoAtividade"></select>
+ 
+        <div id="blocoDetalhe" class="oculto">
+          <label for="campoDetalhe">Detalhe da atividade (ex.: nº do chamado)</label>
+          <input id="campoDetalhe" type="text">
+        </div>
+ 
+        <label for="campoData">Data da execução</label>
+        <input id="campoData" type="date">
+ 
+        <div id="blocoWOs" class="oculto">
+          <h2 class="secao" id="tituloWOs"></h2>
+          <div id="listaWOs" class="lista-wo"></div>
+          <label class="check"><input id="campoConferi" type="checkbox"> Conferi as WOs com o técnico</label>
+        </div>
+ 
+        <div class="linha-botoes"><button id="botaoRegistrar" class="principal">Registrar deslocamento</button></div>
+        <div id="msgRegistrar" class="msg"></div>
+      </div>
+    </section>
+ 
+    <!-- EQUIPES EM CAMPO -->
+    <section id="telaCampo" class="tela oculto">
+      <h1>Equipes em campo</h1>
+      <p class="sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</p>
+      <div class="azulejos" id="azulejos"></div>
+      <div class="grade-cartoes" id="gradeCampo"></div>
+      <h2 class="secao">Saíram hoje</h2>
+      <div class="grade-cartoes" id="gradeSaidas"></div>
+    </section>
+  </main>
+ 
+  <div id="toast" class="toast oculto"></div>
+ 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+  // ===========================================================================
+  // 1) CONFIGURACAO
+  // ===========================================================================
+  const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
+  const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
+ 
+  // ===========================================================================
+  // 2) REGRAS DE NEGOCIO  (esta parte é sua: pode editar os valores)
+  // ===========================================================================
+  const REGRAS = {
+    prefixoSite: "SM",                 // prefixo padrão dos sites
+    horasLongaPermanencia: 3,          // alerta de "longa permanência" no site
+    atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva", "Outra"],
+    atividadesComPreventiva: ["Preventiva", "Preventiva + Corretiva"],
+    situacaoDeslocamento: "Em Deslocamento",
+    situacaoNoSite: "No Site",
+    situacaoSaiu: "Saiu do Site",
+    situacaoCancelado: "Cancelado"
+  };
+ 
+  // Tira espaços e deixa em maiúsculas: "grs riv" vira "GRSRIV".
+  function limparSite(texto) {
+    return String(texto == null ? "" : texto).toUpperCase().replace(/\s+/g, "");
+  }
+ 
+  // Procura o site digitado na lista. Nunca escolhe sozinho quando há dúvida.
+  //   unico     -> achou exatamente um site
+  //   sugestoes -> achou parecidos; a pessoa escolhe
+  //   nenhum    -> nada encontrado
+  function acharSite(digitado, sites) {
+    const t = limparSite(digitado);
+    if (t.length < 2) return { tipo: "nenhum", sites: [] };
+    const comPrefixo = REGRAS.prefixoSite + t;
+    const exatos = sites.filter(function (s) {
+      return s.busca === t || s.busca === comPrefixo || s.infratel === t;
+    });
+    if (exatos.length === 1) return { tipo: "unico", sites: exatos };
+    if (exatos.length > 1) return { tipo: "sugestoes", sites: exatos.slice(0, 10) };
+    const parecidos = sites.filter(function (s) {
+      return s.busca.includes(t) || s.infratel.includes(t);
+    });
+    return { tipo: parecidos.length ? "sugestoes" : "nenhum", sites: parecidos.slice(0, 10) };
+  }
+ 
+  function atividadeTemPreventiva(atividade) {
+    return REGRAS.atividadesComPreventiva.includes(atividade);
+  }
+ 
+  // Minutos -> "1 h 42 min"
+  function formatarDuracao(minutos) {
+    const m = Math.max(0, Math.round(minutos));
+    const h = Math.floor(m / 60);
+    return h > 0 ? h + " h " + String(m % 60).padStart(2, "0") + " min" : m + " min";
+  }
+ 
+  // Cor e texto do status da WO na base do cliente
+  function descreverStatusBase(linhaBase) {
+    if (!linhaBase) return { texto: "WO não encontrada", classe: "p-vermelho" };
+    const s = String(linhaBase.status_final || "").trim().toLowerCase();
+    if (s === "executada") return { texto: "Executada", classe: "p-verde" };
+    if (s === "aberta") return { texto: "Aberta", classe: "p-laranja" };
+    if (s === "pendente") return { texto: "Pendente", classe: "p-cinza" };
+    return { texto: linhaBase.status_final || "Sem status", classe: "p-cinza" };
+  }
+ 
+  // ===========================================================================
+  // 3) DADOS (tudo que fala com o banco fica aqui)
+  // ===========================================================================
+  const banco = supabase.createClient(ENDERECO, CHAVE);
+ 
+  function conferir(resposta) {
+    if (resposta.error) throw new Error(resposta.error.message);
+    return resposta.data;
+  }
+ 
+  async function carregarBase() {           // o banco devolve no máximo 1000 por vez
+    const todas = [];
+    const passo = 1000;
+    for (let de = 0; ; de += passo) {
+      const dados = conferir(await banco.from("base_preventiva")
+        .select("wo,site,site_infratel,site_busca,tipo,status_final,data_fim,atualizado_em")
+        .order("wo").range(de, de + passo - 1));
+      for (const linha of dados) todas.push(linha);
+      if (dados.length < passo) break;
+    }
+    return todas;
+  }
+ 
+  async function carregarEquipes() {
+    return conferir(await banco.from("equipes_lista")
+      .select("id,nome,tipo").eq("ativa", true).order("nome"));
+  }
+ 
+  async function carregarEmCampo() {
+    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
+      .in("situacao", [REGRAS.situacaoDeslocamento, REGRAS.situacaoNoSite]).order("hora_aviso"));
+  }
+ 
+  async function carregarSaidasDeHoje() {
+    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
+      .eq("situacao", REGRAS.situacaoSaiu).gte("hora_saida", inicioDoDia()).order("hora_saida", { ascending: false }));
+  }
+ 
+  async function criarVisita(visita, wos) {
+    const criada = conferir(await banco.from("visitas").insert(visita).select().single());
+    if (wos.length > 0) {
+      const linhas = wos.map(function (w) { return { visita_id: criada.id, wo: w.wo, tipo: w.tipo }; });
+      conferir(await banco.from("wos_visita").insert(linhas));
+    }
+    return criada;
+  }
+ 
+  async function atualizarVisita(id, campos) {
+    conferir(await banco.from("visitas").update(campos).eq("id", id));
+  }
+ 
+  // ===========================================================================
+  // 4) TELAS
+  // ===========================================================================
+  const $ = function (id) { return document.getElementById(id); };
+  const estado = { base: [], sites: [], porWO: {}, equipes: [], siteEscolhido: null, emCampo: [], pollId: null };
+ 
+  function esc(texto) {
+    return String(texto == null ? "" : texto).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function pill(texto, classe) { return '<span class="pill ' + classe + '">' + esc(texto) + "</span>"; }
+ 
+  function hoje() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function inicioDoDia() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+  function horaCurta(iso) {
+    return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—";
+  }
+  function minutosDesde(iso) { return (Date.now() - new Date(iso).getTime()) / 60000; }
+ 
+  let temporizadorToast = null;
+  function mostrarAviso(texto, tipo) {
+    const t = $("toast");
+    t.textContent = texto;
+    t.className = "toast" + (tipo === "erro" ? " erro" : "");
+    clearTimeout(temporizadorToast);
+    temporizadorToast = setTimeout(function () { t.classList.add("oculto"); }, 5000);
+  }
+ 
+  // ---- entrar / sair -------------------------------------------------------
+  $("botaoEntrar").addEventListener("click", async function () {
+    $("msgLogin").textContent = "Entrando...";
+    const r = await banco.auth.signInWithPassword({ email: $("email").value.trim(), password: $("senha").value });
+    if (r.error) { $("msgLogin").innerHTML = '<span class="erro">' + esc(r.error.message) + "</span>"; return; }
+    $("msgLogin").textContent = "";
+    iniciarSistema(r.data.user);
+  });
+  $("senha").addEventListener("keydown", function (e) { if (e.key === "Enter") $("botaoEntrar").click(); });
+ 
+  $("botaoSair").addEventListener("click", async function () {
+    await banco.auth.signOut();
+    clearInterval(estado.pollId);
+    $("topo").classList.add("oculto");
+    document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
+    $("telaLogin").classList.remove("oculto");
+  });
+ 
+  async function iniciarSistema(usuario) {
+    $("nomeUsuario").textContent = usuario.email;
+    $("telaLogin").classList.add("oculto");
+    $("topo").classList.remove("oculto");
+    try {
+      const resultados = await Promise.all([carregarBase(), carregarEquipes()]);
+      estado.base = resultados[0];
+      estado.equipes = resultados[1];
+    } catch (e) {
+      mostrarAviso("Não consegui carregar os dados: " + e.message, "erro");
+      return;
+    }
+    prepararBase();
+    prepararFormulario();
+    irParaTela("Registrar");
+  }
+ 
+  function prepararBase() {
+    const mapaSites = {};
+    estado.porWO = {};
+    estado.base.forEach(function (l) {
+      estado.porWO[l.wo] = l;
+      if (!mapaSites[l.site_busca]) {
+        mapaSites[l.site_busca] = { site: l.site, busca: l.site_busca, infratel: limparSite(l.site_infratel) };
+      }
+    });
+    estado.sites = Object.keys(mapaSites).map(function (k) { return mapaSites[k]; });
+  }
+ 
+  // ---- navegação ------------------------------------------------------------
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { irParaTela(b.dataset.tela); });
+  });
+ 
+  function irParaTela(nome) {
+    document.querySelectorAll("nav button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.tela === nome); });
+    document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
+    $("tela" + nome).classList.remove("oculto");
+    clearInterval(estado.pollId);
+    if (nome === "Campo") {
+      atualizarCampo();
+      estado.pollId = setInterval(atualizarCampo, 30000);
+    }
+  }
+ 
+  // ---- tela REGISTRAR -------------------------------------------------------
+  function prepararFormulario() {
+    $("campoEquipe").innerHTML = '<option value="">Escolha a equipe...</option>' +
+      estado.equipes.map(function (e) {
+        return '<option value="' + esc(e.id) + '">' + esc(e.nome) + " (" + esc(e.tipo) + ")</option>";
+      }).join("");
+    $("campoAtividade").innerHTML = REGRAS.atividades.map(function (a) {
+      return "<option>" + esc(a) + "</option>";
+    }).join("");
+    $("campoData").value = hoje();
+    limparSiteEscolhido();
+    $("campoSite").value = "";
+    atualizarBlocos();
+  }
+ 
+  function limparSiteEscolhido() {
+    estado.siteEscolhido = null;
+    $("resultadoSite").textContent = "";
+    $("sugestoesSite").innerHTML = "";
+  }
+ 
+  $("campoSite").addEventListener("input", function () {
+    limparSiteEscolhido();
+    const r = acharSite($("campoSite").value, estado.sites);
+    if (r.tipo === "unico") {
+      escolherSite(r.sites[0]);
+    } else if (r.tipo === "sugestoes") {
+      $("resultadoSite").innerHTML = "<span>Você quis dizer:</span>";
+      $("sugestoesSite").innerHTML = r.sites.map(function (s) {
+        return '<button type="button" data-busca="' + esc(s.busca) + '">' + esc(s.site) + "</button>";
+      }).join("");
+    } else if (limparSite($("campoSite").value).length >= 2) {
+      $("resultadoSite").innerHTML = '<span class="aviso">Nenhum site encontrado na base.</span>';
+    }
+    atualizarBlocos();
+  });
+ 
+  $("sugestoesSite").addEventListener("click", function (e) {
+    const botao = e.target.closest("button");
+    if (!botao) return;
+    const site = estado.sites.find(function (s) { return s.busca === botao.dataset.busca; });
+    if (site) { escolherSite(site); atualizarBlocos(); }
+  });
+ 
+  function escolherSite(site) {
+    estado.siteEscolhido = site;
+    $("campoSite").value = site.site;
+    $("sugestoesSite").innerHTML = "";
+    $("resultadoSite").innerHTML = '<span class="ok">✓ Site reconhecido: <b>' + esc(site.site) + "</b></span>";
+  }
+ 
+  $("campoAtividade").addEventListener("change", atualizarBlocos);
+ 
+  function atualizarBlocos() {
+    const atividade = $("campoAtividade").value;
+    const comPreventiva = atividadeTemPreventiva(atividade);
+    $("blocoDetalhe").classList.toggle("oculto", atividade === REGRAS.atividades[0]);
+ 
+    const wos = estado.siteEscolhido
+      ? estado.base.filter(function (l) { return l.site_busca === estado.siteEscolhido.busca; }) : [];
+    const mostrar = comPreventiva && estado.siteEscolhido;
+    $("blocoWOs").classList.toggle("oculto", !mostrar);
+    if (!mostrar) return;
+ 
+    $("tituloWOs").textContent = wos.length + (wos.length === 1 ? " WO neste site" : " WOs neste site");
+    $("listaWOs").innerHTML = wos.map(function (l) {
+      const st = descreverStatusBase(l);
+      return '<div class="item"><input type="checkbox" checked data-wo="' + esc(l.wo) + '" data-tipo="' + esc(l.tipo) + '">' +
+        '<span class="wo">' + esc(l.wo) + '</span><span class="tipo">' + esc(l.tipo) + "</span>" + pill(st.texto, st.classe) + "</div>";
+    }).join("");
+  }
+ 
+  $("botaoRegistrar").addEventListener("click", async function () {
+    const msg = $("msgRegistrar");
+    msg.textContent = "";
+    const atividade = $("campoAtividade").value;
+    const comPreventiva = atividadeTemPreventiva(atividade);
+    const equipe = estado.equipes.find(function (e) { return String(e.id) === $("campoEquipe").value; });
+ 
+    if (!equipe) { msg.innerHTML = '<span class="erro">Escolha a equipe.</span>'; return; }
+    if (comPreventiva && !estado.siteEscolhido) {
+      msg.innerHTML = '<span class="erro">Para preventiva, escolha um site que esteja na base.</span>'; return;
+    }
+    const siteTexto = estado.siteEscolhido ? estado.siteEscolhido.site : limparSite($("campoSite").value);
+    if (!siteTexto) { msg.innerHTML = '<span class="erro">Informe o site.</span>'; return; }
+ 
+    const wos = [];
+    if (comPreventiva) {
+      document.querySelectorAll("#listaWOs input[type=checkbox]:checked").forEach(function (c) {
+        wos.push({ wo: c.dataset.wo, tipo: c.dataset.tipo });
+      });
+      if (wos.length === 0) { msg.innerHTML = '<span class="erro">Marque ao menos uma WO.</span>'; return; }
+      if (!$("campoConferi").checked) { msg.innerHTML = '<span class="erro">Confirme que conferiu as WOs com o técnico.</span>'; return; }
+    }
+ 
+    $("botaoRegistrar").disabled = true;
+    try {
+      const abertas = await carregarEmCampo();
+      const jaEmCampo = abertas.find(function (v) { return v.equipe_id === equipe.id; });
+      if (jaEmCampo) {
+        msg.innerHTML = '<span class="erro">A equipe ' + esc(equipe.nome) + " já está em campo (" + esc(jaEmCampo.site) +
+          "). Registre a saída ou cancele antes.</span>";
+        return;
+      }
+      await criarVisita({
+        site: siteTexto, equipe: equipe.nome, equipe_id: equipe.id, atividade: atividade,
+        atividade_detalhe: $("campoDetalhe").value.trim() || null,
+        data_execucao: $("campoData").value || hoje(), situacao: REGRAS.situacaoDeslocamento,
+        hora_aviso: new Date().toISOString()
+      }, wos);
+      mostrarAviso("Deslocamento registrado: " + siteTexto + " · " + equipe.nome);
+      $("campoSite").value = ""; $("campoDetalhe").value = ""; $("campoConferi").checked = false;
+      $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoData").value = hoje();
+      limparSiteEscolhido();
+      atualizarBlocos();
+    } catch (e) {
+      msg.innerHTML = '<span class="erro">Erro ao registrar: ' + esc(e.message) + "</span>";
+    } finally {
+      $("botaoRegistrar").disabled = false;
+    }
+  });
+ 
+  // ---- tela EQUIPES EM CAMPO ------------------------------------------------
+  async function atualizarCampo() {
+    try {
+      const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje()]);
+      estado.emCampo = resultados[0];
+      desenharCampo(resultados[0], resultados[1]);
+      $("subCampo").textContent = "Atualiza sozinha a cada 30 segundos · última leitura às " + horaCurta(new Date().toISOString());
+    } catch (e) {
+      mostrarAviso("Não consegui atualizar: " + e.message, "erro");
+    }
+  }
+ 
+  function desenharCampo(emCampo, saidas) {
+    const emDesloc = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoDeslocamento; });
+    const noSite = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoNoSite; });
+    const longos = noSite.filter(function (v) { return minutosDesde(v.hora_entrada) > REGRAS.horasLongaPermanencia * 60; });
+    $("azulejos").innerHTML =
+      azulejo(emDesloc.length, "Em deslocamento", "a-azul") + azulejo(noSite.length, "No site", "a-azul") +
+      azulejo(longos.length, "Há mais de " + REGRAS.horasLongaPermanencia + " h no site", "a-laranja") +
+      azulejo(saidas.length, "Saíram hoje", "a-verde");
+    $("gradeCampo").innerHTML = emCampo.length
+      ? emCampo.map(cartaoEmCampo).join("") : '<div class="vazio">Nenhuma equipe em campo agora.</div>';
+    $("gradeSaidas").innerHTML = saidas.length
+      ? saidas.map(cartaoSaida).join("") : '<div class="vazio">Ninguém saiu de um site hoje ainda.</div>';
+  }
+ 
+  function azulejo(numero, rotulo, classe) {
+    return '<div class="azulejo ' + classe + '"><div class="num">' + numero + '</div><div class="rot">' + esc(rotulo) + "</div></div>";
+  }
+ 
+  function listaWOsCartao(v) {
+    const wos = v.wos_visita || [];
+    if (wos.length === 0) return "";
+    return '<div class="lista-wo">' + wos.map(function (w) {
+      const st = descreverStatusBase(estado.porWO[w.wo]);
+      return '<div class="item"><span class="wo">' + esc(w.wo) + '</span><span class="tipo">' + esc(w.tipo) + "</span>" +
+        pill(st.texto, st.classe) + "</div>";
+    }).join("") + "</div>";
+  }
+ 
+  function cartaoEmCampo(v) {
+    const noSite = v.situacao === REGRAS.situacaoNoSite;
+    const minutos = noSite ? minutosDesde(v.hora_entrada) : minutosDesde(v.hora_aviso);
+    const longo = noSite && minutos > REGRAS.horasLongaPermanencia * 60;
+    const botoes = noSite
+      ? '<button class="principal" data-acao="saida" data-id="' + esc(v.id) + '">Registrar saída</button>'
+      : '<button class="principal" data-acao="chegada" data-id="' + esc(v.id) + '">Chegou no site</button>';
+    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
+      esc(v.equipe) + "</div></div><div>" +
+      (longo ? pill("Longa permanência", "p-laranja") + " " : "") + pill(v.situacao, "p-azul") + "</div></div>" +
+      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") +
+      (v.atividade_detalhe ? ' <span class="nome">' + esc(v.atividade_detalhe) + "</span>" : "") + "</div>" +
+      '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
+      "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
+      '<div class="duracao"><span>' + (noSite ? "Tempo no site" : "Em deslocamento há") + "</span><b>" + formatarDuracao(minutos) + "</b></div>" +
+      listaWOsCartao(v) +
+      '<div class="linha-botoes">' + botoes + '<button class="secundario" data-acao="cancelar" data-id="' + esc(v.id) + '">Cancelar</button></div></div>';
+  }
+ 
+  function cartaoSaida(v) {
+    const permanencia = v.hora_entrada ? formatarDuracao((new Date(v.hora_saida) - new Date(v.hora_entrada)) / 60000) : "—";
+    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
+      esc(v.equipe) + "</div></div>" + pill("Saiu do Site", "p-verde") + "</div>" +
+      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") + "</div>" +
+      '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
+      "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
+      '<div class="duracao"><span>Tempo no site</span><b>' + permanencia + "</b></div>" + listaWOsCartao(v) + "</div>";
+  }
+ 
+  // Pergunta o horário (padrão: agora). Devolve uma data ISO, ou null se cancelou.
+  function perguntarHorario(rotulo, minimoIso) {
+    const agora = new Date();
+    const padrao = String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0");
+    const resposta = window.prompt(rotulo + " (HH:MM). Deixe como está para usar agora.", padrao);
+    if (resposta === null) return null;
+    const m = resposta.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) { mostrarAviso("Horário inválido. Use o formato HH:MM.", "erro"); return null; }
+    const quando = new Date();
+    quando.setHours(Number(m[1]), Number(m[2]), 0, 0);
+    if (quando.getTime() > Date.now() + 60000) { mostrarAviso("O horário não pode estar no futuro.", "erro"); return null; }
+    if (minimoIso && quando.getTime() < new Date(minimoIso).getTime() - 60000) {
+      mostrarAviso("O horário não pode ser antes de " + horaCurta(minimoIso) + ".", "erro"); return null;
+    }
+    return quando.toISOString();
+  }
+ 
+  $("gradeCampo").addEventListener("click", async function (e) {
+    const botao = e.target.closest("button[data-acao]");
+    if (!botao) return;
+    const visita = estado.emCampo.find(function (v) { return String(v.id) === botao.dataset.id; });
+    if (!visita) return;
+    let campos = null;
+    if (botao.dataset.acao === "chegada") {
+      const quando = perguntarHorario("Hora da chegada no site", visita.hora_aviso);
+      if (!quando) return;
+      campos = { situacao: REGRAS.situacaoNoSite, hora_entrada: quando };
+    } else if (botao.dataset.acao === "saida") {
+      const quando = perguntarHorario("Hora da saída do site", visita.hora_entrada);
+      if (!quando) return;
+      campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando };
+    } else if (botao.dataset.acao === "cancelar") {
+      if (!window.confirm("Cancelar o deslocamento de " + visita.equipe + " para " + visita.site + "?")) return;
+      campos = { situacao: REGRAS.situacaoCancelado };
+    }
+    botao.disabled = true;
+    try {
+      await atualizarVisita(visita.id, campos);
+      mostrarAviso("Registrado.");
+      atualizarCampo();
+    } catch (err) {
+      botao.disabled = false;
+      mostrarAviso("Erro ao gravar: " + err.message, "erro");
+    }
+  });
+ 
+  // ---- ao abrir a página: se já houver sessão, entra direto -----------------
+  (async function () {
+    try {
+      const r = await banco.auth.getSession();
+      if (r.data && r.data.session) iniciarSistema(r.data.session.user);
+    } catch (e) { /* sem sessão: fica na tela de login */ }
+  })();
+  </script>
+</body>
+</html>
