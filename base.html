@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atualizar base de preventivas</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; color: #1b2733; }
+    h1 { font-size: 22px; }
+    .caixa { border: 1px solid #d5dbe2; border-radius: 10px; padding: 16px; margin: 16px 0; background: #fff; }
+    .caixa h2 { font-size: 16px; margin: 0 0 10px; }
+    input, select, button { font: inherit; padding: 8px 10px; margin: 4px 4px 4px 0; }
+    button { background: #1f5fb4; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+    button:disabled { background: #9db3cf; cursor: not-allowed; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    td, th { border-bottom: 1px solid #e3e8ee; padding: 6px 8px; text-align: left; }
+    .ok { color: #17663a; } .erro { color: #b3261e; } .aviso { color: #8a5a00; }
+    .oculto { display: none; }
+    .pequeno { font-size: 13px; color: #5b6b7b; }
+  </style>
+</head>
+<body>
+  <h1>Atualizar base de preventivas</h1>
+  <p class="pequeno">Suba o arquivo "Atualização_Preventiva". Só entram as linhas do setor configurado abaixo.</p>
+ 
+  <div class="caixa" id="caixaLogin">
+    <h2>1. Entrar</h2>
+    <input id="email" type="email" placeholder="e-mail">
+    <input id="senha" type="password" placeholder="senha">
+    <button id="botaoEntrar">Entrar</button>
+    <div id="msgLogin"></div>
+  </div>
+ 
+  <div class="caixa oculto" id="caixaArquivo">
+    <h2>2. Escolher o arquivo</h2>
+    <div class="pequeno" id="ultimaAtualizacao"></div>
+    <input id="arquivo" type="file" accept=".xlsx,.xlsm">
+    <select id="seletorAba" class="oculto"></select>
+    <div id="msgArquivo"></div>
+  </div>
+ 
+  <div class="caixa oculto" id="caixaPrevia">
+    <h2>3. Conferir e gravar</h2>
+    <div id="resumo"></div>
+    <table id="tabelaPrevia"></table>
+    <button id="botaoGravar" disabled>Gravar no banco</button>
+    <div id="msgGravar"></div>
+  </div>
+ 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // ==== CONFIGURACAO (pode ser editada) =======================================
+    const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
+    const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
+ 
+    // Setor que entra no sistema (coluna "Equipe Responsável - Engemon").
+    // Maiúscula e acento não importam.
+    const EQUIPE_ENGEMON_ATIVA = "MÓVEL";
+ 
+    // Nome de cada coluna na planilha (já sem acento, em minúsculas).
+    const COLUNAS = {
+      wo:                "wo",
+      site:              "clr_sdr_site/helix",
+      siteInfratel:      "programado/infratel",
+      tipo:              "tipo de preventiva",
+      equipeResponsavel: "equipe responavel",
+      equipeEngemon:     "equipe responsavel - engemon",
+      expurgo:           "expurgo situacao",
+      statusFinal:       "status compilado - final",
+      dataFim:           "data fim - consolidado"
+    };
+    // Sem estas colunas a base não pode ser lida.
+    const COLUNAS_OBRIGATORIAS = ["wo", "site", "equipeEngemon", "statusFinal", "dataFim"];
+ 
+    // ==== FUNCOES PURAS (so calculam, nao mexem na tela) ========================
+ 
+    // Tira acento, deixa minúsculo e remove espaços repetidos.
+    function limpar(texto) {
+      return String(texto == null ? "" : texto)
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .toLowerCase().replace(/\s+/g, " ").trim();
+    }
+ 
+    // Transforma o que veio da célula em "AAAA-MM-DD" (ou null se não for data).
+    function converterData(valor) {
+      if (valor === null || valor === undefined || valor === "") return null;
+      let data = null;
+      if (valor instanceof Date) {
+        // +12h evita que um fuso horário empurre a data para o dia anterior
+        data = new Date(valor.getTime() + 12 * 3600 * 1000);
+        return formatar(data.getFullYear(), data.getMonth() + 1, data.getDate());
+      }
+      if (typeof valor === "number") {
+        // número de série do Excel
+        data = new Date(Math.round((valor - 25569) * 86400 * 1000));
+        return formatar(data.getUTCFullYear(), data.getUTCMonth() + 1, data.getUTCDate());
+      }
+      const texto = String(valor).trim();
+      const br = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (br) return formatar(Number(br[3]), Number(br[2]), Number(br[1]));
+      const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return formatar(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+      return null;
+    }
+ 
+    function formatar(ano, mes, dia) {
+      return ano + "-" + String(mes).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
+    }
+ 
+    // Procura a linha do cabeçalho (a que tem "WO" e "Status Compilado - Final").
+    function acharCabecalho(matriz) {
+      for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+        const nomes = matriz[i].map(limpar);
+        if (nomes.includes(COLUNAS.wo) && nomes.includes(COLUNAS.statusFinal)) return i;
+      }
+      return -1;
+    }
+ 
+    // Lê a matriz da planilha e devolve as linhas prontas para gravar.
+    function montarLinhas(matriz) {
+      const resultado = { linhas: [], total: 0, foraDoSetor: 0, semWO: 0, duplicadas: 0, erro: null, faltando: [] };
+ 
+      const posCabecalho = acharCabecalho(matriz);
+      if (posCabecalho < 0) {
+        resultado.erro = "Não encontrei o cabeçalho (colunas WO e Status Compilado - Final) nesta aba.";
+        return resultado;
+      }
+ 
+      // posição de cada coluna: { wo: 3, site: 1, ... }
+      const nomes = matriz[posCabecalho].map(limpar);
+      const pos = {};
+      for (const chave in COLUNAS) pos[chave] = nomes.indexOf(COLUNAS[chave]);
+ 
+      resultado.faltando = COLUNAS_OBRIGATORIAS.filter(function (c) { return pos[c] < 0; });
+      if (resultado.faltando.length > 0) {
+        resultado.erro = "Faltam colunas na planilha: " +
+          resultado.faltando.map(function (c) { return COLUNAS[c]; }).join(", ");
+        return resultado;
+      }
+ 
+      function celula(linha, chave) {
+        return pos[chave] < 0 ? "" : linha[pos[chave]];
+      }
+      function texto(valor) {
+        const t = String(valor == null ? "" : valor).trim();
+        return t === "" ? null : t;
+      }
+ 
+      const porWO = {};
+      for (let i = posCabecalho + 1; i < matriz.length; i++) {
+        const linha = matriz[i];
+        const wo = texto(celula(linha, "wo"));
+        if (!wo || !/^WO\d+/i.test(wo)) { resultado.semWO++; continue; }
+        resultado.total++;
+ 
+        if (limpar(celula(linha, "equipeEngemon")) !== limpar(EQUIPE_ENGEMON_ATIVA)) {
+          resultado.foraDoSetor++;
+          continue;
+        }
+ 
+        const site = texto(celula(linha, "site")) || texto(celula(linha, "siteInfratel"));
+        if (!site) { resultado.semWO++; continue; }
+ 
+        if (porWO[wo.toUpperCase()]) resultado.duplicadas++;
+        porWO[wo.toUpperCase()] = {
+          wo: wo.toUpperCase(),
+          site: site,
+          site_infratel: texto(celula(linha, "siteInfratel")),
+          tipo: texto(celula(linha, "tipo")),
+          equipe_responsavel: texto(celula(linha, "equipeResponsavel")),
+          equipe_engemon: texto(celula(linha, "equipeEngemon")),
+          expurgo: texto(celula(linha, "expurgo")),
+          status_final: texto(celula(linha, "statusFinal")),
+          data_fim: converterData(celula(linha, "dataFim"))
+        };
+      }
+      resultado.linhas = Object.keys(porWO).map(function (k) { return porWO[k]; });
+      return resultado;
+    }
+    // ==== FIM DAS FUNCOES PURAS ==================================================
+ 
+    // ==== TELA ===================================================================
+    if (typeof document !== "undefined") {
+      const banco = supabase.createClient(ENDERECO, CHAVE);
+      let linhasParaGravar = [];
+      let pastaDeTrabalho = null;
+ 
+      const $ = function (id) { return document.getElementById(id); };
+ 
+      $("botaoEntrar").addEventListener("click", async function () {
+        $("msgLogin").textContent = "Entrando...";
+        const login = await banco.auth.signInWithPassword({
+          email: $("email").value.trim(), password: $("senha").value
+        });
+        if (login.error) {
+          $("msgLogin").innerHTML = '<span class="erro">Erro no login: ' + login.error.message + "</span>";
+          return;
+        }
+        $("msgLogin").innerHTML = '<span class="ok">Login feito.</span>';
+        $("caixaArquivo").classList.remove("oculto");
+        mostrarUltimaAtualizacao();
+      });
+ 
+      async function mostrarUltimaAtualizacao() {
+        const r = await banco.from("base_preventiva")
+          .select("atualizado_em").order("atualizado_em", { ascending: false }).limit(1);
+        if (r.error) { $("ultimaAtualizacao").textContent = "Não consegui ler a última atualização: " + r.error.message; return; }
+        $("ultimaAtualizacao").textContent = r.data.length
+          ? "Última atualização da base: " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
+          : "A base ainda está vazia.";
+      }
+ 
+      $("arquivo").addEventListener("change", async function (evento) {
+        const arquivo = evento.target.files[0];
+        if (!arquivo) return;
+        $("msgArquivo").textContent = "Lendo o arquivo...";
+        try {
+          const dados = await arquivo.arrayBuffer();
+          pastaDeTrabalho = XLSX.read(dados, { type: "array", cellDates: true });
+        } catch (e) {
+          $("msgArquivo").innerHTML = '<span class="erro">Não consegui abrir o arquivo: ' + e.message + "</span>";
+          return;
+        }
+        // lista de abas; escolhe a que parece ser a da base
+        const seletor = $("seletorAba");
+        seletor.innerHTML = "";
+        let padrao = 0;
+        pastaDeTrabalho.SheetNames.forEach(function (nome, i) {
+          const opcao = document.createElement("option");
+          opcao.value = nome; opcao.textContent = nome;
+          seletor.appendChild(opcao);
+          if (limpar(nome).includes("atualiza")) padrao = i;
+        });
+        seletor.selectedIndex = padrao;
+        seletor.classList.toggle("oculto", pastaDeTrabalho.SheetNames.length < 2);
+        $("msgArquivo").textContent = "";
+        processarAba();
+      });
+ 
+      $("seletorAba").addEventListener("change", processarAba);
+ 
+      function processarAba() {
+        const nomeAba = $("seletorAba").value;
+        const matriz = XLSX.utils.sheet_to_json(pastaDeTrabalho.Sheets[nomeAba], { header: 1, raw: true, defval: "" });
+        const r = montarLinhas(matriz);
+        $("caixaPrevia").classList.remove("oculto");
+        linhasParaGravar = r.linhas;
+ 
+        if (r.erro) {
+          $("resumo").innerHTML = '<span class="erro">' + r.erro + "</span>";
+          $("tabelaPrevia").innerHTML = "";
+          $("botaoGravar").disabled = true;
+          return;
+        }
+ 
+        // contagem por status
+        const porStatus = {};
+        r.linhas.forEach(function (l) { const s = l.status_final || "(vazio)"; porStatus[s] = (porStatus[s] || 0) + 1; });
+        const textoStatus = Object.keys(porStatus).map(function (s) { return s + ": " + porStatus[s]; }).join(" · ");
+ 
+        $("resumo").innerHTML =
+          "<p>WOs lidas na planilha: <b>" + r.total + "</b><br>" +
+          "Do setor " + EQUIPE_ENGEMON_ATIVA + " (vão para o banco): <b>" + r.linhas.length + "</b><br>" +
+          "De outros setores (ignoradas): " + r.foraDoSetor + "<br>" +
+          "Por status: " + (textoStatus || "-") + "</p>" +
+          (r.duplicadas ? '<p class="aviso">Havia ' + r.duplicadas + " WO repetida(s); ficou a última.</p>" : "") +
+          (r.linhas.length === 0 ? '<p class="erro">Nenhuma linha do setor ' + EQUIPE_ENGEMON_ATIVA + " encontrada.</p>" : "");
+ 
+        const amostra = r.linhas.slice(0, 5);
+        $("tabelaPrevia").innerHTML =
+          "<tr><th>Site</th><th>WO</th><th>Tipo</th><th>Status</th><th>Data fim</th></tr>" +
+          amostra.map(function (l) {
+            return "<tr><td>" + l.site + "</td><td>" + l.wo + "</td><td>" + (l.tipo || "") +
+              "</td><td>" + (l.status_final || "") + "</td><td>" + (l.data_fim || "") + "</td></tr>";
+          }).join("");
+        $("botaoGravar").disabled = r.linhas.length === 0;
+        $("msgGravar").textContent = "";
+      }
+ 
+      $("botaoGravar").addEventListener("click", async function () {
+        $("botaoGravar").disabled = true;
+        const carimbo = new Date().toISOString();
+        const lote = 500;
+        let gravadas = 0;
+ 
+        // 1) grava (ou atualiza) as WOs, em lotes, todas com o mesmo carimbo
+        for (let i = 0; i < linhasParaGravar.length; i += lote) {
+          const parte = linhasParaGravar.slice(i, i + lote).map(function (l) {
+            return Object.assign({}, l, { atualizado_em: carimbo });
+          });
+          const r = await banco.from("base_preventiva").upsert(parte, { onConflict: "wo" });
+          if (r.error) {
+            $("msgGravar").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message +
+              " (a base anterior foi mantida)</span>";
+            $("botaoGravar").disabled = false;
+            return;
+          }
+          gravadas += parte.length;
+          $("msgGravar").textContent = "Gravando... " + gravadas + " de " + linhasParaGravar.length;
+        }
+ 
+        // 2) remove as WOs antigas que não vieram nesta planilha
+        const limpeza = await banco.from("base_preventiva").delete().lt("atualizado_em", carimbo);
+        if (limpeza.error) {
+          $("msgGravar").innerHTML = '<span class="aviso">Gravei ' + gravadas +
+            " WOs, mas não consegui remover as antigas: " + limpeza.error.message + "</span>";
+        } else {
+          $("msgGravar").innerHTML = '<span class="ok">Pronto: ' + gravadas + " WOs gravadas.</span>";
+        }
+        mostrarUltimaAtualizacao();
+        $("botaoGravar").disabled = false;
+      });
+    }
+  </script>
+</body>
+</html>
