@@ -47,6 +47,20 @@
     <div id="msgGravar"></div>
   </div>
  
+  <h1>Cadastro de sites (siglas por endereço)</h1>
+  <p class="pequeno">Suba a lista de sites (uma linha por endereço, com as colunas ID_EBT, ID_CLARO_FIXO, ID_NET, ID_CLARO_OMR e ID_SITE_MAIN). A página separa uma sigla por linha e agrupa pelo ID do endereço.</p>
+ 
+  <div class="caixa oculto" id="caixaSites">
+    <h2>Lista de sites</h2>
+    <div class="pequeno" id="ultimaSites"></div>
+    <input id="arquivoSites" type="file" accept=".xlsx,.xlsm">
+    <div id="msgSites"></div>
+    <div id="resumoSites"></div>
+    <table id="tabelaSites"></table>
+    <button id="botaoGravarSites" disabled>Gravar cadastro de sites</button>
+    <div id="msgGravarSites"></div>
+  </div>
+ 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
@@ -179,6 +193,106 @@
       resultado.linhas = Object.keys(porWO).map(function (k) { return porWO[k]; });
       return resultado;
     }
+    // ---- LISTA DE SITES: mesma regra do Power Query (uma sigla por linha) ----------
+    // Só entram os endereços desta unidade (coluna UNIDADE_RESPONSAVEL). Maiúscula e acento não importam.
+    const UNIDADE_ATIVA = "MÓVEL";
+ 
+    // Colunas que guardam siglas (cada uma vira uma linha por endereço).
+    const COLUNAS_SIGLAS = ["id_ebt", "id_claro_fixo", "id_net", "id_claro_omr", "id_site_main"];
+ 
+    // Outras colunas lidas (nome na planilha, sem acento e em minúsculas).
+    const COLUNAS_SITES = {
+      id:                "id",
+      unidade:           "unidade_responsavel",
+      equipeResponsavel: "equipe responsavel",
+      endereco:          "endereco_cep",
+      municipio:         "municipio",
+      estado:            "estado",
+      latitude:          "latitude",
+      longitude:         "longitude"
+    };
+ 
+    // "spo pr" e "SPO PR" viram a mesma chave de busca: SPOPR.
+    function chaveDeSigla(texto) {
+      return String(texto == null ? "" : texto).toUpperCase().replace(/\s+/g, "");
+    }
+ 
+    function acharCabecalhoSites(matriz) {
+      for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+        const nomes = matriz[i].map(limpar);
+        if (nomes.includes("id") && nomes.includes(COLUNAS_SITES.unidade) && nomes.includes("id_ebt")) return i;
+      }
+      return -1;
+    }
+ 
+    function numeroOuNulo(valor) {
+      const n = Number(String(valor == null ? "" : valor).replace(",", "."));
+      return String(valor == null ? "" : valor).trim() !== "" && isFinite(n) ? n : null;
+    }
+ 
+    // Devolve uma linha por sigla: { chave_busca, chave, id_endereco, origem_id, ... }
+    function montarSites(matriz) {
+      const resultado = { linhas: [], lidas: 0, foraDaUnidade: 0, enderecos: 0, enderecosComVarias: 0,
+                          exemplos: [], conflitos: 0, erro: null };
+ 
+      const posCabecalho = acharCabecalhoSites(matriz);
+      if (posCabecalho < 0) {
+        resultado.erro = "Não encontrei o cabeçalho (colunas ID, UNIDADE_RESPONSAVEL e ID_EBT) nesta planilha.";
+        return resultado;
+      }
+      const nomes = matriz[posCabecalho].map(limpar);
+      const pos = {};
+      for (const chave in COLUNAS_SITES) pos[chave] = nomes.indexOf(COLUNAS_SITES[chave]);
+      const colunasDeSigla = COLUNAS_SIGLAS.map(function (n) { return { nome: n, indice: nomes.indexOf(n) }; })
+        .filter(function (c) { return c.indice >= 0; });
+      if (colunasDeSigla.length === 0) { resultado.erro = "Não encontrei nenhuma coluna de sigla (ID_EBT, ID_NET...)."; return resultado; }
+ 
+      function celula(linha, chave) { return pos[chave] < 0 ? "" : linha[pos[chave]]; }
+      function texto(valor) { const t = String(valor == null ? "" : valor).trim(); return t === "" ? null : t; }
+ 
+      const porChave = {};
+      const siglasPorEndereco = {};
+      for (let i = posCabecalho + 1; i < matriz.length; i++) {
+        const linha = matriz[i];
+        const id = texto(celula(linha, "id"));
+        if (!id) continue;
+        resultado.lidas++;
+        if (limpar(celula(linha, "unidade")) !== limpar(UNIDADE_ATIVA)) { resultado.foraDaUnidade++; continue; }
+ 
+        const vistas = {};
+        colunasDeSigla.forEach(function (c) {
+          const sigla = texto(linha[c.indice]);
+          if (!sigla) return;
+          const busca = chaveDeSigla(sigla);
+          if (vistas[busca]) return;               // a mesma sigla repetida na mesma linha conta uma vez (como List.Distinct)
+          vistas[busca] = true;
+          if (porChave[busca] && porChave[busca].id_endereco !== id) resultado.conflitos++;
+          porChave[busca] = {
+            chave_busca: busca,
+            chave: sigla,
+            id_endereco: id,
+            origem_id: c.nome.toUpperCase(),
+            unidade_responsavel: texto(celula(linha, "unidade")),
+            equipe_responsavel: texto(celula(linha, "equipeResponsavel")),
+            endereco_cep: texto(celula(linha, "endereco")),
+            municipio: texto(celula(linha, "municipio")),
+            estado: texto(celula(linha, "estado")),
+            latitude: numeroOuNulo(celula(linha, "latitude")),
+            longitude: numeroOuNulo(celula(linha, "longitude"))
+          };
+        });
+      }
+      resultado.linhas = Object.keys(porChave).map(function (k) { return porChave[k]; });
+      resultado.linhas.forEach(function (l) {
+        (siglasPorEndereco[l.id_endereco] = siglasPorEndereco[l.id_endereco] || []).push(l.chave);
+      });
+      const ids = Object.keys(siglasPorEndereco);
+      resultado.enderecos = ids.length;
+      const varias = ids.filter(function (id) { return siglasPorEndereco[id].length > 1; });
+      resultado.enderecosComVarias = varias.length;
+      resultado.exemplos = varias.slice(0, 8).map(function (id) { return { id: id, siglas: siglasPorEndereco[id] }; });
+      return resultado;
+    }
     // ==== FIM DAS FUNCOES PURAS ==================================================
  
     // ==== TELA ===================================================================
@@ -200,7 +314,9 @@
         }
         $("msgLogin").innerHTML = '<span class="ok">Login feito.</span>';
         $("caixaArquivo").classList.remove("oculto");
+        $("caixaSites").classList.remove("oculto");
         mostrarUltimaAtualizacao();
+        mostrarUltimaSites();
       });
  
       async function mostrarUltimaAtualizacao() {
@@ -311,6 +427,74 @@
         }
         mostrarUltimaAtualizacao();
         $("botaoGravar").disabled = false;
+      });
+ 
+      // ---- lista de sites --------------------------------------------------------
+      let sitesParaGravar = [];
+ 
+      async function mostrarUltimaSites() {
+        const r = await banco.from("sites").select("atualizado_em").order("atualizado_em", { ascending: false }).limit(1);
+        if (r.error) { $("ultimaSites").innerHTML = '<span class="erro">Não consegui ler o cadastro (a tabela "sites" já foi criada?): ' + r.error.message + "</span>"; return; }
+        $("ultimaSites").textContent = r.data.length
+          ? "Última atualização do cadastro: " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
+          : "O cadastro de sites ainda está vazio.";
+      }
+      $("arquivoSites").addEventListener("change", async function (evento) {
+        const arquivo = evento.target.files[0];
+        if (!arquivo) return;
+        $("msgSites").textContent = "Lendo o arquivo...";
+        $("botaoGravarSites").disabled = true;
+        let pasta;
+        try {
+          pasta = XLSX.read(await arquivo.arrayBuffer(), { type: "array", cellDates: true });
+        } catch (e) {
+          $("msgSites").innerHTML = '<span class="erro">Não consegui abrir o arquivo: ' + e.message + "</span>";
+          return;
+        }
+        // usa a primeira aba que tiver o cabeçalho esperado
+        let r = null;
+        for (const nome of pasta.SheetNames) {
+          const matriz = XLSX.utils.sheet_to_json(pasta.Sheets[nome], { header: 1, raw: true, defval: "" });
+          if (acharCabecalhoSites(matriz) >= 0) { r = montarSites(matriz); break; }
+        }
+        if (!r) { $("msgSites").innerHTML = '<span class="erro">Nenhuma aba tem as colunas ID, UNIDADE_RESPONSAVEL e ID_EBT.</span>'; return; }
+        $("msgSites").textContent = "";
+        if (r.erro) { $("resumoSites").innerHTML = '<span class="erro">' + r.erro + "</span>"; return; }
+ 
+        sitesParaGravar = r.linhas;
+        $("resumoSites").innerHTML =
+          "<p>Endereços lidos: <b>" + r.lidas + "</b> (de outras unidades, ignorados: " + r.foraDaUnidade + ")<br>" +
+          "Unidade " + UNIDADE_ATIVA + ": <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
+          "Endereços com mais de uma sigla: <b>" + r.enderecosComVarias + "</b></p>" +
+          (r.conflitos ? '<p class="aviso">' + r.conflitos + " sigla(s) apareciam em mais de um endereço; ficou a última.</p>" : "");
+        $("tabelaSites").innerHTML = "<tr><th>ID do endereço</th><th>Siglas</th></tr>" +
+          r.exemplos.map(function (e) { return "<tr><td>" + e.id + "</td><td>" + e.siglas.join(", ") + "</td></tr>"; }).join("");
+        $("botaoGravarSites").disabled = r.linhas.length === 0;
+        $("msgGravarSites").textContent = "";
+      });
+ 
+      $("botaoGravarSites").addEventListener("click", async function () {
+        $("botaoGravarSites").disabled = true;
+        const carimbo = new Date().toISOString();
+        const lote = 500;
+        let gravadas = 0;
+        for (let i = 0; i < sitesParaGravar.length; i += lote) {
+          const parte = sitesParaGravar.slice(i, i + lote).map(function (l) { return Object.assign({}, l, { atualizado_em: carimbo }); });
+          const r = await banco.from("sites").upsert(parte, { onConflict: "chave_busca" });
+          if (r.error) {
+            $("msgGravarSites").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message + "</span>";
+            $("botaoGravarSites").disabled = false;
+            return;
+          }
+          gravadas += parte.length;
+          $("msgGravarSites").textContent = "Gravando... " + gravadas + " de " + sitesParaGravar.length;
+        }
+        const limpeza = await banco.from("sites").delete().lt("atualizado_em", carimbo);
+        $("msgGravarSites").innerHTML = limpeza.error
+          ? '<span class="aviso">Gravei ' + gravadas + " siglas, mas não consegui remover as antigas: " + limpeza.error.message + "</span>"
+          : '<span class="ok">Pronto: ' + gravadas + " siglas gravadas.</span>";
+        mostrarUltimaSites();
+        $("botaoGravarSites").disabled = false;
       });
     }
   </script>
