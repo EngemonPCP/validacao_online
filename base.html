@@ -233,7 +233,9 @@
     // Devolve uma linha por sigla: { chave_busca, chave, id_endereco, origem_id, ... }
     function montarSites(matriz) {
       const resultado = { linhas: [], lidas: 0, foraDaUnidade: 0, enderecos: 0, enderecosComVarias: 0,
-                          exemplos: [], conflitos: 0, erro: null };
+                          exemplos: [], conflitos: 0, erro: null,
+                          // diagnóstico para conferir contagens
+                          porUnidade: 0, porEngemon: 0, nosDois: 0, semSigla: 0, semEndereco: 0, listaConflitos: [], idsSemSigla: [] };
  
       const posCabecalho = acharCabecalhoSites(matriz);
       if (posCabecalho < 0) {
@@ -243,6 +245,7 @@
       const nomes = matriz[posCabecalho].map(limpar);
       const pos = {};
       for (const chave in COLUNAS_SITES) pos[chave] = nomes.indexOf(COLUNAS_SITES[chave]);
+      const posEngemon = nomes.indexOf("equipe responsavel - engemon");
       const colunasDeSigla = COLUNAS_SIGLAS.map(function (n) { return { nome: n, indice: nomes.indexOf(n) }; })
         .filter(function (c) { return c.indice >= 0; });
       if (colunasDeSigla.length === 0) { resultado.erro = "Não encontrei nenhuma coluna de sigla (ID_EBT, ID_NET...)."; return resultado; }
@@ -257,16 +260,27 @@
         const id = texto(celula(linha, "id"));
         if (!id) continue;
         resultado.lidas++;
-        if (limpar(celula(linha, "unidade")) !== limpar(UNIDADE_ATIVA)) { resultado.foraDaUnidade++; continue; }
+        const naUnidade = limpar(celula(linha, "unidade")) === limpar(UNIDADE_ATIVA);
+        const noEngemon = posEngemon >= 0 && limpar(linha[posEngemon]) === limpar(UNIDADE_ATIVA);
+        if (naUnidade) resultado.porUnidade++;
+        if (noEngemon) resultado.porEngemon++;
+        if (naUnidade && noEngemon) resultado.nosDois++;
+        if (!naUnidade) { resultado.foraDaUnidade++; continue; }
+        if (!texto(celula(linha, "endereco"))) resultado.semEndereco++;
  
         const vistas = {};
+        let achouSigla = false;
         colunasDeSigla.forEach(function (c) {
           const sigla = texto(linha[c.indice]);
           if (!sigla) return;
           const busca = chaveDeSigla(sigla);
           if (vistas[busca]) return;               // a mesma sigla repetida na mesma linha conta uma vez (como List.Distinct)
           vistas[busca] = true;
-          if (porChave[busca] && porChave[busca].id_endereco !== id) resultado.conflitos++;
+          achouSigla = true;
+          if (porChave[busca] && porChave[busca].id_endereco !== id) {
+            resultado.conflitos++;
+            if (resultado.listaConflitos.length < 10) resultado.listaConflitos.push(sigla + " (IDs " + porChave[busca].id_endereco + " e " + id + ")");
+          }
           porChave[busca] = {
             chave_busca: busca,
             chave: sigla,
@@ -281,6 +295,7 @@
             longitude: numeroOuNulo(celula(linha, "longitude"))
           };
         });
+        if (!achouSigla) { resultado.semSigla++; if (resultado.idsSemSigla.length < 10) resultado.idsSemSigla.push(id); }
       }
       resultado.linhas = Object.keys(porChave).map(function (k) { return porChave[k]; });
       resultado.linhas.forEach(function (l) {
@@ -466,7 +481,14 @@
           "<p>Endereços lidos: <b>" + r.lidas + "</b> (de outras unidades, ignorados: " + r.foraDaUnidade + ")<br>" +
           "Unidade " + UNIDADE_ATIVA + ": <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
           "Endereços com mais de uma sigla: <b>" + r.enderecosComVarias + "</b></p>" +
-          (r.conflitos ? '<p class="aviso">' + r.conflitos + " sigla(s) apareciam em mais de um endereço; ficou a última.</p>" : "");
+          '<p class="pequeno"><b>Conferência de contagem</b><br>' +
+          "Com UNIDADE_RESPONSAVEL = " + UNIDADE_ATIVA + ": <b>" + r.porUnidade + "</b> · " +
+          "com Equipe Responsável - Engemon = " + UNIDADE_ATIVA + ": <b>" + r.porEngemon + "</b> · nos dois: <b>" + r.nosDois + "</b><br>" +
+          "Endereços da unidade com ENDERECO_CEP vazio: " + r.semEndereco + "<br>" +
+          "Endereços da unidade sem nenhuma sigla (não gravados): " + r.semSigla +
+          (r.idsSemSigla.length ? " (IDs: " + r.idsSemSigla.join(", ") + ")" : "") + "</p>" +
+          (r.conflitos ? '<p class="aviso">' + r.conflitos + " sigla(s) apareciam em mais de um endereço; ficou a última: " +
+            r.listaConflitos.join("; ") + "</p>" : "");
         $("tabelaSites").innerHTML = "<tr><th>ID do endereço</th><th>Siglas</th></tr>" +
           r.exemplos.map(function (e) { return "<tr><td>" + e.id + "</td><td>" + e.siglas.join(", ") + "</td></tr>"; }).join("");
         $("botaoGravarSites").disabled = r.linhas.length === 0;
