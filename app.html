@@ -243,12 +243,12 @@
     if (t.length < 2) return { tipo: "nenhum", sites: [] };
     const comPrefixo = REGRAS.prefixoSite + t;
     const exatos = sites.filter(function (s) {
-      return s.busca === t || s.busca === comPrefixo || s.infratel === t;
+      return s.busca === t || s.busca === comPrefixo || s.helix === t;
     });
     if (exatos.length === 1) return { tipo: "unico", sites: exatos };
     if (exatos.length > 1) return { tipo: "sugestoes", sites: exatos.slice(0, 10) };
     const parecidos = sites.filter(function (s) {
-      return s.busca.includes(t) || s.infratel.includes(t);
+      return s.busca.includes(t) || s.helix.includes(t);
     });
     return { tipo: parecidos.length ? "sugestoes" : "nenhum", sites: parecidos.slice(0, 10) };
   }
@@ -332,7 +332,7 @@
     const passo = 1000;
     for (let de = 0; ; de += passo) {
       const dados = conferir(await banco.from("base_preventiva")
-        .select("wo,site,site_infratel,site_busca,tipo,status_final,data_fim,atualizado_em")
+        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em")
         .order("wo").range(de, de + passo - 1));
       for (const linha of dados) todas.push(linha);
       if (dados.length < passo) break;
@@ -453,8 +453,11 @@
     estado.porWO = {};
     estado.base.forEach(function (l) {
       estado.porWO[l.wo] = l;
-      if (!mapaSites[l.site_busca]) {
-        mapaSites[l.site_busca] = { site: l.site, busca: l.site_busca, infratel: limparSite(l.site_infratel) };
+      // O site do sistema é a coluna Programado/INFRATEL (se vier vazia, usa o CLR_SDR_SITE/HELIX).
+      const nome = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim();
+      l.chaveSite = limparSite(nome);
+      if (!mapaSites[l.chaveSite]) {
+        mapaSites[l.chaveSite] = { site: nome, busca: l.chaveSite, helix: limparSite(l.clr_sdr_site_helix) };
       }
     });
     estado.sites = Object.keys(mapaSites).map(function (k) { return mapaSites[k]; });
@@ -667,7 +670,7 @@
     $("blocoDetalhe").classList.toggle("oculto", atividade === REGRAS.atividades[0]);
  
     const wos = estado.siteEscolhido
-      ? estado.base.filter(function (l) { return l.site_busca === estado.siteEscolhido.busca; }) : [];
+      ? estado.base.filter(function (l) { return l.chaveSite === estado.siteEscolhido.busca; }) : [];
     const mostrar = comPreventiva && estado.siteEscolhido;
     $("blocoWOs").classList.toggle("oculto", !mostrar);
     if (!mostrar) return;
@@ -858,6 +861,18 @@
       if (!quando) return;
       campos = { situacao: REGRAS.situacaoNoSite, hora_entrada: quando };
     } else if (botao.dataset.acao === "saida") {
+      // Alerta de execução parcial: parte das WOs do endereço já consta executada na base e parte não.
+      const wosDaVisita = (visita.wos_visita || []).map(function (w) { return w.wo; });
+      const faltam = wosDaVisita.filter(function (wo) {
+        const l = estado.porWO[wo];
+        return !l || String(l.status_final || "").trim().toLowerCase() !== "executada";
+      });
+      if (faltam.length > 0 && faltam.length < wosDaVisita.length) {
+        const ok = window.confirm("ATENÇÃO: " + (wosDaVisita.length - faltam.length) + " de " + wosDaVisita.length +
+          " WOs já constam executadas na base, mas faltam:\n\n" + faltam.join("\n") +
+          "\n\nConfirme com a equipe se falta alguma tecnologia ANTES de liberar a saída.\n\nRegistrar a saída mesmo assim?");
+        if (!ok) return;
+      }
       const quando = perguntarHorario("Hora da saída do site", visita.hora_entrada);
       if (!quando) return;
       campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando };
