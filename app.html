@@ -40,6 +40,8 @@
     .p-vermelho { background:var(--vermelho-fundo); color:var(--vermelho); }
     .p-azul { background:var(--azul-fundo); color:var(--azul-escuro); }
     .p-cinza { background:var(--cinza-fundo); color:#3a4654; }
+    .faixa-endereco { background:var(--laranja-fundo); color:var(--laranja); border-radius:10px; padding:10px 12px; margin:10px 0 0; font-size:14px; }
+    .faixa-endereco .sigla-linha { margin-top:4px; color:var(--texto); }
     .lista-wo { margin:8px 0 0; }
     .lista-wo .item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #e9edf1; flex-wrap:wrap; }
     .lista-wo .item:last-child { border-bottom:0; }
@@ -151,6 +153,7 @@
  
         <div id="blocoWOs" class="oculto">
           <h2 class="secao" id="tituloWOs"></h2>
+          <div id="avisoEndereco"></div>
           <div id="listaWOs" class="lista-wo"></div>
           <label class="check"><input id="campoConferi" type="checkbox"> Conferi as WOs com o técnico</label>
         </div>
@@ -340,6 +343,19 @@
     return todas;
   }
  
+  // Cadastro de sites (uma sigla por linha; siglas com o mesmo id_endereco estão no mesmo endereço).
+  async function carregarCadastroSites() {
+    const todas = [];
+    const passo = 1000;
+    for (let de = 0; ; de += passo) {
+      const dados = conferir(await banco.from("sites")
+        .select("chave_busca,chave,id_endereco,origem_id").order("chave_busca").range(de, de + passo - 1));
+      for (const linha of dados) todas.push(linha);
+      if (dados.length < passo) break;
+    }
+    return todas;
+  }
+ 
   async function carregarEquipes() {
     return conferir(await banco.from("equipes_lista")
       .select("id,nome,tipo").eq("ativa", true).order("nome"));
@@ -443,16 +459,63 @@
       mostrarAviso("Não consegui carregar os dados: " + e.message, "erro");
       return;
     }
+    // O cadastro de endereços é um complemento: se faltar, o sistema funciona sem os avisos.
+    try {
+      estado.cadastroSites = await carregarCadastroSites();
+    } catch (e) {
+      estado.cadastroSites = [];
+      mostrarAviso("Não consegui carregar o cadastro de endereços: " + e.message, "erro");
+    }
     prepararBase();
+    prepararCadastro();
     prepararFormulario();
     irParaTela("Registrar");
+  }
+ 
+  // Monta: sigla -> endereço, e endereço -> siglas.
+  function prepararCadastro() {
+    estado.enderecoPorSigla = {};
+    estado.siglasPorEndereco = {};
+    (estado.cadastroSites || []).forEach(function (s) {
+      estado.enderecoPorSigla[s.chave_busca] = s.id_endereco;
+      (estado.siglasPorEndereco[s.id_endereco] = estado.siglasPorEndereco[s.id_endereco] || []).push(s);
+    });
+  }
+ 
+  // Outras siglas que dividem o endereço com este site, com as WOs de cada uma na base.
+  function outrasSiglasDoEndereco(chaveBusca) {
+    const id = estado.enderecoPorSigla[chaveBusca];
+    if (!id) return [];
+    return estado.siglasPorEndereco[id].filter(function (s) { return s.chave_busca !== chaveBusca; }).map(function (s) {
+      const wos = estado.wosPorChave[s.chave_busca] || [];
+      const pendentes = wos.filter(function (l) { return String(l.status_final || "").trim().toLowerCase() !== "executada"; });
+      return { sigla: s.chave, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
+               total: wos.length, pendentes: pendentes.map(function (l) { return l.wo; }) };
+    });
+  }
+ 
+  // Faixa de aviso "este endereço tem outras siglas" (vazia se o endereço tem só uma).
+  function htmlOutrasSiglas(chaveBusca) {
+    const outras = outrasSiglasDoEndereco(chaveBusca);
+    if (outras.length === 0) return "";
+    return '<div class="faixa-endereco"><b>Mesmo endereço: mais ' + outras.length + (outras.length === 1 ? " sigla" : " siglas") + "</b>" +
+      outras.map(function (s) {
+        const situacao = s.total === 0 ? "sem WO na base"
+          : s.total + (s.total === 1 ? " WO" : " WOs") + " na base, " +
+            (s.pendentes.length === 0 ? "todas executadas" : s.pendentes.length + " pendente(s)");
+        return '<div class="sigla-linha"><b>' + esc(s.sigla) + "</b> (" + esc(s.origem) + ") · " + situacao + "</div>";
+      }).join("") + "</div>";
   }
  
   function prepararBase() {
     const mapaSites = {};
     estado.porWO = {};
+    estado.wosPorChave = {};                  // sigla (normalizada) -> WOs dela
     estado.base.forEach(function (l) {
       estado.porWO[l.wo] = l;
+      [limparSite(l.programado_infratel), limparSite(l.clr_sdr_site_helix)].forEach(function (k, i, lista) {
+        if (k && lista.indexOf(k) === i) (estado.wosPorChave[k] = estado.wosPorChave[k] || []).push(l);
+      });
       // O site do sistema é a coluna Programado/INFRATEL (se vier vazia, usa o CLR_SDR_SITE/HELIX).
       const nome = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim();
       l.chaveSite = limparSite(nome);
@@ -673,6 +736,7 @@
       ? estado.base.filter(function (l) { return l.chaveSite === estado.siteEscolhido.busca; }) : [];
     const mostrar = comPreventiva && estado.siteEscolhido;
     $("blocoWOs").classList.toggle("oculto", !mostrar);
+    $("avisoEndereco").innerHTML = mostrar ? htmlOutrasSiglas(estado.siteEscolhido.busca) : "";
     if (!mostrar) return;
  
     $("tituloWOs").textContent = wos.length + (wos.length === 1 ? " WO neste site" : " WOs neste site");
@@ -819,7 +883,7 @@
       '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
       "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
       '<div class="duracao"><span>' + (noSite ? "Tempo no site" : "Em deslocamento há") + "</span><b>" + formatarDuracao(minutos) + "</b></div>" +
-      listaWOsCartao(v) +
+      listaWOsCartao(v) + htmlOutrasSiglas(limparSite(v.site)) +
       '<div class="linha-botoes">' + botoes + '<button class="secundario" data-acao="cancelar" data-id="' + esc(v.id) + '">Cancelar</button></div></div>';
   }
  
@@ -867,11 +931,21 @@
         const l = estado.porWO[wo];
         return !l || String(l.status_final || "").trim().toLowerCase() !== "executada";
       });
-      if (faltam.length > 0 && faltam.length < wosDaVisita.length) {
-        const ok = window.confirm("ATENÇÃO: " + (wosDaVisita.length - faltam.length) + " de " + wosDaVisita.length +
-          " WOs já constam executadas na base, mas faltam:\n\n" + faltam.join("\n") +
-          "\n\nConfirme com a equipe se falta alguma tecnologia ANTES de liberar a saída.\n\nRegistrar a saída mesmo assim?");
-        if (!ok) return;
+      const parcial = faltam.length > 0 && faltam.length < wosDaVisita.length;
+      const irmasPendentes = atividadeTemPreventiva(visita.atividade)
+        ? outrasSiglasDoEndereco(limparSite(visita.site)).filter(function (s) { return s.pendentes.length > 0; }) : [];
+      if (parcial || irmasPendentes.length > 0) {
+        let texto = "ATENÇÃO:\n\n";
+        if (parcial) {
+          texto += (wosDaVisita.length - faltam.length) + " de " + wosDaVisita.length +
+            " WOs desta visita já constam executadas na base, mas faltam:\n" + faltam.join("\n") + "\n\n";
+        }
+        if (irmasPendentes.length > 0) {
+          texto += "Outras siglas do MESMO endereço com WO pendente:\n" +
+            irmasPendentes.map(function (s) { return s.sigla + ": " + s.pendentes.join(", "); }).join("\n") + "\n\n";
+        }
+        texto += "Confirme com a equipe se falta alguma tecnologia ANTES de liberar a saída.\n\nRegistrar a saída mesmo assim?";
+        if (!window.confirm(texto)) return;
       }
       const quando = perguntarHorario("Hora da saída do site", visita.hora_entrada);
       if (!quando) return;
