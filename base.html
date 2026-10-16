@@ -4,19 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Atualizar base de preventivas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; color: #1b2733; }
-    h1 { font-size: 22px; }
-    .caixa { border: 1px solid #d5dbe2; border-radius: 10px; padding: 16px; margin: 16px 0; background: #fff; }
-    .caixa h2 { font-size: 16px; margin: 0 0 10px; }
-    input, select, button { font: inherit; padding: 8px 10px; margin: 4px 4px 4px 0; }
-    button { background: #1f5fb4; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
-    button:disabled { background: #9db3cf; cursor: not-allowed; }
-    table { border-collapse: collapse; width: 100%; font-size: 14px; }
-    td, th { border-bottom: 1px solid #e3e8ee; padding: 6px 8px; text-align: left; }
-    .ok { color: #17663a; } .erro { color: #b3261e; } .aviso { color: #8a5a00; }
-    .oculto { display: none; }
-    .pequeno { font-size: 13px; color: #5b6b7b; }
+    :root { --fonte:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif; }
+    body { font-family:var(--fonte); font-size:15px; line-height:1.45; max-width:860px; margin:0 auto; padding:24px 16px 60px;
+           background:#f2f4f7; color:#1c2733; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
+    h1 { font-size:20px; font-weight:600; margin:24px 0 4px; }
+    .caixa { border:1px solid #d9dee5; border-radius:6px; padding:20px; margin:16px 0; background:#fff; }
+    .caixa h2 { font-size:15px; font-weight:600; margin:0 0 10px; }
+    input, select, button { font:inherit; padding:8px 11px; margin:4px 4px 4px 0; }
+    input, select { border:1px solid #c5ccd6; border-radius:4px; background:#fff; color:#1c2733; }
+    input:focus, select:focus { outline:2px solid rgba(29,79,145,.30); border-color:#1d4f91; }
+    button { background:#1d4f91; color:#fff; border:0; border-radius:4px; font-weight:500; cursor:pointer; transition:background .15s; }
+    button:hover { background:#173f75; }
+    button:focus-visible { outline:2px solid #1d4f91; outline-offset:2px; }
+    button:disabled { background:#9db3cf; cursor:not-allowed; }
+    table { border-collapse:collapse; width:100%; font-size:14px; margin:8px 0; }
+    th { background:#f6f7f9; color:#5f6b7a; font-weight:500; font-size:13px; }
+    td, th { border-bottom:1px solid #e8ecf0; padding:8px 10px; text-align:left; }
+    .ok { color:#1e6b45; } .erro { color:#a6281f; } .aviso { color:#8f5a0a; }
+    .oculto { display:none; }
+    .pequeno { font-size:13px; color:#5f6b7a; }
   </style>
 </head>
 <body>
@@ -194,8 +204,7 @@
       return resultado;
     }
     // ---- LISTA DE SITES: mesma regra do Power Query (uma sigla por linha) ----------
-    // Só entram os endereços desta unidade (coluna UNIDADE_RESPONSAVEL). Maiúscula e acento não importam.
-    const UNIDADE_ATIVA = "MÓVEL";
+    // Só entram os endereços do setor EQUIPE_ENGEMON_ATIVA (coluna "Equipe Responsável - Engemon"), o mesmo da base.
  
     // Colunas que guardam siglas (cada uma vira uma linha por endereço).
     const COLUNAS_SIGLAS = ["id_ebt", "id_claro_fixo", "id_net", "id_claro_omr", "id_site_main"];
@@ -212,9 +221,11 @@
       longitude:         "longitude"
     };
  
-    // "spo pr" e "SPO PR" viram a mesma chave de busca: SPOPR.
+    // Só letras e números, em maiúsculas: "spo pr", "SPO PR" e "SPO-PR" viram a mesma chave: SPOPR.
+    // IMPORTANTE: o app.html usa a mesma regra (limparSite). Se mudar aqui, mude lá.
     function chaveDeSigla(texto) {
-      return String(texto == null ? "" : texto).toUpperCase().replace(/\s+/g, "");
+      return String(texto == null ? "" : texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase().replace(/[^A-Z0-9]/g, "");
     }
  
     function acharCabecalhoSites(matriz) {
@@ -246,6 +257,7 @@
       const pos = {};
       for (const chave in COLUNAS_SITES) pos[chave] = nomes.indexOf(COLUNAS_SITES[chave]);
       const posEngemon = nomes.indexOf("equipe responsavel - engemon");
+      if (posEngemon < 0) { resultado.erro = "Não encontrei a coluna Equipe Responsável - Engemon na lista de sites."; return resultado; }
       const colunasDeSigla = COLUNAS_SIGLAS.map(function (n) { return { nome: n, indice: nomes.indexOf(n) }; })
         .filter(function (c) { return c.indice >= 0; });
       if (colunasDeSigla.length === 0) { resultado.erro = "Não encontrei nenhuma coluna de sigla (ID_EBT, ID_NET...)."; return resultado; }
@@ -253,19 +265,20 @@
       function celula(linha, chave) { return pos[chave] < 0 ? "" : linha[pos[chave]]; }
       function texto(valor) { const t = String(valor == null ? "" : valor).trim(); return t === "" ? null : t; }
  
-      const porChave = {};
+      const porChave = {};          // chave: sigla|id  (a mesma sigla pode estar em mais de um endereço)
+      const idsDaSigla = {};        // sigla -> ids onde ela aparece
       const siglasPorEndereco = {};
       for (let i = posCabecalho + 1; i < matriz.length; i++) {
         const linha = matriz[i];
         const id = texto(celula(linha, "id"));
         if (!id) continue;
         resultado.lidas++;
-        const naUnidade = limpar(celula(linha, "unidade")) === limpar(UNIDADE_ATIVA);
-        const noEngemon = posEngemon >= 0 && limpar(linha[posEngemon]) === limpar(UNIDADE_ATIVA);
+        const naUnidade = limpar(celula(linha, "unidade")) === limpar(EQUIPE_ENGEMON_ATIVA);
+        const noEngemon = posEngemon >= 0 && limpar(linha[posEngemon]) === limpar(EQUIPE_ENGEMON_ATIVA);
         if (naUnidade) resultado.porUnidade++;
         if (noEngemon) resultado.porEngemon++;
         if (naUnidade && noEngemon) resultado.nosDois++;
-        if (!naUnidade) { resultado.foraDaUnidade++; continue; }
+        if (!noEngemon) { resultado.foraDaUnidade++; continue; }
         if (!texto(celula(linha, "endereco"))) resultado.semEndereco++;
  
         const vistas = {};
@@ -277,11 +290,13 @@
           if (vistas[busca]) return;               // a mesma sigla repetida na mesma linha conta uma vez (como List.Distinct)
           vistas[busca] = true;
           achouSigla = true;
-          if (porChave[busca] && porChave[busca].id_endereco !== id) {
+          const outros = idsDaSigla[busca] = idsDaSigla[busca] || [];
+          if (outros.length > 0 && outros.indexOf(id) < 0) {
             resultado.conflitos++;
-            if (resultado.listaConflitos.length < 10) resultado.listaConflitos.push(sigla + " (IDs " + porChave[busca].id_endereco + " e " + id + ")");
+            if (resultado.listaConflitos.length < 10) resultado.listaConflitos.push(sigla + " (IDs " + outros.concat([id]).join(", ") + ")");
           }
-          porChave[busca] = {
+          if (outros.indexOf(id) < 0) outros.push(id);
+          porChave[busca + "|" + id] = {
             chave_busca: busca,
             chave: sigla,
             id_endereco: id,
@@ -478,16 +493,15 @@
  
         sitesParaGravar = r.linhas;
         $("resumoSites").innerHTML =
-          "<p>Endereços lidos: <b>" + r.lidas + "</b> (de outras unidades, ignorados: " + r.foraDaUnidade + ")<br>" +
-          "Unidade " + UNIDADE_ATIVA + ": <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
+          "<p>Endereços lidos: <b>" + r.lidas + "</b> (de outros setores, ignorados: " + r.foraDaUnidade + ")<br>" +
+          "Setor " + EQUIPE_ENGEMON_ATIVA + ": <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
           "Endereços com mais de uma sigla: <b>" + r.enderecosComVarias + "</b></p>" +
           '<p class="pequeno"><b>Conferência de contagem</b><br>' +
-          "Com UNIDADE_RESPONSAVEL = " + UNIDADE_ATIVA + ": <b>" + r.porUnidade + "</b> · " +
-          "com Equipe Responsável - Engemon = " + UNIDADE_ATIVA + ": <b>" + r.porEngemon + "</b> · nos dois: <b>" + r.nosDois + "</b><br>" +
-          "Endereços da unidade com ENDERECO_CEP vazio: " + r.semEndereco + "<br>" +
-          "Endereços da unidade sem nenhuma sigla (não gravados): " + r.semSigla +
+          "Equipe Responsável - Engemon = " + EQUIPE_ENGEMON_ATIVA + " (filtro usado): <b>" + r.porEngemon + "</b> · para comparação, UNIDADE_RESPONSAVEL = " + EQUIPE_ENGEMON_ATIVA + ": " + r.porUnidade + "<br>" +
+          "Endereços do setor com ENDERECO_CEP vazio: " + r.semEndereco + "<br>" +
+          "Endereços do setor sem nenhuma sigla (não gravados): " + r.semSigla +
           (r.idsSemSigla.length ? " (IDs: " + r.idsSemSigla.join(", ") + ")" : "") + "</p>" +
-          (r.conflitos ? '<p class="aviso">' + r.conflitos + " sigla(s) apareciam em mais de um endereço; ficou a última: " +
+          (r.conflitos ? '<p class="aviso">' + r.conflitos + " sigla(s) aparecem em mais de um endereço (guardei todos): " +
             r.listaConflitos.join("; ") + "</p>" : "");
         $("tabelaSites").innerHTML = "<tr><th>ID do endereço</th><th>Siglas</th></tr>" +
           r.exemplos.map(function (e) { return "<tr><td>" + e.id + "</td><td>" + e.siglas.join(", ") + "</td></tr>"; }).join("");
@@ -502,7 +516,7 @@
         let gravadas = 0;
         for (let i = 0; i < sitesParaGravar.length; i += lote) {
           const parte = sitesParaGravar.slice(i, i + lote).map(function (l) { return Object.assign({}, l, { atualizado_em: carimbo }); });
-          const r = await banco.from("sites").upsert(parte, { onConflict: "chave_busca" });
+          const r = await banco.from("sites").upsert(parte, { onConflict: "chave_busca,id_endereco" });
           if (r.error) {
             $("msgGravarSites").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message + "</span>";
             $("botaoGravarSites").disabled = false;
@@ -522,3 +536,4 @@
   </script>
 </body>
 </html>
+ 
