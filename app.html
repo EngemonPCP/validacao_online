@@ -198,7 +198,7 @@
       <p class="sub">Informe o site que o técnico avisou no grupo. O sistema traz as WOs sozinho.</p>
       <div class="cartao">
         <label for="campoSite">Site (pode digitar sem o "SM")</label>
-        <input id="campoSite" type="text" autocomplete="off" placeholder="ex.: moo27">
+        <input id="campoSite" type="text" autocomplete="off" placeholder="Ex.: MOO27">
         <div id="resultadoSite" class="msg"></div>
         <div id="sugestoesSite" class="sugestoes"></div>
 
@@ -209,7 +209,7 @@
         <select id="campoAtividade"></select>
 
         <div id="blocoDetalhe" class="oculto">
-          <label for="campoDetalhe">Detalhe da atividade (ex.: nº do chamado)</label>
+          <label for="campoDetalhe">Detalhe da atividade (Ex.: nº do chamado)</label>
           <input id="campoDetalhe" type="text">
         </div>
 
@@ -308,12 +308,13 @@
   const REGRAS = {
     prefixoSite: "SM",                 // prefixo padrão dos sites
     horasLongaPermanencia: 3,          // alerta de "longa permanência" no site
-    atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva", "Outra"],
+    atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva", "Outra", "Abastecimento"],
     atividadesComPreventiva: ["Preventiva", "Preventiva + Corretiva"],
     situacaoDeslocamento: "Em Deslocamento",
     situacaoNoSite: "No Site",
     situacaoSaiu: "Saiu do Site",
     situacaoCancelado: "Cancelado",
+    situacaoAbastecimento: "Abastecimento",
 
     // --- Alarme de porta aberta (confirma a chegada do técnico) ---
     alarmes: ["Não verificado", "Externou", "Não externou", "Site sem alarme"],
@@ -323,7 +324,7 @@
 
     // --- Grupos de preventiva ---
     // Tipo de preventiva que contém uma destas palavras (sem acento) é MOP; todo o resto é EPS.
-    palavrasMOP: ["energia", "climatiza"],
+    palavrasMOP: ["energia", "climatizacao"],
     horasBaseDesatualizada: 4          // avisa quando a base está mais velha que isso
   };
 
