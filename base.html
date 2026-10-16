@@ -159,14 +159,15 @@
           continue;
         }
  
-        const site = texto(celula(linha, "site")) || texto(celula(linha, "siteInfratel"));
-        if (!site) { resultado.semWO++; continue; }
+        // Cada coluna do banco guarda EXATAMENTE a coluna de mesmo nome da planilha (sem misturar).
+        const siteHelix = texto(celula(linha, "site"));
+        if (!siteHelix) { resultado.semWO++; continue; }
  
         if (porWO[wo.toUpperCase()]) resultado.duplicadas++;
         porWO[wo.toUpperCase()] = {
           wo: wo.toUpperCase(),
-          site: site,
-          site_infratel: texto(celula(linha, "siteInfratel")),
+          clr_sdr_site_helix: siteHelix,
+          programado_infratel: texto(celula(linha, "siteInfratel")),
           tipo: texto(celula(linha, "tipo")),
           equipe_responsavel: texto(celula(linha, "equipeResponsavel")),
           equipe_engemon: texto(celula(linha, "equipeEngemon")),
@@ -271,7 +272,7 @@
         $("tabelaPrevia").innerHTML =
           "<tr><th>Site</th><th>WO</th><th>Tipo</th><th>Status</th><th>Data fim</th></tr>" +
           amostra.map(function (l) {
-            return "<tr><td>" + l.site + "</td><td>" + l.wo + "</td><td>" + (l.tipo || "") +
+            return "<tr><td>" + (l.programado_infratel || l.clr_sdr_site_helix) + "</td><td>" + l.wo + "</td><td>" + (l.tipo || "") +
               "</td><td>" + (l.status_final || "") + "</td><td>" + (l.data_fim || "") + "</td></tr>";
           }).join("");
         $("botaoGravar").disabled = r.linhas.length === 0;
