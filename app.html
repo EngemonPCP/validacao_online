@@ -4,86 +4,118 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Controle de Preventivas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --azul-escuro:#12304f; --azul:#1f5fb4; --fundo:#eef1f5; --borda:#d5dbe2; --texto:#1b2733; --suave:#5b6b7b;
-            --verde:#17663a; --verde-fundo:#dff3e6; --laranja:#8a5a00; --laranja-fundo:#fdeec8;
-            --vermelho:#b3261e; --vermelho-fundo:#fbdcd9; --azul-fundo:#dbe8fb; --cinza-fundo:#e6e9ee; }
+    :root { --azul-escuro:#16212e; --azul:#1d4f91; --fundo:#f2f4f7; --borda:#d9dee5; --texto:#1c2733; --suave:#5f6b7a;
+            --verde:#1e6b45; --verde-fundo:#e6f2ec; --laranja:#8f5a0a; --laranja-fundo:#fbf1de;
+            --vermelho:#a6281f; --vermelho-fundo:#fbe9e7; --azul-fundo:#e6eef8; --cinza-fundo:#eceff3;
+            --fonte:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif; }
     * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--fundo); color:var(--texto); }
+    body { margin:0; font-family:var(--fonte); font-size:15px; line-height:1.45; background:var(--fundo); color:var(--texto);
+           font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
     .oculto { display:none !important; }
-    header { background:var(--azul-escuro); color:#fff; display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; padding:10px 20px; }
-    header .marca { font-weight:700; font-size:18px; }
-    nav { display:flex; gap:6px; flex:1; flex-wrap:wrap; }
-    nav button { background:transparent; color:#cfdcec; border:0; padding:8px 14px; border-radius:8px; font:inherit; cursor:pointer; }
-    nav button.ativo { background:#fff; color:var(--azul-escuro); font-weight:600; }
-    .usuario { font-size:13px; text-align:right; }
-    .usuario button { background:transparent; border:1px solid #6f87a3; color:#fff; border-radius:6px; padding:3px 8px; margin-left:8px; cursor:pointer; }
-    main { max-width:1100px; margin:0 auto; padding:20px 16px 60px; }
-    h1 { font-size:22px; margin:6px 0 4px; }
-    .sub { color:var(--suave); margin:0 0 16px; font-size:14px; }
-    .cartao { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:18px; margin-bottom:16px; }
-    label { display:block; font-size:13px; font-weight:600; color:var(--suave); margin:12px 0 4px; }
+ 
+    /* Cabeçalho e navegação (abas com sublinhado) */
+    header { background:var(--azul-escuro); color:#fff; display:flex; flex-wrap:wrap; align-items:center; gap:0 24px; padding:0 24px; min-height:52px; }
+    header .marca { font-weight:600; font-size:16px; letter-spacing:.01em; padding-right:24px; border-right:1px solid #33465c; }
+    nav { display:flex; gap:4px; flex:1; flex-wrap:wrap; align-self:stretch; }
+    nav button { background:transparent; color:#aab9cb; border:0; border-bottom:2px solid transparent; padding:16px 14px 14px; font:inherit; font-size:14px; cursor:pointer; }
+    nav button:hover { color:#fff; }
+    nav button.ativo { color:#fff; font-weight:500; border-bottom-color:#6aa3e8; }
+    .usuario { font-size:13px; color:#aab9cb; text-align:right; padding:8px 0; }
+    .usuario button { background:transparent; border:1px solid #4a5d74; color:#dbe5f1; border-radius:4px; padding:3px 10px; margin-left:10px; font:inherit; font-size:13px; cursor:pointer; }
+    .usuario button:hover { background:#22334a; }
+ 
+    main { max-width:1100px; margin:0 auto; padding:24px 16px 60px; }
+    h1 { font-size:20px; font-weight:600; letter-spacing:-.005em; margin:4px 0 4px; }
+    h2.secao { font-size:15px; font-weight:600; margin:24px 0 10px; }
+    .sub { color:var(--suave); margin:0 0 18px; font-size:14px; }
+ 
+    /* Superfícies e formulário */
+    .cartao { background:#fff; border:1px solid var(--borda); border-radius:6px; padding:20px; margin-bottom:16px; }
+    label { display:block; font-size:13px; font-weight:500; color:var(--suave); margin:14px 0 4px; }
     input[type=text], input[type=email], input[type=password], input[type=date], input[type=time], select, textarea {
-      width:100%; font:inherit; padding:10px 12px; border:1px solid var(--borda); border-radius:8px; background:#fff; }
-    input:focus, select:focus { outline:2px solid #8fb4e8; }
-    button.principal { background:var(--azul); color:#fff; border:0; border-radius:8px; padding:10px 18px; font:inherit; font-weight:600; cursor:pointer; }
-    button.secundario { background:#fff; color:var(--azul); border:1px solid var(--azul); border-radius:8px; padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; }
+      width:100%; font:inherit; padding:9px 11px; border:1px solid #c5ccd6; border-radius:4px; background:#fff; color:var(--texto); }
+    input:focus, select:focus, textarea:focus { outline:2px solid rgba(29,79,145,.30); border-color:var(--azul); }
+    button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+    button.principal { background:var(--azul); color:#fff; border:0; border-radius:4px; padding:9px 18px; font:inherit; font-weight:500; cursor:pointer; transition:background .15s; }
+    button.principal:hover { background:#173f75; }
+    button.secundario { background:#fff; color:var(--azul); border:1px solid #9db3cf; border-radius:4px; padding:8px 16px; font:inherit; font-weight:500; cursor:pointer; }
+    button.secundario:hover { background:var(--azul-fundo); }
     button:disabled { opacity:.5; cursor:not-allowed; }
-    .linha-botoes { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .linha-botoes { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
     .msg { margin-top:10px; font-size:14px; }
     .ok { color:var(--verde); } .erro { color:var(--vermelho); } .aviso { color:var(--laranja); }
     .sugestoes { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-    .sugestoes button { background:var(--azul-fundo); border:0; border-radius:16px; padding:6px 12px; font:inherit; cursor:pointer; }
-    .pill { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600; white-space:nowrap; }
+    .sugestoes button { background:#fff; border:1px solid #9db3cf; color:var(--azul); border-radius:4px; padding:5px 12px; font:inherit; font-weight:500; cursor:pointer; }
+    .sugestoes button:hover { background:var(--azul-fundo); }
+ 
+    /* Etiquetas de situação */
+    .pill { display:inline-block; padding:2px 8px; border-radius:3px; font-size:12px; font-weight:500; white-space:nowrap; box-shadow:inset 0 0 0 1px rgba(0,0,0,.07); }
     .p-verde { background:var(--verde-fundo); color:var(--verde); }
     .p-laranja { background:var(--laranja-fundo); color:var(--laranja); }
     .p-vermelho { background:var(--vermelho-fundo); color:var(--vermelho); }
-    .p-azul { background:var(--azul-fundo); color:var(--azul-escuro); }
+    .p-azul { background:var(--azul-fundo); color:#173f75; }
     .p-cinza { background:var(--cinza-fundo); color:#3a4654; }
-    .faixa-endereco { background:var(--laranja-fundo); color:var(--laranja); border-radius:10px; padding:10px 12px; margin:10px 0 0; font-size:14px; }
+ 
+    /* Avisos com barra lateral */
+    .faixa-endereco { background:var(--laranja-fundo); color:var(--laranja); border-left:3px solid #c58a1b; border-radius:4px; padding:10px 12px; margin:10px 0 0; font-size:14px; }
     .faixa-endereco .sigla-linha { margin-top:4px; color:var(--texto); }
+    .faixa { background:var(--azul-fundo); border-left:3px solid var(--azul); border-radius:4px; padding:10px 14px; margin-bottom:14px; font-size:14px; }
+    .faixa.alerta { background:var(--laranja-fundo); color:var(--laranja); border-left-color:#c58a1b; }
+ 
     .lista-wo { margin:8px 0 0; }
-    .lista-wo .item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #e9edf1; flex-wrap:wrap; }
+    .lista-wo .item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #e8ecf0; flex-wrap:wrap; }
     .lista-wo .item:last-child { border-bottom:0; }
-    .lista-wo .wo { font-weight:700; }
+    .lista-wo .wo { font-weight:600; }
     .lista-wo .tipo { color:var(--suave); flex:1; min-width:140px; }
-    .check { display:flex; align-items:center; gap:8px; font-weight:400; color:var(--texto); font-size:15px; margin:12px 0 0; }
-    .check input { width:18px; height:18px; }
-    .azulejos { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
-    .azulejo { background:#fff; border:1px solid var(--borda); border-left-width:5px; border-radius:10px; padding:12px 14px; }
-    .azulejo .num { font-size:26px; font-weight:700; }
-    .azulejo .rot { color:var(--suave); font-size:13px; }
-    .a-azul { border-left-color:#3b82d6; } .a-laranja { border-left-color:#e0a100; } .a-verde { border-left-color:#1f9d55; }
-    .grade-cartoes { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px; }
-    .equipe-cartao { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:14px; }
+    .check { display:flex; align-items:center; gap:8px; font-weight:400; color:var(--texto); font-size:15px; margin:14px 0 0; }
+    .check input { width:17px; height:17px; }
+ 
+    /* Indicadores: uma faixa única, número colorido pela situação */
+    .azulejos { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1px; background:var(--borda);
+                border:1px solid var(--borda); border-radius:6px; overflow:hidden; margin-bottom:18px; }
+    .azulejo { background:#fff; padding:14px 18px; }
+    .azulejo .num { font-size:24px; font-weight:600; line-height:1.2; }
+    .azulejo .rot { color:var(--suave); font-size:13px; margin-top:2px; }
+    .azulejo.a-azul .num { color:var(--azul); } .azulejo.a-laranja .num { color:var(--laranja); }
+    .azulejo.a-verde .num { color:var(--verde); } .azulejo.a-vermelho .num { color:var(--vermelho); }
+ 
+    /* Cartões das equipes */
+    .grade-cartoes { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+    .equipe-cartao { background:#fff; border:1px solid var(--borda); border-radius:6px; padding:16px; }
     .equipe-cartao .topo { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
-    .equipe-cartao .site { font-size:20px; font-weight:700; }
+    .equipe-cartao .site { font-size:18px; font-weight:600; letter-spacing:.01em; }
     .equipe-cartao .nome { color:var(--suave); font-size:14px; }
-    .tempos { display:flex; justify-content:space-between; margin:12px 0 6px; font-size:13px; }
-    .tempos b { display:block; font-size:15px; }
-    .duracao { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #e9edf1; border-bottom:1px solid #e9edf1; font-size:14px; }
-    h2.secao { font-size:16px; margin:22px 0 10px; }
-    .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#1b2733; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; max-width:90vw; z-index:10; }
+    .tempos { display:flex; justify-content:space-between; margin:12px 0 6px; font-size:12px; color:var(--suave); }
+    .tempos b { display:block; font-size:15px; font-weight:500; color:var(--texto); }
+    .duracao { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #e8ecf0; border-bottom:1px solid #e8ecf0; font-size:14px; }
+ 
+    .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#16212e; color:#fff; padding:10px 16px; border-radius:4px; font-size:14px; max-width:90vw; z-index:10; }
     .toast.erro { background:var(--vermelho); color:#fff; }
     .login-caixa { max-width:380px; margin:60px auto; }
     .vazio { color:var(--suave); padding:16px 0; }
-    .faixa { background:var(--azul-fundo); border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:14px; }
-    .faixa.alerta { background:var(--laranja-fundo); color:var(--laranja); }
+ 
+    /* Conferência */
     .barra-filtros { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-    .chips { display:flex; gap:6px; flex-wrap:wrap; }
-    .chip { background:#fff; border:1px solid var(--borda); border-radius:18px; padding:7px 14px; font:inherit; cursor:pointer; }
-    .chip.ativo { background:var(--azul-escuro); color:#fff; border-color:var(--azul-escuro); }
+    .chips { display:flex; gap:0; flex-wrap:wrap; }
+    .chip { background:#fff; border:1px solid #c5ccd6; margin-left:-1px; padding:6px 14px; font:inherit; font-size:14px; cursor:pointer; color:var(--texto); }
+    .chip:first-child { border-radius:4px 0 0 4px; margin-left:0; } .chip:last-child { border-radius:0 4px 4px 0; }
+    .chip:hover { background:var(--cinza-fundo); }
+    .chip.ativo { background:var(--azul-escuro); color:#fff; border-color:var(--azul-escuro); position:relative; }
     .periodo { display:flex; align-items:center; gap:8px; }
     .periodo label { margin:0; }
-    .periodo select { width:auto; padding:7px 10px; }
-    .tabela-rolagem { overflow-x:auto; background:#fff; border:1px solid var(--borda); border-radius:12px; }
+    .periodo select { width:auto; padding:6px 10px; }
+    .tabela-rolagem { overflow-x:auto; background:#fff; border:1px solid var(--borda); border-radius:6px; }
     #tabelaConf { border-collapse:collapse; width:100%; font-size:14px; }
-    #tabelaConf th { text-align:left; color:var(--suave); font-size:13px; padding:10px 12px; border-bottom:2px solid var(--borda); white-space:nowrap; }
-    #tabelaConf td { padding:10px 12px; border-bottom:1px solid #eef1f4; vertical-align:top; }
-    #tabelaConf tr.linha-pendente td { background:#fdf3f2; }
-    #tabelaConf .wo { font-weight:700; white-space:nowrap; }
+    #tabelaConf th { text-align:left; background:#f6f7f9; color:var(--suave); font-size:13px; font-weight:500; padding:10px 12px; border-bottom:1px solid var(--borda); white-space:nowrap; }
+    #tabelaConf td { padding:10px 12px; border-bottom:1px solid #e8ecf0; vertical-align:top; }
+    #tabelaConf tr:last-child td { border-bottom:0; }
+    #tabelaConf tr.linha-pendente td:first-child { box-shadow:inset 3px 0 0 var(--vermelho); }
+    #tabelaConf .wo { font-weight:600; white-space:nowrap; }
     .detalhe { display:block; color:var(--suave); font-size:12px; margin-top:3px; }
-    .a-vermelho { border-left-color:#d64545; }
   </style>
 </head>
 <body>
@@ -232,9 +264,11 @@
     horasBaseDesatualizada: 4          // avisa quando a base está mais velha que isso
   };
  
-  // Tira espaços e deixa em maiúsculas: "grs riv" vira "GRSRIV".
+  // Deixa só letras e números, em maiúsculas: "grs riv", "GRS-RIV" e "grs.riv" viram "GRSRIV".
+  // IMPORTANTE: a base.html usa a mesma regra (chaveDeSigla). Se mudar aqui, mude lá.
   function limparSite(texto) {
-    return String(texto == null ? "" : texto).toUpperCase().replace(/\s+/g, "");
+    return String(texto == null ? "" : texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase().replace(/[^A-Z0-9]/g, "");
   }
  
   // Procura o site digitado na lista. Nunca escolhe sozinho quando há dúvida.
@@ -245,11 +279,14 @@
     const t = limparSite(digitado);
     if (t.length < 2) return { tipo: "nenhum", sites: [] };
     const comPrefixo = REGRAS.prefixoSite + t;
-    const exatos = sites.filter(function (s) {
-      return s.busca === t || s.busca === comPrefixo || s.helix === t;
-    });
-    if (exatos.length === 1) return { tipo: "unico", sites: exatos };
+    // 1) O que foi digitado é igual a um site: vale esse (FAV01 é FAV01, nunca SMFAV01).
+    const exatos = sites.filter(function (s) { return s.busca === t || s.helix === t; });
+    // O mesmo código com o prefixo (SMFAV01) é outro site: só serve de aviso ou de sugestão.
+    const comSM = sites.filter(function (s) { return s.busca === comPrefixo && exatos.indexOf(s) < 0; });
+    if (exatos.length === 1) return { tipo: "unico", sites: exatos, tambem: comSM };
     if (exatos.length > 1) return { tipo: "sugestoes", sites: exatos.slice(0, 10) };
+    // 2) Não achou igual, mas existe com o prefixo: pergunta, não escolhe sozinho.
+    if (comSM.length > 0) return { tipo: "sugestoes", sites: comSM.slice(0, 10), pergunta: "Não achei " + t + ". Você quis dizer:" };
     const parecidos = sites.filter(function (s) {
       return s.busca.includes(t) || s.helix.includes(t);
     });
@@ -474,19 +511,26 @@
  
   // Monta: sigla -> endereço, e endereço -> siglas.
   function prepararCadastro() {
-    estado.enderecoPorSigla = {};
+    estado.enderecoPorSigla = {};          // sigla -> lista de ids (uma sigla pode estar em mais de um endereço)
     estado.siglasPorEndereco = {};
     (estado.cadastroSites || []).forEach(function (s) {
-      estado.enderecoPorSigla[s.chave_busca] = s.id_endereco;
+      (estado.enderecoPorSigla[s.chave_busca] = estado.enderecoPorSigla[s.chave_busca] || []).push(s.id_endereco);
       (estado.siglasPorEndereco[s.id_endereco] = estado.siglasPorEndereco[s.id_endereco] || []).push(s);
     });
   }
  
   // Outras siglas que dividem o endereço com este site, com as WOs de cada uma na base.
   function outrasSiglasDoEndereco(chaveBusca) {
-    const id = estado.enderecoPorSigla[chaveBusca];
-    if (!id) return [];
-    return estado.siglasPorEndereco[id].filter(function (s) { return s.chave_busca !== chaveBusca; }).map(function (s) {
+    const ids = estado.enderecoPorSigla[chaveBusca];
+    if (!ids) return [];
+    const vistas = {};
+    const irmas = [];
+    ids.forEach(function (id) {
+      estado.siglasPorEndereco[id].forEach(function (s) {
+        if (s.chave_busca !== chaveBusca && !vistas[s.chave_busca]) { vistas[s.chave_busca] = true; irmas.push(s); }
+      });
+    });
+    return irmas.map(function (s) {
       const wos = estado.wosPorChave[s.chave_busca] || [];
       const pendentes = wos.filter(function (l) { return String(l.status_final || "").trim().toLowerCase() !== "executada"; });
       return { sigla: s.chave, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
@@ -697,8 +741,12 @@
     const r = acharSite($("campoSite").value, estado.sites);
     if (r.tipo === "unico") {
       escolherSite(r.sites[0]);
+      if (r.tambem && r.tambem.length > 0) {
+        $("resultadoSite").innerHTML += ' <span class="aviso">Atenção: existe também <b>' +
+          r.tambem.map(function (x) { return esc(x.site); }).join(", ") + "</b> (outro site).</span>";
+      }
     } else if (r.tipo === "sugestoes") {
-      $("resultadoSite").innerHTML = "<span>Você quis dizer:</span>";
+      $("resultadoSite").innerHTML = "<span>" + esc(r.pergunta || "Você quis dizer:") + "</span>";
       $("sugestoesSite").innerHTML = r.sites.map(function (s) {
         return '<button type="button" data-busca="' + esc(s.busca) + '">' + esc(s.site) + "</button>";
       }).join("");
@@ -758,7 +806,7 @@
     if (comPreventiva && !estado.siteEscolhido) {
       msg.innerHTML = '<span class="erro">Para preventiva, escolha um site que esteja na base.</span>'; return;
     }
-    const siteTexto = estado.siteEscolhido ? estado.siteEscolhido.site : limparSite($("campoSite").value);
+    const siteTexto = estado.siteEscolhido ? estado.siteEscolhido.site : $("campoSite").value.trim().toUpperCase();
     if (!siteTexto) { msg.innerHTML = '<span class="erro">Informe o site.</span>'; return; }
  
     const wos = [];
