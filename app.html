@@ -17,18 +17,38 @@
            font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
     .oculto { display:none !important; }
  
-    /* Cabeçalho e navegação (abas com sublinhado) */
-    header { background:var(--azul-escuro); color:#fff; display:flex; flex-wrap:wrap; align-items:center; gap:0 24px; padding:0 24px; min-height:52px; }
-    header .marca { font-weight:600; font-size:16px; letter-spacing:.01em; padding-right:24px; border-right:1px solid #33465c; }
-    nav { display:flex; gap:4px; flex:1; flex-wrap:wrap; align-self:stretch; }
-    nav button { background:transparent; color:#aab9cb; border:0; border-bottom:2px solid transparent; padding:16px 14px 14px; font:inherit; font-size:14px; cursor:pointer; }
-    nav button:hover { color:#fff; }
-    nav button.ativo { color:#fff; font-weight:500; border-bottom-color:#6aa3e8; }
-    .usuario { font-size:13px; color:#aab9cb; text-align:right; padding:8px 0; }
-    .usuario button { background:transparent; border:1px solid #4a5d74; color:#dbe5f1; border-radius:4px; padding:3px 10px; margin-left:10px; font:inherit; font-size:13px; cursor:pointer; }
+    /* Menu lateral */
+    .app { display:flex; min-height:100vh; align-items:flex-start; }
+    aside { width:236px; flex:none; position:sticky; top:0; height:100vh; overflow-y:auto; background:var(--azul-escuro); color:#fff;
+            display:flex; flex-direction:column; padding:18px 0; }
+    aside .marca { font-weight:600; font-size:16px; letter-spacing:.01em; padding:0 20px 16px; margin-bottom:8px; border-bottom:1px solid #33465c; }
+    nav { display:flex; flex-direction:column; flex:1; }
+    nav button { background:transparent; color:#aab9cb; border:0; border-left:3px solid transparent; text-align:left; width:100%;
+                 padding:11px 20px; font:inherit; font-size:14px; cursor:pointer; }
+    nav button:hover { color:#fff; background:#1d2c3e; }
+    nav button.ativo { color:#fff; font-weight:500; border-left-color:#6aa3e8; background:#1d2c3e; }
+    nav button.grupo { display:flex; justify-content:space-between; align-items:center; }
+    nav button.grupo .seta { font-size:11px; transition:transform .15s; }
+    nav button.grupo[aria-expanded=true] .seta { transform:rotate(180deg); }
+    .submenu button { padding-left:38px; }
+    .usuario { padding:14px 20px 0; border-top:1px solid #33465c; font-size:13px; color:#aab9cb; word-break:break-all; }
+    .usuario button { display:block; background:transparent; border:1px solid #4a5d74; color:#dbe5f1; border-radius:4px; padding:4px 12px; margin-top:8px; font:inherit; font-size:13px; cursor:pointer; }
     .usuario button:hover { background:#22334a; }
+    .grupo-titulo { font-size:13px; font-weight:600; color:var(--suave); margin:14px 0 2px; }
+    @media (max-width:820px) {
+      .app { flex-direction:column; align-items:stretch; }
+      aside { width:auto; height:auto; position:static; padding:10px 0 0; }
+      nav { flex-direction:row; flex-wrap:wrap; }
+      nav button { width:auto; border-left:0; border-bottom:2px solid transparent; padding:10px 14px; }
+      nav button.ativo { border-bottom-color:#6aa3e8; }
+      .submenu { display:flex; width:100%; }
+      .submenu button { padding-left:14px; }
+      .usuario { display:flex; align-items:center; gap:10px; padding:8px 14px; }
+      .usuario button { margin-top:0; }
+      main { margin:0; width:100%; padding:18px 14px 60px; }
+    }
  
-    main { max-width:1100px; margin:0 auto; padding:24px 16px 60px; }
+    main { flex:1; min-width:0; max-width:1100px; margin:0 auto; padding:24px 24px 60px; }
     h1 { font-size:20px; font-weight:600; letter-spacing:-.005em; margin:4px 0 4px; }
     h2.secao { font-size:15px; font-weight:600; margin:24px 0 10px; }
     .sub { color:var(--suave); margin:0 0 18px; font-size:14px; }
@@ -120,15 +140,21 @@
 </head>
 <body>
  
-  <header id="topo" class="oculto">
-    <span class="marca">Controle de Preventivas</span>
+  <div class="app">
+  <aside id="topo" class="oculto">
+    <div class="marca">Controle de Preventivas</div>
     <nav>
-      <button data-tela="Registrar" class="ativo">Registrar</button>
-      <button data-tela="Campo">Equipes em campo</button>
-      <button data-tela="Conferencia">Conferência</button>
+      <button data-tela="Registrar" data-grupo="" class="ativo">Registrar</button>
+      <button data-tela="Campo" data-grupo="">Equipes em campo</button>
+      <button id="botaoGrupoPreventiva" class="grupo" aria-expanded="false">Preventiva <span class="seta">▾</span></button>
+      <div id="submenuPreventiva" class="submenu oculto">
+        <button data-tela="Conferencia" data-grupo="MOP">MOP</button>
+        <button data-tela="Conferencia" data-grupo="EPS">EPS</button>
+      </div>
+      <button data-tela="Conferencia" data-grupo="">Conferência</button>
     </nav>
     <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
-  </header>
+  </aside>
  
   <main>
     <!-- ENTRAR -->
@@ -207,8 +233,8 @@
  
     <!-- CONFERENCIA -->
     <section id="telaConferencia" class="tela oculto">
-      <h1>Conferência de relatórios</h1>
-      <p class="sub">Cada WO das equipes que saíram do site é conferida na base do cliente.</p>
+      <h1 id="tituloConf">Conferência de relatórios</h1>
+      <p class="sub" id="subConf">Cada WO das equipes que saíram do site é conferida na base do cliente.</p>
       <div id="faixaBase" class="faixa"></div>
       <div class="azulejos" id="azulejosConf"></div>
       <div class="barra-filtros">
@@ -235,6 +261,7 @@
       </div>
     </section>
   </main>
+  </div>
  
   <div id="toast" class="toast oculto"></div>
  
@@ -260,7 +287,11 @@
     situacaoCancelado: "Cancelado",
  
     // --- Conferência ---
-    carenciaMinutos: 120,              // tempo após a saída antes de cobrar o relatório
+    carenciaMinutos: { MOP: 120, EPS: 120 },   // tempo após a saída antes de cobrar o relatório (por grupo)
+ 
+    // --- Grupos de preventiva ---
+    // Tipo de preventiva que contém uma destas palavras (sem acento) é MOP; todo o resto é EPS.
+    palavrasMOP: ["energia", "climatiza"],
     horasBaseDesatualizada: 4          // avisa quando a base está mais velha que isso
   };
  
@@ -270,6 +301,13 @@
     return String(texto == null ? "" : texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .toUpperCase().replace(/[^A-Z0-9]/g, "");
   }
+ 
+  // Separa as preventivas em dois grupos pelo tipo da WO: "MOP" (energia e climatização) ou "EPS" (o resto).
+  function grupoDaPreventiva(tipo) {
+    const t = String(tipo == null ? "" : tipo).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return REGRAS.palavrasMOP.some(function (p) { return t.indexOf(p) >= 0; }) ? "MOP" : "EPS";
+  }
+  function carenciaDoGrupo(grupo) { return REGRAS.carenciaMinutos[grupo] || 120; }
  
   // Procura o site digitado na lista. Nunca escolhe sozinho quando há dúvida.
   //   unico     -> achou exatamente um site
@@ -345,7 +383,7 @@
     // 3) Ainda não executada na base: pode ser só demora de atualização?
     const saida = new Date(visita.hora_saida).getTime();
     const baseVelha = !baseAtualizadaEm || new Date(baseAtualizadaEm).getTime() < saida;
-    const dentroDaCarencia = (agora - saida) / 60000 < REGRAS.carenciaMinutos;
+    const dentroDaCarencia = (agora - saida) / 60000 < carenciaDoGrupo(grupoDaPreventiva(woVisita.tipo || (linhaBase && linhaBase.tipo)));
     if (baseVelha || dentroDaCarencia) {
       return { codigo: "aguardando", texto: "Aguardando base", classe: "p-azul", grupo: "aguardando" };
     }
@@ -437,7 +475,7 @@
   // ===========================================================================
   const $ = function (id) { return document.getElementById(id); };
   const estado = { base: [], sites: [], porWO: {}, equipes: [], siteEscolhido: null, emCampo: [], pollId: null,
-                   usuarioEmail: "", filtroConf: "pendentes", linhasConf: [] };
+                   usuarioEmail: "", filtroConf: "pendentes", linhasConf: [], grupoAtual: "" };
  
   function esc(texto) {
     return String(texto == null ? "" : texto).replace(/[&<>"']/g, function (c) {
@@ -531,7 +569,7 @@
       });
     });
     return irmas.map(function (s) {
-      const wos = estado.wosPorChave[s.chave_busca] || [];
+      const wos = (estado.wosPorChave[s.chave_busca] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
       const pendentes = wos.filter(function (l) { return String(l.status_final || "").trim().toLowerCase() !== "executada"; });
       return { sigla: s.chave, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
                total: wos.length, pendentes: pendentes.map(function (l) { return l.wo; }) };
@@ -544,8 +582,8 @@
     if (outras.length === 0) return "";
     return '<div class="faixa-endereco"><b>Mesmo endereço: mais ' + outras.length + (outras.length === 1 ? " sigla" : " siglas") + "</b>" +
       outras.map(function (s) {
-        const situacao = s.total === 0 ? "sem WO na base"
-          : s.total + (s.total === 1 ? " WO" : " WOs") + " na base, " +
+        const situacao = s.total === 0 ? "sem WO MOP na base"
+          : s.total + (s.total === 1 ? " WO MOP" : " WOs MOP") + " na base, " +
             (s.pendentes.length === 0 ? "todas executadas" : s.pendentes.length + " pendente(s)");
         return '<div class="sigla-linha"><b>' + esc(s.sigla) + "</b> (" + esc(s.origem) + ") · " + situacao + "</div>";
       }).join("") + "</div>";
@@ -571,12 +609,26 @@
   }
  
   // ---- navegação ------------------------------------------------------------
-  document.querySelectorAll("nav button").forEach(function (b) {
-    b.addEventListener("click", function () { irParaTela(b.dataset.tela); });
+  document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
+    b.addEventListener("click", function () { irParaTela(b.dataset.tela, b.dataset.grupo || ""); });
   });
  
-  function irParaTela(nome) {
-    document.querySelectorAll("nav button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.tela === nome); });
+  function definirSubmenu(aberto) {
+    $("botaoGrupoPreventiva").setAttribute("aria-expanded", aberto ? "true" : "false");
+    $("submenuPreventiva").classList.toggle("oculto", !aberto);
+  }
+  $("botaoGrupoPreventiva").addEventListener("click", function () {
+    definirSubmenu($("botaoGrupoPreventiva").getAttribute("aria-expanded") !== "true");
+  });
+ 
+  // grupo: "MOP", "EPS" ou "" (todos). Só a Conferência usa o grupo.
+  function irParaTela(nome, grupo) {
+    grupo = grupo || "";
+    estado.grupoAtual = grupo;
+    document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
+      b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo);
+    });
+    if (nome === "Conferencia" && grupo) definirSubmenu(true);
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("tela" + nome).classList.remove("oculto");
     clearInterval(estado.pollId);
@@ -636,8 +688,21 @@
     estado.linhasConf = linhas;
   }
  
+  function textoCarencia() {
+    const g = estado.grupoAtual;
+    if (g) return (carenciaDoGrupo(g) / 60) + " h";
+    return carenciaDoGrupo("MOP") === carenciaDoGrupo("EPS") ? (carenciaDoGrupo("MOP") / 60) + " h" : "o prazo de carência de cada grupo";
+  }
+ 
   function desenharConferencia() {
-    const linhas = estado.linhasConf;
+    const grupo = estado.grupoAtual;
+    $("tituloConf").textContent = grupo ? "Preventiva " + grupo + ": conferência de relatórios" : "Conferência de relatórios";
+    $("subConf").textContent = grupo === "MOP" ? "Preventivas de energia e climatização, conferidas na base do cliente."
+      : grupo === "EPS" ? "Demais tipos de preventiva (gerador e outros), conferidos na base do cliente."
+      : "Cada WO das equipes que saíram do site é conferida na base do cliente (MOP e EPS juntos).";
+    const linhas = estado.linhasConf.filter(function (l) {
+      return !grupo || grupoDaPreventiva(l.wo.tipo || (l.base && l.base.tipo)) === grupo;
+    });
     const contar = function (grupo) { return linhas.filter(function (l) { return l.resultado.grupo === grupo; }).length; };
     const cobradas = linhas.filter(function (l) { return l.resultado.grupo === "pendente" && l.wo.cobrado; }).length;
  
@@ -649,7 +714,7 @@
       faixa.className = "faixa" + (velha ? " alerta" : "");
       faixa.innerHTML = "Base atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>." +
         (velha ? " <b>Atenção: a base está desatualizada há " + formatarDuracao(horas * 60) + ".</b>" : "") +
-        " Saídas com menos de " + (REGRAS.carenciaMinutos / 60) + " h, ou feitas depois da última atualização, aparecem como “Aguardando base”.";
+        " Saídas com menos de " + textoCarencia() + ", ou feitas depois da última atualização, aparecem como “Aguardando base”.";
     } else {
       faixa.className = "faixa alerta";
       faixa.textContent = "A base está vazia. Suba a planilha na tela de atualizar a base.";
@@ -788,10 +853,16 @@
     if (!mostrar) return;
  
     $("tituloWOs").textContent = wos.length + (wos.length === 1 ? " WO neste site" : " WOs neste site");
-    $("listaWOs").innerHTML = wos.map(function (l) {
-      const st = descreverStatusBase(l);
-      return '<div class="item"><input type="checkbox" checked data-wo="' + esc(l.wo) + '" data-tipo="' + esc(l.tipo) + '">' +
-        '<span class="wo">' + esc(l.wo) + '</span><span class="tipo">' + esc(l.tipo) + "</span>" + pill(st.texto, st.classe) + "</div>";
+    // MOP já vem marcada; EPS só se a equipe também vai fazer.
+    $("listaWOs").innerHTML = ["MOP", "EPS"].map(function (g) {
+      const doGrupo = wos.filter(function (l) { return grupoDaPreventiva(l.tipo) === g; });
+      if (doGrupo.length === 0) return "";
+      return '<div class="grupo-titulo">' + g + (g === "EPS" ? " (marque só se a equipe também vai fazer)" : "") + "</div>" +
+        doGrupo.map(function (l) {
+          const st = descreverStatusBase(l);
+          return '<div class="item"><input type="checkbox" ' + (g === "MOP" ? "checked " : "") + 'data-wo="' + esc(l.wo) + '" data-tipo="' + esc(l.tipo) + '">' +
+            '<span class="wo">' + esc(l.wo) + '</span><span class="tipo">' + esc(l.tipo) + "</span>" + pill(st.texto, st.classe) + "</div>";
+        }).join("");
     }).join("");
   }
  
@@ -882,13 +953,25 @@
       const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje()]);
       estado.emCampo = resultados[0];
       desenharCampo(resultados[0], resultados[1]);
-      $("subCampo").textContent = "Atualiza sozinha a cada 30 segundos · última leitura às " + horaCurta(new Date().toISOString());
+      $("subCampo").textContent = "MOP · atualiza sozinha a cada 30 segundos · última leitura às " + horaCurta(new Date().toISOString());
     } catch (e) {
       mostrarAviso("Não consegui atualizar: " + e.message, "erro");
     }
   }
  
+  // Equipes em campo mostra só o MOP: visitas com WO MOP (ou sem WO, como as corretivas) e só as WOs MOP de cada uma.
+  function soMOP(visitas) {
+    return visitas.filter(function (v) {
+      const w = v.wos_visita || [];
+      return w.length === 0 || w.some(function (x) { return grupoDaPreventiva(x.tipo) === "MOP"; });
+    }).map(function (v) {
+      return Object.assign({}, v, { wos_visita: (v.wos_visita || []).filter(function (x) { return grupoDaPreventiva(x.tipo) === "MOP"; }) });
+    });
+  }
+ 
   function desenharCampo(emCampo, saidas) {
+    emCampo = soMOP(emCampo);
+    saidas = soMOP(saidas);
     const emDesloc = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoDeslocamento; });
     const noSite = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoNoSite; });
     const longos = noSite.filter(function (v) { return minutosDesde(v.hora_entrada) > REGRAS.horasLongaPermanencia * 60; });
@@ -974,7 +1057,8 @@
       campos = { situacao: REGRAS.situacaoNoSite, hora_entrada: quando };
     } else if (botao.dataset.acao === "saida") {
       // Alerta de execução parcial: parte das WOs do endereço já consta executada na base e parte não.
-      const wosDaVisita = (visita.wos_visita || []).map(function (w) { return w.wo; });
+      const wosDaVisita = (visita.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; })
+        .map(function (w) { return w.wo; });
       const faltam = wosDaVisita.filter(function (wo) {
         const l = estado.porWO[wo];
         return !l || String(l.status_final || "").trim().toLowerCase() !== "executada";
