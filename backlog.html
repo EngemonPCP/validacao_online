@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="data:image/png;base64,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">
+  <title>Carga do backlog de visitas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --fonte:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif; }
+    body { font-family:var(--fonte); font-size:15px; line-height:1.45; max-width:860px; margin:0 auto; padding:24px 16px 60px;
+           background:#f2f4f7; color:#1c2733; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
+    h1 { font-size:20px; font-weight:600; margin:24px 0 4px; }
+    .caixa { border:1px solid #d9dee5; border-radius:6px; padding:20px; margin:16px 0; background:#fff; }
+    .caixa h2 { font-size:15px; font-weight:600; margin:0 0 10px; }
+    input, select, button { font:inherit; padding:8px 11px; margin:4px 4px 4px 0; }
+    input, select { border:1px solid #c5ccd6; border-radius:4px; background:#fff; color:#1c2733; }
+    input:focus, select:focus { outline:2px solid rgba(29,79,145,.30); border-color:#1d4f91; }
+    button { background:#1d4f91; color:#fff; border:0; border-radius:4px; font-weight:500; cursor:pointer; transition:background .15s; }
+    button:hover { background:#173f75; }
+    button:focus-visible { outline:2px solid #1d4f91; outline-offset:2px; }
+    button:disabled { background:#9db3cf; cursor:not-allowed; }
+    table { border-collapse:collapse; width:100%; font-size:14px; margin:8px 0; }
+    th { background:#f6f7f9; color:#5f6b7a; font-weight:500; font-size:13px; }
+    td, th { border-bottom:1px solid #e8ecf0; padding:8px 10px; text-align:left; }
+    .ok { color:#1e6b45; } .erro { color:#a6281f; } .aviso { color:#8f5a0a; }
+    .oculto { display:none; }
+    .pequeno { font-size:13px; color:#5f6b7a; }
+  </style>
+  <style>
+    body { max-width:1100px; }
+    .tile { display:inline-block; border:1px solid #d9dee5; border-radius:6px; padding:8px 14px; margin:4px 6px 4px 0; background:#fff; }
+    .tile b { font-size:20px; display:block; }
+    .abas button { background:#e8ecf0; color:#1c2733; }
+    .abas button.ativa { background:#1d4f91; color:#fff; }
+    .rolagem { max-height:460px; overflow:auto; border:1px solid #e8ecf0; }
+    td.motivo { color:#a6281f; }
+    select.mini { padding:4px 6px; margin:0; max-width:230px; }
+  </style>
+</head>
+<body>
+  <h1>Carga do backlog de visitas</h1>
+  <p class="pequeno">Suba a planilha de visitas (uma linha por visita ao site). Cada site é procurado na base preventiva e as WOs de MOP dele são ligadas à visita. O que não bater fica <b>reservado</b>, com todas as informações originais, para você investigar.</p>
+
+  <div class="caixa" id="caixaLogin">
+    <h2>1. Entrar</h2>
+    <input id="email" type="email" placeholder="e-mail">
+    <input id="senha" type="password" placeholder="senha">
+    <button id="botaoEntrar">Entrar</button>
+    <div id="msgLogin"></div>
+  </div>
+
+  <div class="caixa oculto" id="caixaArquivo">
+    <h2>2. Escolher a planilha</h2>
+    <label class="pequeno">Importar visitas a partir de: <input id="dataInicio" type="date" value="2026-10-01"></label><br>
+    <input id="arquivo" type="file" accept=".xlsx,.xlsm,.xls">
+    <select id="seletorAba" class="oculto"></select>
+    <div id="msgArquivo"></div>
+  </div>
+
+  <div class="caixa oculto" id="caixaEquipes">
+    <h2>3. Equipes da planilha que não bateram com as cadastradas</h2>
+    <p class="pequeno">Escolha a equipe cadastrada que corresponde a cada nome. Quem ficar sem escolha é reservado.</p>
+    <table id="tabelaEquipes"></table>
+  </div>
+
+  <div class="caixa oculto" id="caixaPrevia">
+    <h2>4. Conferir e gravar</h2>
+    <div id="resumo"></div>
+    <div class="abas">
+      <button id="abaProntas" class="ativa">Prontas</button>
+      <button id="abaEscolher">Escolher WO</button>
+      <button id="abaReservadas">Reservadas</button>
+      <button id="abaDuplicadas">Já gravadas</button>
+    </div>
+    <div class="rolagem"><table id="tabelaPrevia"></table></div>
+    <div style="margin-top:10px">
+      <button id="botaoGravar" disabled>Gravar visitas prontas</button>
+      <button id="botaoExcel" disabled>Baixar reservadas (Excel)</button>
+      <button id="botaoReservar" disabled>Guardar reservadas no banco</button>
+    </div>
+    <div id="msgGravar"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+  // ==== CONFIGURACAO (pode ser editada) =========================================
+  const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
+  const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
+
+  const REGRAS = {
+    fuso: "-03:00",                      // horário de Brasília
+    situacaoFinal: "Saiu do Site",
+    alarmePadrao: "Não verificado",
+    origem: "backlog",
+    palavrasMOP: ["energia", "climatiza"],   // igual ao app.html
+    // Nome de cada coluna da planilha (sem acento, minúsculo; basta CONTER o texto).
+    colunas: { data: "data", equipe: "equipe", atividade: "atividade", site: "site",
+               entrada: "entrada", saida: "saida", wos: "wo", obs: "observ" },
+    // Palavras do texto da atividade -> atividade do sistema (a primeira que bater vale).
+    atividades: [
+      { tem: ["prevent", "corret"], vira: "Preventiva + Corretiva" },
+      { tem: ["prevent"],           vira: "Preventiva" },
+      { tem: ["corret"],            vira: "Corretiva" }
+    ],
+    statusExecutada: "executada"
+  };
+
+  // ==== FUNCOES PURAS ===========================================================
+  function semAcento(t) { return String(t == null ? "" : t).normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+  function limparSite(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  function limparTexto(t) { return semAcento(t).toLowerCase().replace(/\s+/g, " ").trim(); }
+  function p2(n) { return String(n).padStart(2, "0"); }
+
+  // Data da célula -> "AAAA-MM-DD" ou null.
+  function lerData(v) {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return v.getFullYear() + "-" + p2(v.getMonth() + 1) + "-" + p2(v.getDate());
+    if (typeof v === "number") {
+      const d = new Date(Math.round((v - 25569) * 86400000));
+      return d.getUTCFullYear() + "-" + p2(d.getUTCMonth() + 1) + "-" + p2(d.getUTCDate());
+    }
+    const t = String(v).trim();
+    let m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return m[3] + "-" + p2(m[2]) + "-" + p2(m[1]);
+    m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[1] + "-" + m[2] + "-" + m[3] : null;
+  }
+
+  // Hora da célula -> "HH:MM:SS" ou null (vazio). Número do Excel = fração do dia.
+  function lerHora(v) {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return p2(v.getHours()) + ":" + p2(v.getMinutes()) + ":" + p2(v.getSeconds());
+    if (typeof v === "number") {
+      const seg = Math.round((v - Math.floor(v)) * 86400) % 86400;
+      return p2(Math.floor(seg / 3600)) + ":" + p2(Math.floor(seg / 60) % 60) + ":" + p2(seg % 60);
+    }
+    const m = String(v).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    return m ? p2(m[1]) + ":" + m[2] + ":" + (m[3] || "00") : null;
+  }
+
+  function dataBr(iso) { return iso ? iso.split("-").reverse().join("/") : ""; }
+  function grupoMOP(tipo) {
+    const t = limparTexto(tipo);
+    return REGRAS.palavrasMOP.some(function (p) { return t.indexOf(p) >= 0; });
+  }
+  function ehExecutada(l) { return limparTexto(l.status_final) === REGRAS.statusExecutada; }
+  function dataIsoDe(v) { return v ? String(v).slice(0, 10) : ""; }
+
+  // Atividade do texto da planilha -> atividade do sistema (ou null).
+  function lerAtividade(texto) {
+    const t = limparTexto(texto);
+    if (!t) return null;
+    for (const r of REGRAS.atividades) if (r.tem.every(function (p) { return t.indexOf(p) >= 0; })) return r.vira;
+    return null;
+  }
+
+  // Acha a equipe cadastrada pelo nome (igual; ou um nome contém o outro, se só houver uma).
+  function acharEquipe(nome, equipes) {
+    const n = limparTexto(nome);
+    if (!n) return null;
+    const igual = equipes.filter(function (e) { return limparTexto(e.nome) === n; });
+    if (igual.length === 1) return igual[0];
+    const parecidas = equipes.filter(function (e) {
+      const x = limparTexto(e.nome); return x.indexOf(n) >= 0 || n.indexOf(x) >= 0;
+    });
+    return parecidas.length === 1 ? parecidas[0] : null;
+  }
+
+  // Lê a planilha (matriz de linhas) -> { linhas, erro }.
+  function lerPlanilha(matriz) {
+    let cab = -1;
+    for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+      const t = matriz[i].map(limparTexto);
+      if (t.some(function (c) { return c.indexOf("site") >= 0; }) && t.some(function (c) { return c.indexOf("entrada") >= 0; })) { cab = i; break; }
+    }
+    if (cab < 0) return { linhas: [], erro: "Não achei a linha de títulos (precisa ter 'Site' e 'Entrada')." };
+    const titulos = matriz[cab].map(limparTexto);
+    const col = {};
+    for (const k in REGRAS.colunas) {
+      col[k] = titulos.findIndex(function (c) { return c.indexOf(REGRAS.colunas[k]) >= 0; });
+    }
+    const faltam = ["data", "site", "entrada", "saida"].filter(function (k) { return col[k] < 0; });
+    if (faltam.length) return { linhas: [], erro: "Faltam colunas: " + faltam.join(", ") };
+    const linhas = [];
+    for (let i = cab + 1; i < matriz.length; i++) {
+      const r = matriz[i];
+      const pega = function (k) { return col[k] >= 0 ? r[col[k]] : ""; };
+      if (r.every(function (c) { return c === "" || c == null; })) continue;
+      const nWo = String(pega("wos")).trim() === "" ? null : Number(String(pega("wos")).replace(",", "."));
+      linhas.push({
+        linha: i + 1, dataBruta: pega("data"), data: lerData(pega("data")),
+        equipe: String(pega("equipe") || "").trim(), atividadeTexto: String(pega("atividade") || "").trim(),
+        site: String(pega("site") || "").trim(), entrada: lerHora(pega("entrada")), saida: lerHora(pega("saida")),
+        nWo: isNaN(nWo) ? null : nWo, obs: String(pega("obs") || "").trim()
+      });
+    }
+    return { linhas: linhas, erro: "" };
+  }
+
+  // Se a sigla não existe, sugere a parecida (com/sem SM). Só sugestão: nunca liga sozinho.
+  function sugerirSite(chave, wosPorChave) {
+    const alt = chave.indexOf("SM") === 0 ? chave.slice(2) : "SM" + chave;
+    return wosPorChave[alt] ? alt : "";
+  }
+
+  // Analisa uma linha: devolve { estado, motivos, equipe, atividade, candidatas, escolhidas, entradaIso, saidaIso }.
+  function analisarLinha(l, ctx) {
+    const motivos = [];
+    const r = { l: l, motivos: motivos, estado: "pronta", candidatas: [], escolhidas: [] };
+    if (!l.data) motivos.push("data inválida ou vazia");
+    if (!l.site) motivos.push("sem site (ex.: treinamento, deslocamento)");
+    if (!l.entrada) motivos.push("sem horário de entrada");
+    if (!l.saida) motivos.push("sem horário de saída");
+    else if (l.saida === "00:00:00") motivos.push("saída 00:00:00 (provável saída não registrada)");
+    if (l.entrada && l.saida && l.saida !== "00:00:00" && l.saida < l.entrada) motivos.push("saída antes da entrada");
+
+    r.atividade = lerAtividade(l.atividadeTexto);
+    if (!r.atividade) motivos.push(l.atividadeTexto ? "atividade não reconhecida: " + l.atividadeTexto : "sem atividade");
+
+    const eq = l.equipe ? (ctx.mapaEquipes[limparTexto(l.equipe)] !== undefined
+      ? ctx.equipes.find(function (e) { return e.id === ctx.mapaEquipes[limparTexto(l.equipe)]; }) || null
+      : acharEquipe(l.equipe, ctx.equipes)) : null;
+    r.equipe = eq;
+    if (!l.equipe) motivos.push("sem equipe"); else if (!eq) motivos.push("equipe não cadastrada: " + l.equipe);
+
+    if (l.site) {
+      const chave = limparSite(l.site);
+      const wos = ctx.wosPorChave[chave];
+      if (!wos) {
+        const sug = sugerirSite(chave, ctx.wosPorChave);
+        motivos.push("site não encontrado na base" + (sug ? " (parecido na base: " + sug + ")" : ""));
+      } else {
+        r.siteBase = wos[0].programado_infratel || wos[0].clr_sdr_site_helix;
+        r.candidatas = wos.filter(function (w) { return grupoMOP(w.tipo); });
+        if (r.candidatas.length === 0 && (l.nWo || 0) > 0) motivos.push("site na base, mas sem WO de MOP");
+      }
+    }
+    if (l.nWo != null && l.nWo < 0) motivos.push("quantidade de WOs inválida");
+
+    if (motivos.length) { r.estado = "reservada"; return r; }
+
+    // ---- escolha das WOs ----
+    const n = l.nWo == null ? r.candidatas.length : l.nWo;
+    const c = r.candidatas;
+    if (n === 0 || c.length === 0) { r.escolhidas = []; }
+    else if (n >= c.length) { r.escolhidas = c.slice(); }
+    else {
+      const doDia = c.filter(function (w) { return ehExecutada(w) && dataIsoDe(w.data_fim) === l.data; });
+      if (doDia.length === n) r.escolhidas = doDia;
+      else { r.estado = "escolher"; r.dicaWos = "planilha diz " + n + " WO(s); o site tem " + c.length + " de MOP"; }
+    }
+    r.entradaIso = l.data + "T" + l.entrada + ctx.fuso;
+    r.saidaIso = l.data + "T" + l.saida + ctx.fuso;
+    r.chaveDup = limparSite(l.site) + "|" + new Date(r.entradaIso).getTime();
+    if (ctx.jaGravadas[r.chaveDup]) r.estado = "duplicada";
+    return r;
+  }
+
+  if (typeof module !== "undefined") module.exports = { lerData, lerHora, lerAtividade, acharEquipe, lerPlanilha, analisarLinha, limparSite, grupoMOP };
+  </script>
+  <script>
+  if (typeof document !== "undefined") (function () {
+    const $ = function (id) { return document.getElementById(id); };
+    const banco = supabase.createClient(ENDERECO, CHAVE);
+    const estado = { equipes: [], wosPorChave: {}, jaGravadas: {}, linhas: [], resultados: [], mapaEquipes: {}, aba: "prontas", usuario: "" };
+
+    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function conferir(r) { if (r.error) throw new Error(r.error.message); return r.data; }
+    function msg(id, texto, classe) { $(id).innerHTML = '<p class="' + (classe || "") + '">' + esc(texto) + "</p>"; }
+
+    async function paginado(tabela, colunas, filtro) {
+      const todas = [];
+      for (let de = 0; ; de += 1000) {
+        let q = banco.from(tabela).select(colunas);
+        if (filtro) q = filtro(q);
+        const d = conferir(await q.range(de, de + 999));
+        d.forEach(function (x) { todas.push(x); });
+        if (d.length < 1000) break;
+      }
+      return todas;
+    }
+
+    // ---- login ----
+    async function entrou(usuario) {
+      estado.usuario = usuario.email;
+      $("caixaLogin").classList.add("oculto");
+      $("caixaArquivo").classList.remove("oculto");
+      try {
+        estado.equipes = conferir(await banco.from("equipes_lista").select("id,nome,tipo").eq("ativa", true).order("nome"));
+        const base = await paginado("base_preventiva", "wo,clr_sdr_site_helix,programado_infratel,tipo,status_final,data_fim", function (q) { return q.order("wo"); });
+        estado.wosPorChave = {};
+        base.forEach(function (l) {
+          [limparSite(l.programado_infratel), limparSite(l.clr_sdr_site_helix)].forEach(function (k, i, lista) {
+            if (k && lista.indexOf(k) === i) (estado.wosPorChave[k] = estado.wosPorChave[k] || []).push(l);
+          });
+        });
+        msg("msgArquivo", base.length + " WOs na base · " + estado.equipes.length + " equipes cadastradas.", "pequeno");
+      } catch (e) { msg("msgArquivo", "Não consegui carregar a base: " + e.message, "erro"); }
+    }
+    $("botaoEntrar").addEventListener("click", async function () {
+      const r = await banco.auth.signInWithPassword({ email: $("email").value.trim(), password: $("senha").value });
+      if (r.error) msg("msgLogin", "Não entrou: " + r.error.message, "erro"); else entrou(r.data.user);
+    });
+    banco.auth.getSession().then(function (r) { if (r.data && r.data.session) entrou(r.data.session.user); });
+
+    // ---- arquivo ----
+    let pasta = null;
+    $("arquivo").addEventListener("change", async function () {
+      const f = $("arquivo").files[0]; if (!f) return;
+      pasta = XLSX.read(await f.arrayBuffer(), { type: "array" });
+      const sel = $("seletorAba");
+      sel.innerHTML = pasta.SheetNames.map(function (n) { return "<option>" + esc(n) + "</option>"; }).join("");
+      sel.classList.toggle("oculto", pasta.SheetNames.length < 2);
+      lerAba();
+    });
+    $("seletorAba").addEventListener("change", lerAba);
+    $("dataInicio").addEventListener("change", function () { if (estado.linhas.length) processar(); });
+
+    function lerAba() {
+      const aba = pasta.Sheets[$("seletorAba").value || pasta.SheetNames[0]];
+      const matriz = XLSX.utils.sheet_to_json(aba, { header: 1, raw: true, defval: "" });
+      const r = lerPlanilha(matriz);
+      if (r.erro) { msg("msgArquivo", r.erro, "erro"); return; }
+      estado.linhas = r.linhas; estado.mapaEquipes = {};
+      msg("msgArquivo", r.linhas.length + " linhas lidas.", "ok");
+      processar();
+    }
+
+    async function processar() {
+      const inicio = $("dataInicio").value;
+      try {
+        estado.jaGravadas = {};
+        const ja = await paginado("visitas", "site,hora_entrada", function (q) { return q.eq("origem", REGRAS.origem); });
+        ja.forEach(function (v) { estado.jaGravadas[limparSite(v.site) + "|" + new Date(v.hora_entrada).getTime()] = true; });
+      } catch (e) { msg("msgGravar", "Não consegui conferir duplicadas (a coluna 'origem' existe?): " + e.message, "erro"); }
+      const ctx = { equipes: estado.equipes, wosPorChave: estado.wosPorChave, jaGravadas: estado.jaGravadas, mapaEquipes: estado.mapaEquipes, fuso: REGRAS.fuso };
+      estado.foraPeriodo = 0;
+      estado.resultados = [];
+      estado.linhas.forEach(function (l) {
+        if (l.data && inicio && l.data < inicio) { estado.foraPeriodo++; return; }
+        estado.resultados.push(analisarLinha(l, ctx));
+      });
+      desenharEquipes(); desenhar();
+    }
+
+    function desenharEquipes() {
+      const nomes = {};
+      estado.resultados.forEach(function (r) {
+        if (r.l.equipe && !r.equipe) nomes[limparTexto(r.l.equipe)] = r.l.equipe;
+      });
+      const chaves = Object.keys(nomes);
+      $("caixaEquipes").classList.toggle("oculto", chaves.length === 0);
+      $("tabelaEquipes").innerHTML = "<tr><th>Nome na planilha</th><th>Equipe cadastrada</th></tr>" + chaves.map(function (k) {
+        return "<tr><td>" + esc(nomes[k]) + '</td><td><select class="mini" data-eq="' + esc(k) + '"><option value="">— reservar —</option>' +
+          estado.equipes.map(function (e) { return '<option value="' + e.id + '"' + (estado.mapaEquipes[k] === e.id ? " selected" : "") + ">" + esc(e.nome) + "</option>"; }).join("") + "</select></td></tr>";
+      }).join("");
+      $("tabelaEquipes").querySelectorAll("select").forEach(function (s) {
+        s.addEventListener("change", function () {
+          const k = s.dataset.eq;
+          if (s.value) estado.mapaEquipes[k] = s.value; else delete estado.mapaEquipes[k];
+          processar();
+        });
+      });
+    }
+
+    function lista(estadoNome) { return estado.resultados.filter(function (r) { return r.estado === estadoNome; }); }
+    function prontas() {
+      return estado.resultados.filter(function (r) { return r.estado === "pronta" || (r.estado === "escolher" && r.escolhidas.length > 0); });
+    }
+
+    function desenhar() {
+      $("caixaPrevia").classList.remove("oculto");
+      const pr = prontas(), es = lista("escolher").filter(function (r) { return r.escolhidas.length === 0; }),
+            re = lista("reservada"), du = lista("duplicada");
+      $("resumo").innerHTML =
+        '<span class="tile"><b class="ok">' + pr.length + "</b>prontas</span>" +
+        '<span class="tile"><b class="aviso">' + es.length + "</b>escolher WO</span>" +
+        '<span class="tile"><b class="erro">' + re.length + "</b>reservadas</span>" +
+        '<span class="tile"><b>' + du.length + "</b>já gravadas</span>" +
+        '<span class="tile"><b>' + estado.foraPeriodo + "</b>antes da data inicial</span>";
+      $("botaoGravar").disabled = pr.length === 0;
+      $("botaoExcel").disabled = re.length === 0;
+      $("botaoReservar").disabled = re.length === 0;
+      ["prontas", "escolher", "reservadas", "duplicadas"].forEach(function (a) {
+        $("aba" + a[0].toUpperCase() + a.slice(1)).classList.toggle("ativa", estado.aba === a);
+      });
+      const cab = "<tr><th>Linha</th><th>Data</th><th>Equipe</th><th>Atividade</th><th>Site</th><th>Entrada</th><th>Saída</th><th>WO exec.</th><th>Observação</th>";
+      const cel = function (r) {
+        const l = r.l;
+        return "<td>" + l.linha + "</td><td>" + dataBr(l.data) + "</td><td>" + esc(l.equipe) + "</td><td>" + esc(l.atividadeTexto) + "</td><td>" + esc(l.site) +
+          "</td><td>" + (l.entrada || "") + "</td><td>" + (l.saida || "") + "</td><td>" + (l.nWo == null ? "" : l.nWo) + "</td><td>" + esc(l.obs) + "</td>";
+      };
+      let corpo = "";
+      if (estado.aba === "prontas") {
+        corpo = cab + "<th>WOs ligadas</th></tr>" + pr.map(function (r) {
+          return "<tr>" + cel(r) + "<td>" + r.escolhidas.map(function (w) { return esc(w.wo); }).join(", ") + "</td></tr>";
+        }).join("");
+      } else if (estado.aba === "escolher") {
+        corpo = cab + "<th>Marque as WOs desta visita</th></tr>" + lista("escolher").map(function (r) {
+          const i = estado.resultados.indexOf(r);
+          return "<tr>" + cel(r) + "<td><div class=\"pequeno\">" + esc(r.dicaWos) + "</div>" + r.candidatas.map(function (w) {
+            const marcado = r.escolhidas.indexOf(w) >= 0;
+            return '<label style="display:block"><input type="checkbox" data-r="' + i + '" data-wo="' + esc(w.wo) + '"' + (marcado ? " checked" : "") + "> " +
+              esc(w.wo) + " · " + esc(w.tipo) + " · " + esc(w.status_final || "") + (w.data_fim ? " · " + dataBr(dataIsoDe(w.data_fim)) : "") + "</label>";
+          }).join("") + "</td></tr>";
+        }).join("");
+      } else if (estado.aba === "reservadas") {
+        corpo = cab + "<th>Motivo</th></tr>" + re.map(function (r) { return "<tr>" + cel(r) + '<td class="motivo">' + r.motivos.map(esc).join("; ") + "</td></tr>"; }).join("");
+      } else {
+        corpo = cab + "</tr>" + du.map(function (r) { return "<tr>" + cel(r) + "</tr>"; }).join("");
+      }
+      $("tabelaPrevia").innerHTML = corpo;
+      $("tabelaPrevia").querySelectorAll("input[type=checkbox]").forEach(function (c) {
+        c.addEventListener("change", function () {
+          const r = estado.resultados[Number(c.dataset.r)];
+          const w = r.candidatas.find(function (x) { return x.wo === c.dataset.wo; });
+          const i = r.escolhidas.indexOf(w);
+          if (c.checked && i < 0) r.escolhidas.push(w);
+          if (!c.checked && i >= 0) r.escolhidas.splice(i, 1);
+          const resumoAntes = $("tabelaPrevia").parentNode.scrollTop;
+          desenhar(); $("tabelaPrevia").parentNode.scrollTop = resumoAntes;
+        });
+      });
+    }
+    [["abaProntas", "prontas"], ["abaEscolher", "escolher"], ["abaReservadas", "reservadas"], ["abaDuplicadas", "duplicadas"]].forEach(function (p) {
+      $(p[0]).addEventListener("click", function () { estado.aba = p[1]; desenhar(); });
+    });
+
+    // ---- gravar ----
+    $("botaoGravar").addEventListener("click", async function () {
+      const pr = prontas();
+      if (!confirm("Gravar " + pr.length + " visitas?")) return;
+      $("botaoGravar").disabled = true;
+      let feitas = 0;
+      try {
+        for (let i = 0; i < pr.length; i += 100) {
+          const lote = pr.slice(i, i + 100);
+          const linhas = lote.map(function (r) {
+            return { site: r.siteBase || r.l.site, equipe: r.equipe.nome, equipe_id: r.equipe.id, atividade: r.atividade,
+              atividade_detalhe: r.l.atividadeTexto, data_execucao: r.l.data, situacao: REGRAS.situacaoFinal, hora_aviso: null,
+              hora_entrada: r.entradaIso, hora_saida: r.saidaIso, alarme_porta: REGRAS.alarmePadrao,
+              observacao: r.l.obs || null, origem: REGRAS.origem };
+          });
+          const criadas = conferir(await banco.from("visitas").insert(linhas).select("id,hora_entrada,equipe_id"));
+          const wos = [];
+          lote.forEach(function (r, k) {
+            const c = criadas[k];
+            r.escolhidas.forEach(function (w) { wos.push({ visita_id: c.id, wo: w.wo, tipo: w.tipo }); });
+          });
+          if (wos.length) conferir(await banco.from("wos_visita").insert(wos));
+          feitas += lote.length;
+          msg("msgGravar", feitas + " de " + pr.length + " gravadas...", "pequeno");
+        }
+        msg("msgGravar", feitas + " visitas gravadas. Reservadas e duplicadas não foram gravadas.", "ok");
+        processar();
+      } catch (e) {
+        msg("msgGravar", "Parou após " + feitas + " visitas: " + e.message + ". Pode subir a planilha de novo: as já gravadas serão puladas.", "erro");
+      }
+    });
+
+    // ---- reservadas ----
+    function linhasReservadas() {
+      return lista("reservada").map(function (r) {
+        const l = r.l;
+        return { "Linha na planilha": l.linha, "Data": dataBr(l.data) || String(l.dataBruta), "Equipe": l.equipe, "Atividade": l.atividadeTexto,
+          "Site": l.site, "Entrada": l.entrada || "", "Saída": l.saida || "", "WO executados": l.nWo == null ? "" : l.nWo,
+          "Observação": l.obs, "Motivo": r.motivos.join("; ") };
+      });
+    }
+    $("botaoExcel").addEventListener("click", function () {
+      const ws = XLSX.utils.json_to_sheet(linhasReservadas());
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reservadas");
+      XLSX.writeFile(wb, "backlog_reservadas.xlsx");
+    });
+    $("botaoReservar").addEventListener("click", async function () {
+      try {
+        const lote = lista("reservada").map(function (r) {
+          const l = r.l;
+          return { linha_planilha: l.linha, data_execucao: l.data, equipe: l.equipe, atividade: l.atividadeTexto, site: l.site,
+            entrada: l.entrada, saida: l.saida, wo_executados: l.nWo, observacao: l.obs, motivo: r.motivos.join("; "), enviado_por: estado.usuario };
+        });
+        for (let i = 0; i < lote.length; i += 200) conferir(await banco.from("backlog_inconsistencias").insert(lote.slice(i, i + 200)));
+        msg("msgGravar", lote.length + " linhas reservadas guardadas no banco (tabela backlog_inconsistencias).", "ok");
+      } catch (e) { msg("msgGravar", "Não guardou: " + e.message + " (a tabela backlog_inconsistencias existe?)", "erro"); }
+    });
+  })();
+  </script>
+</body>
+</html>
