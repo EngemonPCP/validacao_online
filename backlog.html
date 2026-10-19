@@ -222,7 +222,7 @@
     if (!r.atividade) motivos.push(l.atividadeTexto ? "atividade não reconhecida: " + l.atividadeTexto : "sem atividade");
 
     const eq = l.equipe ? (ctx.mapaEquipes[limparTexto(l.equipe)] !== undefined
-      ? ctx.equipes.find(function (e) { return e.id === ctx.mapaEquipes[limparTexto(l.equipe)]; }) || null
+      ? ctx.equipes.find(function (e) { return String(e.id) === String(ctx.mapaEquipes[limparTexto(l.equipe)]); }) || null
       : acharEquipe(l.equipe, ctx.equipes)) : null;
     r.equipe = eq;
     if (!l.equipe) motivos.push("sem equipe"); else if (!eq) motivos.push("equipe não cadastrada: " + l.equipe);
@@ -266,7 +266,7 @@
   if (typeof document !== "undefined") (function () {
     const $ = function (id) { return document.getElementById(id); };
     const banco = supabase.createClient(ENDERECO, CHAVE);
-    const estado = { equipes: [], wosPorChave: {}, jaGravadas: {}, linhas: [], resultados: [], mapaEquipes: {}, aba: "prontas", usuario: "" };
+    const estado = { equipes: [], wosPorChave: {}, jaGravadas: {}, linhas: [], resultados: [], mapaEquipes: {}, nomesEquipe: {}, aba: "prontas", usuario: "" };
 
     function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
     function conferir(r) { if (r.error) throw new Error(r.error.message); return r.data; }
@@ -325,7 +325,7 @@
       const matriz = XLSX.utils.sheet_to_json(aba, { header: 1, raw: true, defval: "" });
       const r = lerPlanilha(matriz);
       if (r.erro) { msg("msgArquivo", r.erro, "erro"); return; }
-      estado.linhas = r.linhas; estado.mapaEquipes = {};
+      estado.linhas = r.linhas; estado.mapaEquipes = {}; estado.nomesEquipe = {};
       msg("msgArquivo", r.linhas.length + " linhas lidas.", "ok");
       processar();
     }
@@ -348,7 +348,7 @@
     }
 
     function desenharEquipes() {
-      const nomes = {};
+      const nomes = estado.nomesEquipe;
       estado.resultados.forEach(function (r) {
         if (r.l.equipe && !r.equipe) nomes[limparTexto(r.l.equipe)] = r.l.equipe;
       });
@@ -356,7 +356,7 @@
       $("caixaEquipes").classList.toggle("oculto", chaves.length === 0);
       $("tabelaEquipes").innerHTML = "<tr><th>Nome na planilha</th><th>Equipe cadastrada</th></tr>" + chaves.map(function (k) {
         return "<tr><td>" + esc(nomes[k]) + '</td><td><select class="mini" data-eq="' + esc(k) + '"><option value="">— reservar —</option>' +
-          estado.equipes.map(function (e) { return '<option value="' + e.id + '"' + (estado.mapaEquipes[k] === e.id ? " selected" : "") + ">" + esc(e.nome) + "</option>"; }).join("") + "</select></td></tr>";
+          estado.equipes.map(function (e) { return '<option value="' + e.id + '"' + (String(estado.mapaEquipes[k]) === String(e.id) ? " selected" : "") + ">" + esc(e.nome) + "</option>"; }).join("") + "</select></td></tr>";
       }).join("");
       $("tabelaEquipes").querySelectorAll("select").forEach(function (s) {
         s.addEventListener("change", function () {
