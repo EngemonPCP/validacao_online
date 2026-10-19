@@ -4,1746 +4,536 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="data:image/png;base64,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">
-  <title>Controle de Preventivas</title>
+  <title>Atualizar base de preventivas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --azul-escuro:#16212e; --azul:#1d4f91; --fundo:#f2f4f7; --borda:#d9dee5; --texto:#1c2733; --suave:#5f6b7a;
-            --verde:#1e6b45; --verde-fundo:#e6f2ec; --laranja:#8f5a0a; --laranja-fundo:#fbf1de;
-            --vermelho:#a6281f; --vermelho-fundo:#fbe9e7; --azul-fundo:#e6eef8; --cinza-fundo:#eceff3;
-            --fonte:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:var(--fonte); font-size:15px; line-height:1.45; background:var(--fundo); color:var(--texto);
-           font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
-    .oculto { display:none !important; }
-
-    /* Menu lateral */
-    .app { display:flex; min-height:100vh; align-items:flex-start; }
-    aside { width:236px; flex:none; position:sticky; top:0; height:100vh; overflow-y:auto; background:var(--azul-escuro); color:#fff;
-            display:flex; flex-direction:column; padding:18px 0; }
-    aside .marca { display:flex; align-items:center; gap:10px; font-weight:600; font-size:16px; letter-spacing:.01em; padding:0 20px 16px; margin-bottom:8px; border-bottom:1px solid #33465c; }
-    nav { display:flex; flex-direction:column; flex:1; }
-    nav button { background:transparent; color:#aab9cb; border:0; border-left:3px solid transparent; text-align:left; width:100%;
-                 padding:11px 20px; font:inherit; font-size:14px; cursor:pointer; }
-    nav button:hover { color:#fff; background:#1d2c3e; }
-    nav button.ativo { color:#fff; font-weight:500; border-left-color:#6aa3e8; background:#1d2c3e; }
-    nav button.grupo { display:flex; justify-content:space-between; align-items:center; }
-    nav button.grupo .seta { font-size:11px; transition:transform .15s; }
-    nav button.grupo[aria-expanded=true] .seta { transform:rotate(180deg); }
-    .submenu button { padding-left:38px; }
-    .usuario { padding:14px 20px 0; border-top:1px solid #33465c; font-size:13px; color:#aab9cb; word-break:break-all; }
-    .usuario button { display:block; background:transparent; border:1px solid #4a5d74; color:#dbe5f1; border-radius:4px; padding:4px 12px; margin-top:8px; font:inherit; font-size:13px; cursor:pointer; }
-    .usuario button:hover { background:#22334a; }
-    .resumo { border:1px solid var(--azul); border-radius:6px; padding:18px; margin-top:20px; background:#fff; }
-    .resumo h2.secao:first-child { margin-top:0; }
-    .resumo-grid { display:grid; grid-template-columns:170px 1fr; gap:6px 14px; margin:0 0 6px; }
-    .resumo-grid dt { color:var(--suave); font-size:13px; padding-top:2px; }
-    .resumo-grid dd { margin:0; }
-    @media (max-width:520px) { .resumo-grid { grid-template-columns:1fr; gap:0 0; } .resumo-grid dd { margin-bottom:8px; } }
-    textarea { resize:vertical; }
-    details.notas { margin-top:10px; border-top:1px solid #e8ecf0; padding-top:8px; }
-    details.notas summary { cursor:pointer; color:var(--azul); font-size:14px; font-weight:500; }
-    details.notas select, details.notas textarea { margin-top:8px; }
-    .grupo-titulo { font-size:13px; font-weight:600; color:var(--suave); margin:14px 0 2px; }
-    @media (max-width:820px) {
-      .app { flex-direction:column; align-items:stretch; }
-      aside { width:auto; height:auto; position:static; padding:10px 0 0; }
-      nav { flex-direction:row; flex-wrap:wrap; }
-      nav button { width:auto; border-left:0; border-bottom:2px solid transparent; padding:10px 14px; }
-      nav button.ativo { border-bottom-color:#6aa3e8; }
-      .submenu { display:flex; width:100%; }
-      .submenu button { padding-left:14px; }
-      .usuario { display:flex; align-items:center; gap:10px; padding:8px 14px; }
-      .usuario button { margin-top:0; }
-      main { margin:0; width:100%; padding:18px 14px 60px; }
-    }
-
-    main { flex:1; min-width:0; max-width:1100px; margin:0 auto; padding:24px 24px 60px; }
-    h1 { font-size:20px; font-weight:600; letter-spacing:-.005em; margin:4px 0 4px; }
-    h2.secao { font-size:15px; font-weight:600; margin:24px 0 10px; }
-    .sub { color:var(--suave); margin:0 0 18px; font-size:14px; }
-
-    /* Superfícies e formulário */
-    .cartao { background:#fff; border:1px solid var(--borda); border-radius:6px; padding:20px; margin-bottom:16px; }
-    label { display:block; font-size:13px; font-weight:500; color:var(--suave); margin:14px 0 4px; }
-    input[type=text], input[type=email], input[type=password], input[type=date], input[type=time], select, textarea {
-      width:100%; font:inherit; padding:9px 11px; border:1px solid #c5ccd6; border-radius:4px; background:#fff; color:var(--texto); }
-    input:focus, select:focus, textarea:focus { outline:2px solid rgba(29,79,145,.30); border-color:var(--azul); }
-    button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
-    button.principal { background:var(--azul); color:#fff; border:0; border-radius:4px; padding:9px 18px; font:inherit; font-weight:500; cursor:pointer; transition:background .15s; }
-    button.principal:hover { background:#173f75; }
-    button.secundario { background:#fff; color:var(--azul); border:1px solid #9db3cf; border-radius:4px; padding:8px 16px; font:inherit; font-weight:500; cursor:pointer; }
-    button.secundario:hover { background:var(--azul-fundo); }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .linha-botoes { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
-    .msg { margin-top:10px; font-size:14px; }
-    .ok { color:var(--verde); } .erro { color:var(--vermelho); } .aviso { color:var(--laranja); }
-    .sugestoes { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-    .sugestoes button { background:#fff; border:1px solid #9db3cf; color:var(--azul); border-radius:4px; padding:5px 12px; font:inherit; font-weight:500; cursor:pointer; }
-    .sugestoes button:hover { background:var(--azul-fundo); }
-
-    /* Etiquetas de situação */
-    .pill { display:inline-block; padding:2px 8px; border-radius:3px; font-size:12px; font-weight:500; white-space:nowrap; box-shadow:inset 0 0 0 1px rgba(0,0,0,.07); }
-    .p-verde { background:var(--verde-fundo); color:var(--verde); }
-    .p-laranja { background:var(--laranja-fundo); color:var(--laranja); }
-    .p-vermelho { background:var(--vermelho-fundo); color:var(--vermelho); }
-    .p-azul { background:var(--azul-fundo); color:#173f75; }
-    .p-cinza { background:var(--cinza-fundo); color:#3a4654; }
-
-    /* Avisos com barra lateral */
-    .faixa-endereco { background:var(--laranja-fundo); color:var(--laranja); border-left:3px solid #c58a1b; border-radius:4px; padding:10px 12px; margin:10px 0 0; font-size:14px; }
-    .faixa-endereco .sigla-linha { margin-top:4px; color:var(--texto); }
-    .faixa { background:var(--azul-fundo); border-left:3px solid var(--azul); border-radius:4px; padding:10px 14px; margin-bottom:14px; font-size:14px; }
-    .faixa.alerta { background:var(--laranja-fundo); color:var(--laranja); border-left-color:#c58a1b; }
-
-    .lista-wo { margin:8px 0 0; }
-    .lista-wo .item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #e8ecf0; flex-wrap:wrap; }
-    .lista-wo .item:last-child { border-bottom:0; }
-    .lista-wo .wo { font-weight:600; }
-    .lista-wo .tipo { color:var(--suave); flex:1; min-width:140px; }
-    .check { display:flex; align-items:center; gap:8px; font-weight:400; color:var(--texto); font-size:15px; margin:14px 0 0; }
-    .check input { width:17px; height:17px; }
-
-    /* Indicadores: uma faixa única, número colorido pela situação */
-    .azulejos { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1px; background:var(--borda);
-                border:1px solid var(--borda); border-radius:6px; overflow:hidden; margin-bottom:18px; }
-    .azulejo { background:#fff; padding:14px 18px; }
-    .azulejo .num { font-size:24px; font-weight:600; line-height:1.2; }
-    .azulejo .rot { color:var(--suave); font-size:13px; margin-top:2px; }
-    .azulejo.a-azul .num { color:var(--azul); } .azulejo.a-laranja .num { color:var(--laranja); }
-    .azulejo.a-verde .num { color:var(--verde); } .azulejo.a-vermelho .num { color:var(--vermelho); }
-
-    /* Cartões das equipes */
-    .grade-cartoes { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
-    .equipe-cartao { background:#fff; border:1px solid var(--borda); border-radius:6px; padding:16px; }
-    .equipe-cartao .topo { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
-    .equipe-cartao .site { font-size:18px; font-weight:600; letter-spacing:.01em; }
-    .equipe-cartao .nome { color:var(--suave); font-size:14px; }
-    .tempos { display:flex; justify-content:space-between; margin:12px 0 6px; font-size:12px; color:var(--suave); }
-    .tempos b { display:block; font-size:15px; font-weight:500; color:var(--texto); }
-    .duracao { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #e8ecf0; border-bottom:1px solid #e8ecf0; font-size:14px; }
-
-    .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#16212e; color:#fff; padding:10px 16px; border-radius:4px; font-size:14px; max-width:90vw; z-index:10; }
-    .toast.erro { background:var(--vermelho); color:#fff; }
-    .login-caixa { max-width:380px; margin:60px auto; }
-    .vazio { color:var(--suave); padding:16px 0; }
-
-    /* Conferência */
-    .barra-filtros { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-    .chips { display:flex; gap:0; flex-wrap:wrap; }
-    .chip { background:#fff; border:1px solid #c5ccd6; margin-left:-1px; padding:6px 14px; font:inherit; font-size:14px; cursor:pointer; color:var(--texto); }
-    .chip:first-child { border-radius:4px 0 0 4px; margin-left:0; } .chip:last-child { border-radius:0 4px 4px 0; }
-    .chip:hover { background:var(--cinza-fundo); }
-    .chip.ativo { background:var(--azul-escuro); color:#fff; border-color:var(--azul-escuro); position:relative; }
-    .periodo { display:flex; align-items:center; gap:8px; }
-    .periodo label { margin:0; }
-    .periodo select { width:auto; padding:6px 10px; }
-    .tabela-rolagem { overflow-x:auto; background:#fff; border:1px solid var(--borda); border-radius:6px; }
-    #tabelaConf, #tabelaEPS { border-collapse:collapse; width:100%; font-size:14px; }
-    #tabelaConf th, #tabelaEPS th { text-align:left; background:#f6f7f9; color:var(--suave); font-size:13px; font-weight:500; padding:10px 12px; border-bottom:1px solid var(--borda); white-space:nowrap; }
-    #tabelaConf td, #tabelaEPS td { padding:10px 12px; border-bottom:1px solid #e8ecf0; vertical-align:top; }
-    #tabelaConf tr:last-child td, #tabelaEPS tr:last-child td { border-bottom:0; }
-    #tabelaConf tr.linha-pendente td:first-child, #tabelaEPS tr.linha-pendente td:first-child { box-shadow:inset 3px 0 0 var(--vermelho); }
-    #tabelaConf .wo, #tabelaEPS .wo { font-weight:600; white-space:nowrap; }
-    .detalhe { display:block; color:var(--suave); font-size:12px; margin-top:3px; }
-  
-    .periodo { flex-wrap:wrap; }
-    .periodo input[type=text] { width:240px; padding:6px 10px; }
-    #tabelaEPS .arquivo { font-size:13px; word-break:break-word; }
-    #tabelaEPS .arquivo + .arquivo { margin-top:8px; }
-    #tabelaEPS td select, #tabelaEPS td input[type=text] { width:auto; max-width:240px; padding:4px 8px; font-size:13px; }
-    #tabelaEPS td .acoes { display:flex; gap:6px; flex-wrap:wrap; }
-    #tabelaEPS .esmaecido { color:var(--suave); }
-    #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #c58a1b; }
+    :root { --fonte:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif; }
+    body { font-family:var(--fonte); font-size:15px; line-height:1.45; max-width:860px; margin:0 auto; padding:24px 16px 60px;
+           background:#f2f4f7; color:#1c2733; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
+    h1 { font-size:20px; font-weight:600; margin:24px 0 4px; }
+    .caixa { border:1px solid #d9dee5; border-radius:6px; padding:20px; margin:16px 0; background:#fff; }
+    .caixa h2 { font-size:15px; font-weight:600; margin:0 0 10px; }
+    input, select, button { font:inherit; padding:8px 11px; margin:4px 4px 4px 0; }
+    input, select { border:1px solid #c5ccd6; border-radius:4px; background:#fff; color:#1c2733; }
+    input:focus, select:focus { outline:2px solid rgba(29,79,145,.30); border-color:#1d4f91; }
+    button { background:#1d4f91; color:#fff; border:0; border-radius:4px; font-weight:500; cursor:pointer; transition:background .15s; }
+    button:hover { background:#173f75; }
+    button:focus-visible { outline:2px solid #1d4f91; outline-offset:2px; }
+    button:disabled { background:#9db3cf; cursor:not-allowed; }
+    table { border-collapse:collapse; width:100%; font-size:14px; margin:8px 0; }
+    th { background:#f6f7f9; color:#5f6b7a; font-weight:500; font-size:13px; }
+    td, th { border-bottom:1px solid #e8ecf0; padding:8px 10px; text-align:left; }
+    .ok { color:#1e6b45; } .erro { color:#a6281f; } .aviso { color:#8f5a0a; }
+    .oculto { display:none; }
+    .pequeno { font-size:13px; color:#5f6b7a; }
   </style>
 </head>
 <body>
+  <h1>Atualizar base de preventivas</h1>
+  <p class="pequeno">Suba o arquivo "Atualização_Preventiva". Só entram as linhas do setor configurado abaixo.</p>
 
-  <div class="app">
-  <aside id="topo" class="oculto">
-    <div class="marca"><svg width="32" height="32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0f2a4a"/><g transform="translate(0,1.5)"><polygon points="6,10 15.5,10 20,23.5 24.5,10 34,10 20,52" fill="#7fb2ee"/><path fill-rule="evenodd" fill="#ffffff" d="M39 22 H50 A8.5 8.5 0 0 1 50 39 H47 V52 H39 Z M47 28.5 H50 A2.5 2.5 0 0 1 50 33.5 H47 Z"/></g></svg><span>Controle de Preventivas</span></div>
-    <nav>
-      <button data-tela="Registrar" data-grupo="" class="ativo">Registrar</button>
-      <button data-tela="Campo" data-grupo="">Equipes em campo</button>
-      <button id="botaoGrupoPreventiva" class="grupo" aria-expanded="false">Preventiva <span class="seta">▾</span></button>
-      <div id="submenuPreventiva" class="submenu oculto">
-        <button data-tela="Conferencia" data-grupo="MOP">MOP</button>
-        <button data-tela="EPS" data-grupo="">EPS</button>
-      </div>
-      <button data-tela="Conferencia" data-grupo="">Conferência</button>
-    </nav>
-    <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
-  </aside>
-
-  <main>
-    <!-- ENTRAR -->
-    <section id="telaLogin" class="login-caixa">
-      <div class="cartao">
-        <h1>Controle de Preventivas</h1>
-        <div id="blocoSessao" class="oculto">
-          <p class="sub">Este navegador já tem uma sessão salva. Confirme para entrar.</p>
-          <dl class="resumo-grid" style="grid-template-columns:80px 1fr"><dt>Usuário</dt><dd id="emailSalvo"></dd></dl>
-          <div class="linha-botoes">
-            <button id="botaoContinuar" class="principal">Entrar com este usuário</button>
-            <button id="botaoOutraConta" class="secundario">Usar outra conta</button>
-          </div>
-        </div>
-        <div id="blocoLoginForm">
-          <p class="sub">Entre com o seu e-mail e senha.</p>
-          <label for="email">E-mail</label>
-          <input id="email" type="email" autocomplete="username">
-          <label for="senha">Senha</label>
-          <input id="senha" type="password" autocomplete="current-password">
-          <div class="linha-botoes"><button id="botaoEntrar" class="principal">Entrar</button></div>
-          <div id="msgLogin" class="msg"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- REGISTRAR -->
-    <section id="telaRegistrar" class="tela oculto">
-      <h1>Registrar deslocamento</h1>
-      <p class="sub">Informe o site que o técnico avisou no grupo. O sistema traz as WOs sozinho.</p>
-      <div class="cartao">
-        <label for="campoSite">Site (pode digitar sem o "SM")</label>
-        <input id="campoSite" type="text" autocomplete="off" placeholder="ex.: moo27">
-        <div id="resultadoSite" class="msg"></div>
-        <div id="sugestoesSite" class="sugestoes"></div>
-
-        <label for="campoEquipe">Equipe</label>
-        <select id="campoEquipe"></select>
-
-        <label for="campoAtividade">Atividade</label>
-        <select id="campoAtividade"></select>
-
-        <div id="blocoDetalhe" class="oculto">
-          <label for="campoDetalhe">Detalhe da atividade (ex.: nº do chamado)</label>
-          <input id="campoDetalhe" type="text">
-        </div>
-
-        <label for="campoData">Data da execução</label>
-        <input id="campoData" type="date">
-
-        <label for="campoSituacaoInicial">Situação da equipe agora</label>
-        <select id="campoSituacaoInicial">
-          <option value="desloc">Em deslocamento</option>
-          <option value="site">Já está no site</option>
-        </select>
-
-        <label for="campoHoraAviso">Horário em que o técnico avisou no grupo (vazio = agora)</label>
-        <input id="campoHoraAviso" type="time">
-
-        <div id="blocoChegada" class="oculto">
-          <label for="campoHoraChegada">Horário em que chegou ao site (vazio = agora)</label>
-          <input id="campoHoraChegada" type="time">
-        </div>
-
-        <label for="campoAlarme">Alarme de porta aberta</label>
-        <select id="campoAlarme"></select>
-        <div class="msg" style="margin-top:4px;color:var(--suave)">Se o site não tem alarme configurado, escolha “Site sem alarme”: assim fica registrado que a falta do alarme não é falha da equipe.</div>
-
-        <label for="campoObservacao">Observações (opcional)</label>
-        <textarea id="campoObservacao" rows="2"></textarea>
-
-        <div id="blocoWOs" class="oculto">
-          <h2 class="secao" id="tituloWOs"></h2>
-          <div id="avisoEndereco"></div>
-          <div id="listaWOs" class="lista-wo"></div>
-          <label class="check"><input id="campoConferi" type="checkbox"> Conferi as WOs com o técnico</label>
-        </div>
-
-        <div class="linha-botoes"><button id="botaoRegistrar" class="principal">Registrar deslocamento</button></div>
-        <div id="msgRegistrar" class="msg"></div>
-        <div id="resumoRegistro" class="resumo oculto"></div>
-      </div>
-    </section>
-
-    <!-- EQUIPES EM CAMPO -->
-    <section id="telaCampo" class="tela oculto">
-      <h1>Equipes em campo</h1>
-      <p class="sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</p>
-      <div class="azulejos" id="azulejos"></div>
-      <div class="grade-cartoes" id="gradeCampo"></div>
-      <h2 class="secao">Saídas a ajustar</h2>
-      <p class="sub">Visitas sem horário de saída (equipe ainda no site às 18h, ou histórico carregado sem saída). Informe a saída real aqui.</p>
-      <div class="grade-cartoes" id="gradeAjustar"></div>
-      <h2 class="secao">Saíram hoje</h2>
-      <div class="grade-cartoes" id="gradeSaidas"></div>
-    </section>
-
-    <!-- EPS: relatorios das terceiras -->
-    <section id="telaEPS" class="tela oculto">
-      <h1>Preventiva EPS: relatórios das terceiras</h1>
-      <p class="sub" id="subEPS">Relatórios que as terceiras colocaram nas pastas do SharePoint, comparados com a base do cliente. O que estiver em “Falta lançar” é trabalho da planejadora no Infratel.</p>
-      <div id="faixaEPS" class="faixa"></div>
-      <div class="azulejos" id="azulejosEPS"></div>
-      <div class="barra-filtros">
-        <div class="chips" id="chipsEPS">
-          <button data-filtro="falta" class="chip ativo">Falta lançar</button>
-          <button data-filtro="aguardando" class="chip">Aguardando relatório</button>
-          <button data-filtro="lancada" class="chip">Lançadas</button>
-          <button data-filtro="revisar" class="chip">Revisar</button>
-          <button data-filtro="todos" class="chip">Todos</button>
-        </div>
-        <div class="periodo">
-          <label for="mesEPS">Mês</label>
-          <select id="mesEPS"></select>
-          <label for="empresaEPS">Empresa</label>
-          <select id="empresaEPS"><option value="">Todas</option></select>
-          <input type="text" id="buscaEPS" placeholder="Buscar site, WO ou arquivo">
-          <button id="botaoAtualizarEPS" class="secundario">Atualizar</button>
-        </div>
-      </div>
-      <div class="tabela-rolagem">
-        <table id="tabelaEPS"></table>
-      </div>
-      <p class="detalhe" id="notaEPS"></p>
-    </section>
-
-    <!-- CONFERENCIA -->
-    <section id="telaConferencia" class="tela oculto">
-      <h1 id="tituloConf">Conferência de relatórios</h1>
-      <p class="sub" id="subConf">Cada WO das equipes que saíram do site é conferida na base do cliente.</p>
-      <div id="faixaBase" class="faixa"></div>
-      <div class="azulejos" id="azulejosConf"></div>
-      <div class="barra-filtros">
-        <div class="chips" id="chipsConf">
-          <button data-filtro="pendentes" class="chip ativo">Pendentes</button>
-          <button data-filtro="diferente" class="chip">Data diferente</button>
-          <button data-filtro="aguardando" class="chip">Aguardando base</button>
-          <button data-filtro="entregues" class="chip">Entregues</button>
-          <button data-filtro="todos" class="chip">Todos</button>
-        </div>
-        <div class="periodo">
-          <label for="periodoConf">Período</label>
-          <select id="periodoConf">
-            <option value="1">Hoje</option>
-            <option value="2">Últimos 2 dias</option>
-            <option value="7" selected>Últimos 7 dias</option>
-            <option value="30">Últimos 30 dias</option>
-          </select>
-          <button id="botaoAtualizarConf" class="secundario">Atualizar</button>
-        </div>
-      </div>
-      <div class="tabela-rolagem">
-        <table id="tabelaConf"></table>
-      </div>
-    </section>
-  </main>
+  <div class="caixa" id="caixaLogin">
+    <h2>1. Entrar</h2>
+    <input id="email" type="email" placeholder="e-mail">
+    <input id="senha" type="password" placeholder="senha">
+    <button id="botaoEntrar">Entrar</button>
+    <div id="msgLogin"></div>
   </div>
 
-  <div id="toast" class="toast oculto"></div>
+  <div class="caixa oculto" id="caixaArquivo">
+    <h2>2. Escolher o arquivo</h2>
+    <div class="pequeno" id="ultimaAtualizacao"></div>
+    <input id="arquivo" type="file" accept=".xlsx,.xlsm">
+    <select id="seletorAba" class="oculto"></select>
+    <div id="msgArquivo"></div>
+  </div>
+
+  <div class="caixa oculto" id="caixaPrevia">
+    <h2>3. Conferir e gravar</h2>
+    <div id="resumo"></div>
+    <table id="tabelaPrevia"></table>
+    <button id="botaoGravar" disabled>Gravar no banco</button>
+    <div id="msgGravar"></div>
+  </div>
+
+  <h1>Cadastro de sites (siglas por endereço)</h1>
+  <p class="pequeno">Suba a lista de sites (uma linha por endereço, com as colunas ID_EBT, ID_CLARO_FIXO, ID_NET, ID_CLARO_OMR e ID_SITE_MAIN). A página separa uma sigla por linha e agrupa pelo ID do endereço.</p>
+
+  <div class="caixa oculto" id="caixaSites">
+    <h2>Lista de sites</h2>
+    <div class="pequeno" id="ultimaSites"></div>
+    <input id="arquivoSites" type="file" accept=".xlsx,.xlsm">
+    <div id="msgSites"></div>
+    <div id="resumoSites"></div>
+    <table id="tabelaSites"></table>
+    <button id="botaoGravarSites" disabled>Gravar cadastro de sites</button>
+    <div id="msgGravarSites"></div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
-  // ===========================================================================
-  // 1) CONFIGURACAO
-  // ===========================================================================
-  const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
-  const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
+    // ==== CONFIGURACAO (pode ser editada) =======================================
+    const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
+    const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
 
-  // ===========================================================================
-  // 2) REGRAS DE NEGOCIO  (esta parte é sua: pode editar os valores)
-  // ===========================================================================
-  const REGRAS = {
-    prefixoSite: "SM",                 // prefixo padrão dos sites
-    horasLongaPermanencia: 3,          // alerta de "longa permanência" no site
-    atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva", "Outra"],
-    atividadesComPreventiva: ["Preventiva", "Preventiva + Corretiva"],
-    situacaoDeslocamento: "Em Deslocamento",
-    situacaoNoSite: "No Site",
-    situacaoSaiu: "Saiu do Site",
-    situacaoCancelado: "Cancelado",
+    // Setor que entra no sistema (coluna "Equipe Responsável - Engemon").
+    // Maiúscula e acento não importam.
+    const EQUIPE_ENGEMON_ATIVA = "MÓVEL";
 
-    // --- Alarme de porta aberta (confirma a chegada do técnico) ---
-    alarmes: ["Não verificado", "Externou", "Não externou", "Site sem alarme"],
+    // Nome de cada coluna na planilha (já sem acento, em minúsculas).
+    const COLUNAS = {
+      wo:                "wo",
+      site:              "clr_sdr_site/helix",
+      siteInfratel:      "programado/infratel",
+      tipo:              "tipo de preventiva",
+      equipeResponsavel: "equipe responavel",
+      equipeEngemon:     "equipe responsavel - engemon",
+      expurgo:           "expurgo situacao",
+      statusFinal:       "status compilado - final",
+      dataFim:           "data fim - consolidado"
+    };
+    // Sem estas colunas a base não pode ser lida.
+    const COLUNAS_OBRIGATORIAS = ["wo", "site", "equipeEngemon", "statusFinal", "dataFim"];
 
-    // --- Conferência ---
-    carenciaMinutos: { MOP: 120, EPS: 120 },   // tempo após a saída antes de cobrar o relatório (por grupo)
+    // ==== FUNCOES PURAS (so calculam, nao mexem na tela) ========================
 
-    // --- Grupos de preventiva ---
-    // Tipo de preventiva que contém uma destas palavras (sem acento) é MOP; todo o resto é EPS.
-    palavrasMOP: ["energia", "climatiza"],
-    horasBaseDesatualizada: 4,         // avisa quando a base está mais velha que isso
-
-    // --- Painel EPS (relatórios que as terceiras colocam no SharePoint) ---
-    eps: {
-      // Subpastas que NÃO são preventiva (sem acento, minúsculas): os arquivos delas são ignorados.
-      ignorarSubpastas: ["corretiv", "servic"],
-      diasAlerta: 2,            // relatório entregue e ainda não lançado há mais que isso fica em destaque
-      diasHistorico: 150,       // quantos dias de arquivos o painel carrega
-      horasColetaDesatualizada: 3,   // avisa quando o robô de coleta não roda há mais que isso
-      // Pasta da terceira -> palavras do TIPO da WO na base (sem acento, minúsculas).
-      // Só serve para escolher a WO certa quando o site tem mais de uma WO EPS. Ajuste conforme os tipos da sua base.
-      pastas: [
-        { pasta: "ENERG - GERADORES",            palavras: ["gerador", "gmg"] },
-        { pasta: "ENGEMON - SDAI",               palavras: ["sdai", "incendio"] },
-        { pasta: "ENGEMON - TERMOGRAFIA & SPDA", palavras: ["termograf", "spda"] },
-        { pasta: "FCS SERVIÇOS - ZELADORIA",     palavras: ["zelador", "limpeza"] },
-        { pasta: "PISTEKER - SPDA",              palavras: ["spda", "termograf", "cabine", "manuten"] }
-      ],
-      // Código no NOME do arquivo -> palavras do tipo da WO. Quando o site tem mais de uma WO EPS,
-      // o código escolhe a certa (ex.: RT-ENGEMON-SPOIG-MANU-2026.pdf é a manutenção da cabine primária).
-      servicosNoNome: [
-        { codigos: ["TERM", "TERMO", "THERMO", "TRMGRF"], palavras: ["termograf"] },
-        { codigos: ["MANU"],                              palavras: ["cabine", "manuten"] },
-        { codigos: ["SPDA"],                              palavras: ["spda", "para-raio", "para raio"] }
-      ]
+    // Tira acento, deixa minúsculo e remove espaços repetidos.
+    function limpar(texto) {
+      return String(texto == null ? "" : texto)
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .toLowerCase().replace(/\s+/g, " ").trim();
     }
-  };
 
-  // Deixa só letras e números, em maiúsculas: "grs riv", "GRS-RIV" e "grs.riv" viram "GRSRIV".
-  // IMPORTANTE: a base.html usa a mesma regra (chaveDeSigla). Se mudar aqui, mude lá.
-  function limparSite(texto) {
-    return String(texto == null ? "" : texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .toUpperCase().replace(/[^A-Z0-9]/g, "");
-  }
-
-  // Separa as preventivas em dois grupos pelo tipo da WO: "MOP" (energia e climatização) ou "EPS" (o resto).
-  function grupoDaPreventiva(tipo) {
-    const t = String(tipo == null ? "" : tipo).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    return REGRAS.palavrasMOP.some(function (p) { return t.indexOf(p) >= 0; }) ? "MOP" : "EPS";
-  }
-  function carenciaDoGrupo(grupo) { return REGRAS.carenciaMinutos[grupo] || 120; }
-
-  // Procura o site digitado na lista. Nunca escolhe sozinho quando há dúvida.
-  //   unico     -> achou exatamente um site
-  //   sugestoes -> achou parecidos; a pessoa escolhe
-  //   nenhum    -> nada encontrado
-  function acharSite(digitado, sites) {
-    const t = limparSite(digitado);
-    if (t.length < 2) return { tipo: "nenhum", sites: [] };
-    const comPrefixo = REGRAS.prefixoSite + t;
-    // 1) O que foi digitado é igual a um site: vale esse (FAV01 é FAV01, nunca SMFAV01).
-    const exatos = sites.filter(function (s) { return s.busca === t || s.helix === t; });
-    // O mesmo código com o prefixo (SMFAV01) é outro site: só serve de aviso ou de sugestão.
-    const comSM = sites.filter(function (s) { return s.busca === comPrefixo && exatos.indexOf(s) < 0; });
-    if (exatos.length === 1) return { tipo: "unico", sites: exatos, tambem: comSM };
-    if (exatos.length > 1) return { tipo: "sugestoes", sites: exatos.slice(0, 10) };
-    // 2) Não achou igual, mas existe com o prefixo: pergunta, não escolhe sozinho.
-    if (comSM.length > 0) return { tipo: "sugestoes", sites: comSM.slice(0, 10), pergunta: "Não achei " + t + ". Você quis dizer:" };
-    const parecidos = sites.filter(function (s) {
-      return s.busca.includes(t) || s.helix.includes(t);
-    });
-    return { tipo: parecidos.length ? "sugestoes" : "nenhum", sites: parecidos.slice(0, 10) };
-  }
-
-  function atividadeTemPreventiva(atividade) {
-    return REGRAS.atividadesComPreventiva.includes(atividade);
-  }
-
-  // Minutos -> "1 h 42 min"
-  function formatarDuracao(minutos) {
-    const m = Math.max(0, Math.round(minutos));
-    const h = Math.floor(m / 60);
-    return h > 0 ? h + " h " + String(m % 60).padStart(2, "0") + " min" : m + " min";
-  }
-
-  // Cor e texto do status da WO na base do cliente
-  function descreverStatusBase(linhaBase) {
-    if (!linhaBase) return { texto: "WO não encontrada", classe: "p-vermelho" };
-    const s = String(linhaBase.status_final || "").trim().toLowerCase();
-    if (s === "executada") return { texto: "Executada", classe: "p-verde" };
-    if (s === "aberta") return { texto: "Aberta", classe: "p-laranja" };
-    if (s === "pendente") return { texto: "Pendente", classe: "p-cinza" };
-    return { texto: linhaBase.status_final || "Sem status", classe: "p-cinza" };
-  }
-
-  // ---------------------------------------------------------------------------
-  // REGRA PRINCIPAL DA CONFERÊNCIA: decide o resultado de cada WO depois da saída.
-  //   woVisita         -> a WO conferida na visita
-  //   visita           -> a visita (tem data_execucao e hora_saida)
-  //   linhaBase        -> a linha dessa WO na base do cliente (ou undefined)
-  //   baseAtualizadaEm -> quando a base foi gravada pela última vez
-  //   agora            -> hora atual em milissegundos
-  // Devolve: { codigo, texto, classe, grupo }
-  //   grupo = pendente | diferente | aguardando | entregue
-  // ---------------------------------------------------------------------------
-  function avaliarWO(woVisita, visita, linhaBase, baseAtualizadaEm, agora) {
-    // 1) A WO nem está na base
-    if (!linhaBase) {
-      return { codigo: "sem_wo", texto: "WO não encontrada na base", classe: "p-vermelho", grupo: "pendente" };
-    }
-    const status = String(linhaBase.status_final || "").trim().toLowerCase();
-
-    // 2) Executada: confere se o relatório foi entregue no dia da execução
-    if (status === "executada") {
-      if (!linhaBase.data_fim) {
-        return { codigo: "executada_sem_data", texto: "Executada, sem data de relatório", classe: "p-laranja", grupo: "pendente" };
+    // Transforma o que veio da célula em "AAAA-MM-DD" (ou null se não for data).
+    function converterData(valor) {
+      if (valor === null || valor === undefined || valor === "") return null;
+      let data = null;
+      if (valor instanceof Date) {
+        // +12h evita que um fuso horário empurre a data para o dia anterior
+        data = new Date(valor.getTime() + 12 * 3600 * 1000);
+        return formatar(data.getFullYear(), data.getMonth() + 1, data.getDate());
       }
-      if (linhaBase.data_fim === visita.data_execucao) {
-        return { codigo: "entregue_dia", texto: "Entregue no dia", classe: "p-verde", grupo: "entregue" };
+      if (typeof valor === "number") {
+        // número de série do Excel
+        data = new Date(Math.round((valor - 25569) * 86400 * 1000));
+        return formatar(data.getUTCFullYear(), data.getUTCMonth() + 1, data.getUTCDate());
       }
-      return { codigo: "data_diferente", texto: "Entregue em data diferente", classe: "p-laranja", grupo: "diferente" };
+      const texto = String(valor).trim();
+      const br = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (br) return formatar(Number(br[3]), Number(br[2]), Number(br[1]));
+      const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return formatar(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+      return null;
     }
 
-    // 3) Ainda não executada na base: pode ser só demora de atualização?
-    const saida = new Date(visita.hora_saida).getTime();
-    const baseVelha = !baseAtualizadaEm || new Date(baseAtualizadaEm).getTime() < saida;
-    const dentroDaCarencia = (agora - saida) / 60000 < carenciaDoGrupo(grupoDaPreventiva(woVisita.tipo || (linhaBase && linhaBase.tipo)));
-    if (baseVelha || dentroDaCarencia) {
-      return { codigo: "aguardando", texto: "Aguardando base", classe: "p-azul", grupo: "aguardando" };
+    function formatar(ano, mes, dia) {
+      return ano + "-" + String(mes).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
     }
 
-    // 4) Passou a carência e a base já foi atualizada depois da saída
-    if (status === "aberta") {
-      return { codigo: "aberta", texto: "Aberta: iniciada e não finalizada", classe: "p-laranja", grupo: "pendente" };
-    }
-    return { codigo: "pendente", texto: "Pendente: risco de recusa", classe: "p-vermelho", grupo: "pendente" };
-  }
-
-  // ===========================================================================
-  // 3) DADOS (tudo que fala com o banco fica aqui)
-  // ===========================================================================
-  const banco = supabase.createClient(ENDERECO, CHAVE);
-
-  function conferir(resposta) {
-    if (resposta.error) throw new Error(resposta.error.message);
-    return resposta.data;
-  }
-
-  async function carregarBase() {           // o banco devolve no máximo 1000 por vez
-    const todas = [];
-    const passo = 1000;
-    for (let de = 0; ; de += passo) {
-      const dados = conferir(await banco.from("base_preventiva")
-        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em")
-        .order("wo").range(de, de + passo - 1));
-      for (const linha of dados) todas.push(linha);
-      if (dados.length < passo) break;
-    }
-    return todas;
-  }
-
-  // Cadastro de sites (uma sigla por linha; siglas com o mesmo id_endereco estão no mesmo endereço).
-  async function carregarCadastroSites() {
-    const todas = [];
-    const passo = 1000;
-    for (let de = 0; ; de += passo) {
-      const dados = conferir(await banco.from("sites")
-        .select("chave_busca,chave,id_endereco,origem_id").order("chave_busca").range(de, de + passo - 1));
-      for (const linha of dados) todas.push(linha);
-      if (dados.length < passo) break;
-    }
-    return todas;
-  }
-
-
-  // Relatórios que o robô de coleta registrou a partir das pastas do SharePoint.
-  async function carregarRelatorios() {
-    const desde = new Date(Date.now() - REGRAS.eps.diasHistorico * 86400000).toISOString();
-    const todas = [];
-    const passo = 1000;
-    for (let de = 0; ; de += passo) {
-      const dados = conferir(await banco.from("relatorios_drive")
-        .select("caminho,pasta_raiz,subpasta,nome_arquivo,data_arquivo,visto_em,wo,vinculado_por")
-        .gte("data_arquivo", desde).order("caminho").range(de, de + passo - 1));
-      for (const linha of dados) todas.push(linha);
-      if (dados.length < passo) break;
-    }
-    return todas;
-  }
-
-  // Liga um relatório a uma WO (wo = "IGNORAR" tira o arquivo do painel).
-  async function vincularRelatorio(caminho, wo, quem) {
-    conferir(await banco.from("relatorios_drive")
-      .update({ wo: wo, vinculado_por: quem, vinculado_em: new Date().toISOString() }).eq("caminho", caminho));
-  }
-
-  async function carregarEquipes() {
-    return conferir(await banco.from("equipes_lista")
-      .select("id,nome,tipo").eq("ativa", true).order("nome"));
-  }
-
-  async function carregarEmCampo() {
-    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
-      .in("situacao", [REGRAS.situacaoDeslocamento, REGRAS.situacaoNoSite]).order("hora_aviso"));
-  }
-
-  async function carregarSaidasDeHoje() {
-    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
-      .eq("situacao", REGRAS.situacaoSaiu).gte("hora_saida", inicioDoDia()).order("hora_saida", { ascending: false }));
-  }
-
-  // Visitas que "saíram", mas sem horário de saída (a validadora informa depois).
-  async function carregarSaidasPendentes() {
-    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
-      .eq("situacao", REGRAS.situacaoSaiu).is("hora_saida", null).order("hora_entrada", { ascending: false }).limit(300));
-  }
-
-  async function criarVisita(visita, wos) {
-    const criada = conferir(await banco.from("visitas").insert(visita).select().single());
-    if (wos.length > 0) {
-      const linhas = wos.map(function (w) { return { visita_id: criada.id, wo: w.wo, tipo: w.tipo }; });
-      conferir(await banco.from("wos_visita").insert(linhas));
-    }
-    return criada;
-  }
-
-  async function atualizarVisita(id, campos) {
-    conferir(await banco.from("visitas").update(campos).eq("id", id));
-  }
-
-  async function carregarParaConferencia(desdeIso) {
-    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
-      .eq("situacao", REGRAS.situacaoSaiu).in("atividade", REGRAS.atividadesComPreventiva)
-      .gte("hora_saida", desdeIso).order("hora_saida", { ascending: false }));
-  }
-
-  async function marcarCobrado(idWoVisita, quem) {
-    conferir(await banco.from("wos_visita")
-      .update({ cobrado: true, cobrado_por: quem, cobrado_em: new Date().toISOString() }).eq("id", idWoVisita));
-  }
-
-  // ===========================================================================
-  // 4) TELAS
-  // ===========================================================================
-  const $ = function (id) { return document.getElementById(id); };
-  const estado = { base: [], sites: [], porWO: {}, equipes: [], siteEscolhido: null, emCampo: [], pollId: null,
-                   usuarioEmail: "", filtroConf: "pendentes", linhasConf: [], grupoAtual: "",
-                   filtroEPS: "falta", mesEPS: "", relatoriosEPS: [] };
-
-  function esc(texto) {
-    return String(texto == null ? "" : texto).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-  function pill(texto, classe) { return '<span class="pill ' + classe + '">' + esc(texto) + "</span>"; }
-
-  function hoje() {
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  }
-  function inicioDoDia() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); }
-  function horaCurta(iso) {
-    return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—";
-  }
-  function minutosDesde(iso) { return (Date.now() - new Date(iso).getTime()) / 60000; }
-
-  let temporizadorToast = null;
-  function mostrarAviso(texto, tipo) {
-    const t = $("toast");
-    t.textContent = texto;
-    t.className = "toast" + (tipo === "erro" ? " erro" : "");
-    clearTimeout(temporizadorToast);
-    temporizadorToast = setTimeout(function () { t.classList.add("oculto"); }, 5000);
-  }
-
-  // ---- entrar / sair -------------------------------------------------------
-  $("botaoEntrar").addEventListener("click", async function () {
-    $("msgLogin").textContent = "Entrando...";
-    const r = await banco.auth.signInWithPassword({ email: $("email").value.trim(), password: $("senha").value });
-    if (r.error) { $("msgLogin").innerHTML = '<span class="erro">' + esc(r.error.message) + "</span>"; return; }
-    $("msgLogin").textContent = "";
-    iniciarSistema(r.data.user);
-  });
-  $("senha").addEventListener("keydown", function (e) { if (e.key === "Enter") $("botaoEntrar").click(); });
-
-  $("botaoSair").addEventListener("click", async function () {
-    await banco.auth.signOut();
-    clearInterval(estado.pollId);
-    $("topo").classList.add("oculto");
-    document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
-    $("blocoSessao").classList.add("oculto");
-    $("blocoLoginForm").classList.remove("oculto");
-    $("telaLogin").classList.remove("oculto");
-  });
-
-  async function iniciarSistema(usuario) {
-    estado.usuarioEmail = usuario.email;
-    $("nomeUsuario").textContent = usuario.email;
-    $("telaLogin").classList.add("oculto");
-    $("topo").classList.remove("oculto");
-    try {
-      const resultados = await Promise.all([carregarBase(), carregarEquipes()]);
-      estado.base = resultados[0];
-      estado.equipes = resultados[1];
-    } catch (e) {
-      mostrarAviso("Não consegui carregar os dados: " + e.message, "erro");
-      return;
-    }
-    // O cadastro de endereços é um complemento: se faltar, o sistema funciona sem os avisos.
-    try {
-      estado.cadastroSites = await carregarCadastroSites();
-    } catch (e) {
-      estado.cadastroSites = [];
-      mostrarAviso("Não consegui carregar o cadastro de endereços: " + e.message, "erro");
-    }
-    prepararBase();
-    prepararCadastro();
-    prepararFormulario();
-    irParaTela("Registrar");
-  }
-
-  // Monta: sigla -> endereço, e endereço -> siglas.
-  function prepararCadastro() {
-    estado.enderecoPorSigla = {};          // sigla -> lista de ids (uma sigla pode estar em mais de um endereço)
-    estado.siglasPorEndereco = {};
-    (estado.cadastroSites || []).forEach(function (s) {
-      (estado.enderecoPorSigla[s.chave_busca] = estado.enderecoPorSigla[s.chave_busca] || []).push(s.id_endereco);
-      (estado.siglasPorEndereco[s.id_endereco] = estado.siglasPorEndereco[s.id_endereco] || []).push(s);
-    });
-  }
-
-  // Outras siglas que dividem o endereço com este site, com as WOs de cada uma na base.
-  function outrasSiglasDoEndereco(chaveBusca) {
-    const ids = estado.enderecoPorSigla[chaveBusca];
-    if (!ids) return [];
-    const vistas = {};
-    const irmas = [];
-    ids.forEach(function (id) {
-      estado.siglasPorEndereco[id].forEach(function (s) {
-        if (s.chave_busca !== chaveBusca && !vistas[s.chave_busca]) { vistas[s.chave_busca] = true; irmas.push(s); }
-      });
-    });
-    return irmas.map(function (s) {
-      const wos = (estado.wosPorChave[s.chave_busca] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
-      const pendentes = wos.filter(function (l) { return String(l.status_final || "").trim().toLowerCase() !== "executada"; });
-      return { sigla: s.chave, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
-               total: wos.length, pendentes: pendentes.map(function (l) { return l.wo; }) };
-    });
-  }
-
-  // Faixa de aviso "este endereço tem outras siglas" (vazia se o endereço tem só uma).
-  function htmlOutrasSiglas(chaveBusca) {
-    const outras = outrasSiglasDoEndereco(chaveBusca);
-    if (outras.length === 0) return "";
-    return '<div class="faixa-endereco"><b>Mesmo endereço: mais ' + outras.length + (outras.length === 1 ? " sigla" : " siglas") + "</b>" +
-      outras.map(function (s) {
-        const situacao = s.total === 0 ? "sem WO MOP na base"
-          : s.total + (s.total === 1 ? " WO MOP" : " WOs MOP") + " na base, " +
-            (s.pendentes.length === 0 ? "todas executadas" : s.pendentes.length + " pendente(s)");
-        return '<div class="sigla-linha"><b>' + esc(s.sigla) + "</b> (" + esc(s.origem) + ") · " + situacao + "</div>";
-      }).join("") + "</div>";
-  }
-
-  function prepararBase() {
-    const mapaSites = {};
-    estado.porWO = {};
-    estado.wosPorChave = {};                  // sigla (normalizada) -> WOs dela
-    estado.base.forEach(function (l) {
-      estado.porWO[l.wo] = l;
-      [limparSite(l.programado_infratel), limparSite(l.clr_sdr_site_helix)].forEach(function (k, i, lista) {
-        if (k && lista.indexOf(k) === i) (estado.wosPorChave[k] = estado.wosPorChave[k] || []).push(l);
-      });
-      // O site do sistema é a coluna Programado/INFRATEL (se vier vazia, usa o CLR_SDR_SITE/HELIX).
-      const nome = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim();
-      l.chaveSite = limparSite(nome);
-      if (!mapaSites[l.chaveSite]) {
-        mapaSites[l.chaveSite] = { site: nome, busca: l.chaveSite, helix: limparSite(l.clr_sdr_site_helix) };
+    // Procura a linha do cabeçalho (a que tem "WO" e "Status Compilado - Final").
+    function acharCabecalho(matriz) {
+      for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+        const nomes = matriz[i].map(limpar);
+        if (nomes.includes(COLUNAS.wo) && nomes.includes(COLUNAS.statusFinal)) return i;
       }
-    });
-    estado.sites = Object.keys(mapaSites).map(function (k) { return mapaSites[k]; });
-  }
-
-  // ---- navegação ------------------------------------------------------------
-  document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-    b.addEventListener("click", function () { irParaTela(b.dataset.tela, b.dataset.grupo || ""); });
-  });
-
-  function definirSubmenu(aberto) {
-    $("botaoGrupoPreventiva").setAttribute("aria-expanded", aberto ? "true" : "false");
-    $("submenuPreventiva").classList.toggle("oculto", !aberto);
-  }
-  $("botaoGrupoPreventiva").addEventListener("click", function () {
-    definirSubmenu($("botaoGrupoPreventiva").getAttribute("aria-expanded") !== "true");
-  });
-
-  // grupo: "MOP", "EPS" ou "" (todos). Só a Conferência usa o grupo.
-  function irParaTela(nome, grupo) {
-    grupo = grupo || "";
-    estado.grupoAtual = grupo;
-    document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-      b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo);
-    });
-    if ((nome === "Conferencia" && grupo) || nome === "EPS") definirSubmenu(true);
-    document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
-    $("tela" + nome).classList.remove("oculto");
-    clearInterval(estado.pollId);
-    if (nome === "Campo") {
-      atualizarCampo();
-      estado.pollId = setInterval(atualizarCampo, 30000);
-    }
-    if (nome === "Conferencia") {
-      atualizarConferencia();
-      estado.pollId = setInterval(atualizarConferencia, 120000);
-    }
-    if (nome === "EPS") {
-      atualizarEPS();
-      estado.pollId = setInterval(atualizarEPS, 300000);
-    }
-  }
-
-  // ---- tela CONFERENCIA -----------------------------------------------------
-  function formatarDataCurta(aaaaMmDd) {
-    if (!aaaaMmDd) return "—";
-    const p = String(aaaaMmDd).split("-");
-    return p[2] + "/" + p[1];
-  }
-  function formatarDataHora(iso) {
-    return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-  }
-
-  async function atualizarConferencia() {
-    try {
-      const dias = Number($("periodoConf").value);
-      const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
-      const resultados = await Promise.all([carregarBase(), carregarParaConferencia(inicio.toISOString())]);
-      estado.base = resultados[0];
-      prepararBase();
-      montarLinhasConferencia(resultados[1]);
-      desenharConferencia();
-    } catch (e) {
-      mostrarAviso("Não consegui atualizar a conferência: " + e.message, "erro");
-    }
-  }
-
-  function montarLinhasConferencia(visitas) {
-    let baseAtualizadaEm = null;
-    estado.base.forEach(function (l) {
-      if (l.atualizado_em && (!baseAtualizadaEm || l.atualizado_em > baseAtualizadaEm)) baseAtualizadaEm = l.atualizado_em;
-    });
-    estado.baseAtualizadaEm = baseAtualizadaEm;
-    const agora = Date.now();
-    const linhas = [];
-    visitas.forEach(function (v) {
-      (v.wos_visita || []).forEach(function (w) {
-        linhas.push({ visita: v, wo: w, base: estado.porWO[w.wo],
-                      resultado: avaliarWO(w, v, estado.porWO[w.wo], baseAtualizadaEm, agora) });
-      });
-    });
-    const ordem = { pendente: 0, diferente: 1, aguardando: 2, entregue: 3 };
-    linhas.sort(function (a, b) {
-      const d = ordem[a.resultado.grupo] - ordem[b.resultado.grupo];
-      return d !== 0 ? d : (a.visita.hora_saida < b.visita.hora_saida ? 1 : -1);
-    });
-    estado.linhasConf = linhas;
-  }
-
-  function textoCarencia() {
-    const g = estado.grupoAtual;
-    if (g) return (carenciaDoGrupo(g) / 60) + " h";
-    return carenciaDoGrupo("MOP") === carenciaDoGrupo("EPS") ? (carenciaDoGrupo("MOP") / 60) + " h" : "o prazo de carência de cada grupo";
-  }
-
-  function desenharConferencia() {
-    const grupo = estado.grupoAtual;
-    $("tituloConf").textContent = grupo ? "Preventiva " + grupo + ": conferência de relatórios" : "Conferência de relatórios";
-    $("subConf").textContent = grupo === "MOP" ? "Preventivas de energia e climatização, conferidas na base do cliente."
-      : grupo === "EPS" ? "Demais tipos de preventiva (gerador e outros), conferidos na base do cliente."
-      : "Cada WO das equipes que saíram do site é conferida na base do cliente (MOP e EPS juntos).";
-    const linhas = estado.linhasConf.filter(function (l) {
-      return !grupo || grupoDaPreventiva(l.wo.tipo || (l.base && l.base.tipo)) === grupo;
-    });
-    const contar = function (grupo) { return linhas.filter(function (l) { return l.resultado.grupo === grupo; }).length; };
-    const cobradas = linhas.filter(function (l) { return l.resultado.grupo === "pendente" && l.wo.cobrado; }).length;
-
-    // faixa com a hora da última atualização da base
-    const faixa = $("faixaBase");
-    if (estado.baseAtualizadaEm) {
-      const horas = minutosDesde(estado.baseAtualizadaEm) / 60;
-      const velha = horas > REGRAS.horasBaseDesatualizada;
-      faixa.className = "faixa" + (velha ? " alerta" : "");
-      faixa.innerHTML = "Base atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>." +
-        (velha ? " <b>Atenção: a base está desatualizada há " + formatarDuracao(horas * 60) + ".</b>" : "") +
-        " Saídas com menos de " + textoCarencia() + ", ou feitas depois da última atualização, aparecem como “Aguardando base”.";
-    } else {
-      faixa.className = "faixa alerta";
-      faixa.textContent = "A base está vazia. Suba a planilha na tela de atualizar a base.";
+      return -1;
     }
 
-    $("azulejosConf").innerHTML =
-      azulejo(contar("pendente"), "Pendentes · risco de recusa" + (cobradas ? " (" + cobradas + " já cobradas)" : ""), "a-vermelho") +
-      azulejo(contar("diferente"), "Entregue em data diferente", "a-laranja") +
-      azulejo(contar("aguardando"), "Aguardando base", "a-azul") +
-      azulejo(contar("entregue"), "Entregues no dia", "a-verde");
+    // Lê a matriz da planilha e devolve as linhas prontas para gravar.
+    function montarLinhas(matriz) {
+      const resultado = { linhas: [], total: 0, foraDoSetor: 0, semWO: 0, duplicadas: 0, erro: null, faltando: [] };
 
-    const filtro = estado.filtroConf;
-    const visiveis = linhas.filter(function (l) {
-      return filtro === "todos" || (filtro === "pendentes" && l.resultado.grupo === "pendente") ||
-        (filtro === "diferente" && l.resultado.grupo === "diferente") ||
-        (filtro === "aguardando" && l.resultado.grupo === "aguardando") ||
-        (filtro === "entregues" && l.resultado.grupo === "entregue");
-    });
-
-    if (visiveis.length === 0) {
-      $("tabelaConf").innerHTML = '<tr><td class="vazio">Nada para mostrar neste filtro.</td></tr>';
-      return;
-    }
-    $("tabelaConf").innerHTML =
-      "<tr><th>Site</th><th>Equipe</th><th>Saída</th><th>WO</th><th>Tipo</th><th>Resultado</th><th>Relatório</th><th>Alarme</th><th></th></tr>" +
-      visiveis.map(function (l) {
-        const r = l.resultado;
-        const relatorio = !l.base ? "sem WO na base"
-          : (l.base.data_fim ? formatarDataCurta(l.base.data_fim) + (r.grupo === "diferente" ? " · execução " + formatarDataCurta(l.visita.data_execucao) : "")
-                             : "não consta");
-        const cobrado = l.wo.cobrado
-          ? '<span class="detalhe">Cobrado por ' + esc(l.wo.cobrado_por) + " às " + horaCurta(l.wo.cobrado_em) + "</span>" : "";
-        const acao = (r.grupo === "pendente" && !l.wo.cobrado)
-          ? '<button class="secundario" data-acao="cobrar" data-id="' + esc(l.wo.id) + '">Marcar cobrado</button>' : "";
-        return '<tr class="' + (r.grupo === "pendente" ? "linha-pendente" : "") + '"><td><b>' + esc(l.visita.site) + "</b></td><td>" +
-          esc(l.visita.equipe) + "</td><td>" + formatarDataHora(l.visita.hora_saida) + '</td><td class="wo">' + esc(l.wo.wo) +
-          "</td><td>" + esc(l.wo.tipo || "") + "</td><td>" + pill(r.texto, r.classe) + cobrado + "</td><td>" + esc(relatorio) +
-          "</td><td>" + pillAlarme(l.visita.alarme_porta) +
-          (l.visita.observacao ? '<span class="detalhe">' + esc(l.visita.observacao) + "</span>" : "") + "</td><td>" + acao + "</td></tr>";
-      }).join("");
-  }
-
-  $("chipsConf").addEventListener("click", function (e) {
-    const botao = e.target.closest("button[data-filtro]");
-    if (!botao) return;
-    estado.filtroConf = botao.dataset.filtro;
-    document.querySelectorAll("#chipsConf .chip").forEach(function (c) { c.classList.toggle("ativo", c === botao); });
-    desenharConferencia();
-  });
-  $("periodoConf").addEventListener("change", atualizarConferencia);
-  $("botaoAtualizarConf").addEventListener("click", atualizarConferencia);
-
-  $("tabelaConf").addEventListener("click", async function (e) {
-    const botao = e.target.closest("button[data-acao=cobrar]");
-    if (!botao) return;
-    botao.disabled = true;
-    try {
-      await marcarCobrado(botao.dataset.id, estado.usuarioEmail);
-      mostrarAviso("Marcado como cobrado.");
-      atualizarConferencia();
-    } catch (err) {
-      botao.disabled = false;
-      mostrarAviso("Erro ao gravar: " + err.message, "erro");
-    }
-  });
-
-
-  // ---- tela EPS -------------------------------------------------------------
-  // Fluxo: a terceira coloca o relatório na pasta -> o robô registra -> aqui ele aparece ligado à WO do site.
-  //   Aguardando relatório = WO EPS aberta na base e nenhum relatório do mês na pasta
-  //   Falta lançar         = WO aberta na base, mas o relatório já está na pasta (trabalho da planejadora)
-  //   Lançada              = a base já mostra a WO como executada
-  //   Revisar              = relatório que o sistema não conseguiu ligar a uma WO com segurança
-  const MESES = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-  function semAcento(t) { return String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, ""); }
-  function doisDigitos(n) { return String(n).padStart(2, "0"); }
-
-  // Mês do serviço = mês escrito na pasta ("10 - Outubro", "AGOSTO - 2026"); se não houver, o mês da data do arquivo.
-  // Ano: o que estiver na pasta; senão o ano da data do arquivo (menos 1 se o mês da pasta for depois do mês do arquivo).
-  function competenciaDoRelatorio(r) {
-    const caminho = semAcento(r.subpasta).toLowerCase();
-    const data = r.data_arquivo ? new Date(r.data_arquivo) : new Date();
-    let mes = 0;
-    for (let i = 0; i < 12; i++) {
-      if (new RegExp("(^|[^a-z])" + MESES[i] + "([^a-z]|$)").test(caminho)) { mes = i + 1; break; }
-    }
-    if (!mes) return data.getFullYear() + "-" + doisDigitos(data.getMonth() + 1);
-    const ano = caminho.match(/(^|[^0-9])(20[0-9][0-9])([^0-9]|$)/);
-    let anoFinal = ano ? Number(ano[2]) : data.getFullYear();
-    if (!ano && mes > data.getMonth() + 1) anoFinal -= 1;
-    return anoFinal + "-" + doisDigitos(mes);
-  }
-
-  // Possíveis siglas de site dentro de um texto: cada pedaço, e dois ou três pedaços colados
-  // ("THERMO - SMMOO - 93" -> SMMOO93).
-  function candidatasDeSite(texto) {
-    const t = semAcento(texto).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
-    const lista = [];
-    for (let i = 0; i < t.length; i++) {
-      lista.push(t[i]);
-      if (i + 1 < t.length) lista.push(t[i] + t[i + 1]);
-      if (i + 2 < t.length) lista.push(t[i] + t[i + 1] + t[i + 2]);
-    }
-    return lista.filter(function (k, i) { return k.length >= 4 && lista.indexOf(k) === i; });
-  }
-
-  function palavrasDaPasta(pasta) {
-    const chave = limparSite(pasta);
-    const achada = REGRAS.eps.pastas.filter(function (p) { return limparSite(p.pasta) === chave; })[0];
-    return achada ? achada.palavras : [];
-  }
-  function tipoCombina(tipo, palavras) {
-    const t = semAcento(tipo).toLowerCase();
-    return palavras.some(function (p) { return t.indexOf(p) >= 0; });
-  }
-  // Serviço indicado pelo código no nome do arquivo (TERM, MANU, SPDA...). Devolve as palavras do tipo da WO.
-  function palavrasDoServico(nome) {
-    const pedacos = semAcento(nome).toUpperCase().split(/[^A-Z0-9]+/);
-    let palavras = [];
-    REGRAS.eps.servicosNoNome.forEach(function (s) {
-      if (s.codigos.some(function (c) { return pedacos.indexOf(c) >= 0; })) palavras = palavras.concat(s.palavras);
-    });
-    return palavras;
-  }
-  function wosEPSDaChave(chave) {
-    return (estado.wosPorChave[chave] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "EPS"; });
-  }
-
-  // Descobre a WO de um relatório. Só liga sozinho quando tem certeza.
-  //   { wo }                      -> ligado
-  //   { motivo, candidatas, ... } -> precisa de revisão
-  function ligarRelatorio(r) {
-    if (r.wo && estado.porWO[r.wo]) return { wo: r.wo, manual: true };
-    const nome = String(r.nome_arquivo || "").replace(/\.[^.]+$/, "");
-    const ultima = String(r.subpasta || "").split("/").pop();
-    let sigla = "";
-    let chaves = candidatasDeSite(nome).filter(function (k) { return wosEPSDaChave(k).length > 0; });
-    if (chaves.length === 0) {   // plano B: a sigla pode estar no nome da pasta ("1 - SPO IG")
-      chaves = candidatasDeSite(ultima).filter(function (k) { return wosEPSDaChave(k).length > 0; });
-    }
-    if (chaves.length === 0) {
-      // Existe com o prefixo SM? Só sugere, nunca liga sozinho (FAV01 e SMFAV01 podem ser sites diferentes).
-      const prov = candidatasDeSite(nome).concat(candidatasDeSite(ultima)).filter(function (k) {
-        return wosEPSDaChave(REGRAS.prefixoSite + k).length > 0;
-      });
-      if (prov.length > 0) {
-        const cand = wosEPSDaChave(REGRAS.prefixoSite + prov[0]);
-        return { motivo: "Site provável: " + REGRAS.prefixoSite + prov[0] + " (confirme)", candidatas: cand, sigla: REGRAS.prefixoSite + prov[0] };
+      const posCabecalho = acharCabecalho(matriz);
+      if (posCabecalho < 0) {
+        resultado.erro = "Não encontrei o cabeçalho (colunas WO e Status Compilado - Final) nesta aba.";
+        return resultado;
       }
-      return { motivo: "Site não identificado no nome do arquivo", candidatas: [] };
-    }
-    let cand = [];
-    chaves.forEach(function (k) {
-      wosEPSDaChave(k).forEach(function (l) { if (cand.indexOf(l) < 0) cand.push(l); });
-    });
-    sigla = chaves[0];
-    if (chaves.length > 1) return { motivo: "Mais de um site no nome: " + chaves.join(", "), candidatas: cand, sigla: sigla };
-    const servico = palavrasDoServico(nome);
-    const palavras = palavrasDaPasta(r.pasta_raiz);
-    if (cand.length === 1) {
-      const palavrasConferir = servico.length > 0 ? servico : palavras;
-      return { wo: cand[0].wo, tipoConfere: palavrasConferir.length === 0 || tipoCombina(cand[0].tipo, palavrasConferir) };
-    }
-    // Mais de uma WO EPS no site: o código no nome do arquivo (TERM, MANU...) decide; sem código, vale a pasta.
-    if (servico.length > 0) {
-      const porServico = cand.filter(function (l) { return tipoCombina(l.tipo, servico); });
-      if (porServico.length === 1) return { wo: porServico[0].wo, tipoConfere: true };
-      if (porServico.length > 1) return { motivo: "Mais de uma WO desse serviço no site: escolha a certa", candidatas: porServico, sigla: sigla };
-    }
-    const filtradas = cand.filter(function (l) { return tipoCombina(l.tipo, palavras); });
-    if (filtradas.length === 1) return { wo: filtradas[0].wo, tipoConfere: true };
-    return { motivo: "O site tem " + cand.length + " WOs EPS: escolha a certa", candidatas: filtradas.length > 1 ? filtradas : cand, sigla: sigla };
-  }
 
-  function empresaDoTipo(tipo) {
-    const achada = REGRAS.eps.pastas.filter(function (p) { return tipoCombina(tipo, p.palavras); })[0];
-    return achada ? achada.pasta : "";
-  }
+      // posição de cada coluna: { wo: 3, site: 1, ... }
+      const nomes = matriz[posCabecalho].map(limpar);
+      const pos = {};
+      for (const chave in COLUNAS) pos[chave] = nomes.indexOf(COLUNAS[chave]);
 
-  async function atualizarEPS() {
-    try {
-      const resultados = await Promise.all([carregarBase(), carregarRelatorios()]);
-      estado.base = resultados[0];
-      prepararBase();
-      prepararRelatoriosEPS(resultados[1]);
-      desenharEPS();
-    } catch (e) {
-      mostrarAviso("Não consegui atualizar o painel EPS: " + e.message, "erro");
-    }
-  }
-
-  function prepararRelatoriosEPS(lista) {
-    let baseAtualizadaEm = null;
-    estado.base.forEach(function (l) {
-      if (l.atualizado_em && (!baseAtualizadaEm || l.atualizado_em > baseAtualizadaEm)) baseAtualizadaEm = l.atualizado_em;
-    });
-    estado.baseAtualizadaEm = baseAtualizadaEm;
-    // Só vale o que o robô viu na última coleta (arquivo apagado do SharePoint some do painel).
-    let ultimoVisto = 0;
-    lista.forEach(function (r) { const t = new Date(r.visto_em).getTime(); if (t > ultimoVisto) ultimoVisto = t; });
-    estado.ultimaColeta = ultimoVisto ? new Date(ultimoVisto).toISOString() : null;
-    estado.epsIgnorados = 0;
-    estado.relatoriosEPS = [];
-    lista.forEach(function (r) {
-      if (ultimoVisto - new Date(r.visto_em).getTime() > 30 * 60000) return;
-      if (r.wo === "IGNORAR") return;
-      const sub = semAcento(r.subpasta).toLowerCase();
-      if (REGRAS.eps.ignorarSubpastas.some(function (p) { return sub.indexOf(p) >= 0; })) { estado.epsIgnorados++; return; }
-      r.competencia = competenciaDoRelatorio(r);
-      estado.relatoriosEPS.push(r);
-    });
-    // Opções de mês (mês atual sempre aparece) e de empresa
-    const mesAtual = new Date().getFullYear() + "-" + doisDigitos(new Date().getMonth() + 1);
-    const meses = {};
-    meses[mesAtual] = true;
-    estado.relatoriosEPS.forEach(function (r) { meses[r.competencia] = true; });
-    const listaMeses = Object.keys(meses).sort().reverse();
-    if (!estado.mesEPS || !meses[estado.mesEPS]) estado.mesEPS = mesAtual;
-    $("mesEPS").innerHTML = listaMeses.map(function (m) {
-      return '<option value="' + m + '"' + (m === estado.mesEPS ? " selected" : "") + ">" + m.slice(5) + "/" + m.slice(0, 4) + "</option>";
-    }).join("");
-    const empresas = {};
-    estado.relatoriosEPS.forEach(function (r) { empresas[r.pasta_raiz] = true; });
-    REGRAS.eps.pastas.forEach(function (p) { empresas[p.pasta] = true; });
-    const antes = $("empresaEPS").value;
-    $("empresaEPS").innerHTML = '<option value="">Todas</option>' + Object.keys(empresas).sort().map(function (e) {
-      return '<option value="' + esc(e) + '"' + (e === antes ? " selected" : "") + ">" + esc(e) + "</option>";
-    }).join("");
-  }
-
-  // Monta as linhas do painel para o mês escolhido.
-  function montarLinhasEPS() {
-    const mes = estado.mesEPS;
-    const porWo = {};
-    estado.base.forEach(function (l) {
-      if (grupoDaPreventiva(l.tipo) === "EPS") porWo[l.wo] = { base: l, relatorios: [] };
-    });
-    const revisar = [];
-    estado.relatoriosEPS.forEach(function (r) {
-      if (r.competencia !== mes) return;
-      const lig = ligarRelatorio(r);
-      if (lig.wo) {
-        if (!porWo[lig.wo] && estado.porWO[lig.wo]) porWo[lig.wo] = { base: estado.porWO[lig.wo], relatorios: [] };
-        porWo[lig.wo].relatorios.push(r);
-        if (lig.tipoConfere === false) r.tipoNaoConfere = true;
-      } else {
-        revisar.push({ r: r, motivo: lig.motivo, candidatas: lig.candidatas || [], sigla: lig.sigla || "" });
+      resultado.faltando = COLUNAS_OBRIGATORIAS.filter(function (c) { return pos[c] < 0; });
+      if (resultado.faltando.length > 0) {
+        resultado.erro = "Faltam colunas na planilha: " +
+          resultado.faltando.map(function (c) { return COLUNAS[c]; }).join(", ");
+        return resultado;
       }
-    });
-    const linhas = [];
-    Object.keys(porWo).forEach(function (wo) {
-      const e = porWo[wo];
-      const status = String(e.base.status_final || "").trim().toLowerCase();
-      let grupo = status === "executada" ? "lancada" : (e.relatorios.length > 0 ? "falta" : "aguardando");
-      // Executadas só entram no mês em que foram lançadas (ou se tiverem relatório do mês).
-      if (grupo === "lancada" && e.relatorios.length === 0 && !String(e.base.data_fim || "").startsWith(mes)) return;
-      const empresas = [];
-      e.relatorios.forEach(function (r) { if (empresas.indexOf(r.pasta_raiz) < 0) empresas.push(r.pasta_raiz); });
-      let prevista = false;
-      if (empresas.length === 0) { const p = empresaDoTipo(e.base.tipo); if (p) { empresas.push(p); prevista = true; } }
-      const maisAntigo = e.relatorios.reduce(function (m, r) { return !m || r.data_arquivo < m ? r.data_arquivo : m; }, null);
-      linhas.push({ tipo: "wo", grupo: grupo, base: e.base, relatorios: e.relatorios, empresas: empresas, prevista: prevista, maisAntigo: maisAntigo });
-    });
-    revisar.forEach(function (x) {
-      linhas.push({ tipo: "revisar", grupo: "revisar", rev: x, empresas: [x.r.pasta_raiz], maisAntigo: x.r.data_arquivo });
-    });
-    const ordem = { falta: 0, revisar: 1, aguardando: 2, lancada: 3 };
-    linhas.sort(function (a, b) {
-      const d = ordem[a.grupo] - ordem[b.grupo];
-      if (d !== 0) return d;
-      if (a.maisAntigo && b.maisAntigo && a.maisAntigo !== b.maisAntigo) return a.maisAntigo < b.maisAntigo ? -1 : 1;
-      return String(nomeSiteEPS(a)).localeCompare(String(nomeSiteEPS(b)));
-    });
-    return linhas;
-  }
 
-  function nomeSiteEPS(l) {
-    if (l.tipo === "wo") return l.base.programado_infratel || l.base.clr_sdr_site_helix || "";
-    return l.rev.sigla || "";
-  }
-  function diasDesde(iso) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
-
-  function desenharEPS() {
-    // Faixa: base do cliente + última coleta do robô
-    const faixa = $("faixaEPS");
-    const horasBase = estado.baseAtualizadaEm ? minutosDesde(estado.baseAtualizadaEm) / 60 : null;
-    const horasColeta = estado.ultimaColeta ? minutosDesde(estado.ultimaColeta) / 60 : null;
-    const baseVelha = horasBase === null || horasBase > REGRAS.horasBaseDesatualizada;
-    const coletaVelha = horasColeta === null || horasColeta > REGRAS.eps.horasColetaDesatualizada;
-    faixa.className = "faixa" + (baseVelha || coletaVelha ? " alerta" : "");
-    faixa.innerHTML = (estado.baseAtualizadaEm ? "Base do cliente atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>" : "<b>A base do cliente está vazia.</b>") +
-      (baseVelha && estado.baseAtualizadaEm ? " (desatualizada há " + formatarDuracao(horasBase * 60) + ")" : "") + ". " +
-      (estado.ultimaColeta ? "Última coleta de relatórios em <b>" + formatarDataHora(estado.ultimaColeta) + "</b>" +
-        (coletaVelha ? " (<b>o robô não coleta há " + formatarDuracao(horasColeta * 60) + "</b>)" : "") + "."
-        : "<b>Nenhum relatório coletado ainda.</b> Confira o robô de coleta no computador.");
-
-    let linhas = montarLinhasEPS();
-    const empresa = $("empresaEPS").value;
-    if (empresa) linhas = linhas.filter(function (l) { return l.empresas.indexOf(empresa) >= 0; });
-    const contar = function (g) { return linhas.filter(function (l) { return l.grupo === g; }).length; };
-    $("azulejosEPS").innerHTML =
-      azulejo(contar("falta"), "Falta lançar no Infratel", "a-laranja") +
-      azulejo(contar("aguardando"), "Aguardando relatório", "a-azul") +
-      azulejo(contar("lancada"), "Lançadas no Infratel", "a-verde") +
-      azulejo(contar("revisar"), "Relatórios para revisar", contar("revisar") ? "a-vermelho" : "a-azul");
-
-    const filtro = estado.filtroEPS;
-    const busca = semAcento($("buscaEPS").value).toLowerCase().trim();
-    const visiveis = linhas.filter(function (l) {
-      if (filtro !== "todos" && l.grupo !== filtro) return false;
-      if (!busca) return true;
-      const texto = [nomeSiteEPS(l), l.tipo === "wo" ? l.base.wo : "", (l.relatorios || [l.rev.r]).map(function (r) { return r.nome_arquivo; }).join(" ")].join(" ");
-      return semAcento(texto).toLowerCase().indexOf(busca) >= 0;
-    });
-
-    $("notaEPS").textContent = "Mês " + estado.mesEPS.slice(5) + "/" + estado.mesEPS.slice(0, 4) + ": só valem relatórios da pasta desse mês. " +
-      (estado.epsIgnorados ? estado.epsIgnorados + " arquivos de corretiva e serviços avulsos foram ignorados." : "");
-    if (visiveis.length === 0) {
-      $("tabelaEPS").innerHTML = '<tr><td class="vazio">Nada para mostrar neste filtro.</td></tr>';
-      return;
-    }
-    $("tabelaEPS").innerHTML =
-      "<tr><th>Site</th><th>WO</th><th>Tipo</th><th>Situação</th><th>Relatório</th><th>Empresa</th><th></th></tr>" +
-      visiveis.map(linhaHtmlEPS).join("");
-  }
-
-  function htmlArquivosEPS(relatorios) {
-    if (relatorios.length === 0) return '<span class="esmaecido">—</span>';
-    return relatorios.map(function (r) {
-      const dias = diasDesde(r.data_arquivo);
-      return '<div class="arquivo" title="' + esc(r.pasta_raiz + "/" + r.subpasta + "/" + r.nome_arquivo) + '">' + esc(r.nome_arquivo) +
-        '<span class="detalhe">entregue ' + formatarDataHora(r.data_arquivo) + (dias > 0 ? " · há " + dias + (dias === 1 ? " dia" : " dias") : " · hoje") + "</span></div>";
-    }).join("");
-  }
-
-  function linhaHtmlEPS(l) {
-    const empresas = l.empresas.map(function (e) { return esc(e); }).join("<br>");
-    if (l.tipo === "revisar") {
-      const x = l.rev;
-      const opcoes = x.candidatas.map(function (c) {
-        return '<option value="' + esc(c.wo) + '">' + esc(c.wo) + " · " + esc(c.tipo) + "</option>";
-      }).join("");
-      const escolha = x.candidatas.length > 0
-        ? '<select data-escolha>' + '<option value="">Escolha a WO...</option>' + opcoes + "</select>"
-        : '<input type="text" data-escolha placeholder="Número da WO">';
-      return '<tr data-caminho="' + esc(x.r.caminho) + '"><td><b>' + esc(x.sigla || "—") + "</b></td><td>" + escolha + "</td><td>—</td><td>" +
-        pill("Revisar", "p-vermelho") + '<span class="detalhe">' + esc(x.motivo) + "</span></td><td>" + htmlArquivosEPS([x.r]) + "</td><td>" + empresas +
-        '</td><td><div class="acoes"><button class="secundario" data-acao="vincular">Vincular</button>' +
-        '<button class="secundario" data-acao="ignorar" title="Não é preventiva ou não interessa">Ignorar</button></div></td></tr>';
-    }
-    const b = l.base;
-    let situacao;
-    if (l.grupo === "falta") {
-      const dias = diasDesde(l.maisAntigo);
-      situacao = pill("Falta lançar", "p-laranja") +
-        (dias >= REGRAS.eps.diasAlerta ? ' <span class="pill p-vermelho">há ' + dias + " dias</span>" : "") +
-        '<span class="detalhe">Status na base: ' + esc(b.status_final || "sem status") + "</span>";
-    } else if (l.grupo === "lancada") {
-      situacao = pill("Lançada", "p-verde") + (b.data_fim ? '<span class="detalhe">Relatório no Infratel em ' + formatarDataCurta(b.data_fim) + "</span>" : "");
-    } else {
-      situacao = pill("Aguardando relatório", "p-azul") + '<span class="detalhe">Status na base: ' + esc(b.status_final || "sem status") + "</span>";
-    }
-    const alertaTipo = l.relatorios.some(function (r) { return r.tipoNaoConfere; })
-      ? '<span class="detalhe">Confira: o tipo da WO não parece ser o do relatório.</span>' : "";
-    return '<tr class="' + (l.grupo === "falta" ? "linha-falta" : "") + '"><td><b>' + esc(nomeSiteEPS(l)) + '</b></td><td class="wo">' + esc(b.wo) +
-      "</td><td>" + esc(b.tipo || "") + "</td><td>" + situacao + alertaTipo + "</td><td>" + htmlArquivosEPS(l.relatorios) + "</td><td" +
-      (l.prevista ? ' class="esmaecido"' : "") + ">" + (empresas || "—") + "</td><td></td></tr>";
-  }
-
-  $("chipsEPS").addEventListener("click", function (e) {
-    const botao = e.target.closest("button[data-filtro]");
-    if (!botao) return;
-    estado.filtroEPS = botao.dataset.filtro;
-    document.querySelectorAll("#chipsEPS .chip").forEach(function (c) { c.classList.toggle("ativo", c === botao); });
-    desenharEPS();
-  });
-  $("mesEPS").addEventListener("change", function () { estado.mesEPS = $("mesEPS").value; desenharEPS(); });
-  $("empresaEPS").addEventListener("change", desenharEPS);
-  $("buscaEPS").addEventListener("input", desenharEPS);
-  $("botaoAtualizarEPS").addEventListener("click", atualizarEPS);
-
-  $("tabelaEPS").addEventListener("click", async function (e) {
-    const botao = e.target.closest("button[data-acao]");
-    if (!botao) return;
-    const linha = botao.closest("tr");
-    const caminho = linha.dataset.caminho;
-    let wo;
-    if (botao.dataset.acao === "ignorar") {
-      if (!confirm("Ignorar este arquivo? Ele deixa de aparecer no painel.")) return;
-      wo = "IGNORAR";
-    } else {
-      const campo = linha.querySelector("[data-escolha]");
-      wo = campo ? campo.value.trim() : "";
-      if (!wo) { mostrarAviso("Escolha ou digite a WO antes de vincular.", "erro"); return; }
-      if (!estado.porWO[wo]) { mostrarAviso("A WO " + wo + " não está na base do cliente.", "erro"); return; }
-    }
-    botao.disabled = true;
-    try {
-      await vincularRelatorio(caminho, wo, estado.usuarioEmail);
-      mostrarAviso(wo === "IGNORAR" ? "Arquivo ignorado." : "Relatório vinculado à WO " + wo + ".");
-      atualizarEPS();
-    } catch (err) {
-      botao.disabled = false;
-      mostrarAviso("Erro ao gravar: " + err.message, "erro");
-    }
-  });
-
-  // ---- tela REGISTRAR -------------------------------------------------------
-  function prepararFormulario() {
-    $("campoEquipe").innerHTML = '<option value="">Escolha a equipe...</option>' +
-      estado.equipes.map(function (e) {
-        return '<option value="' + esc(e.id) + '">' + esc(e.nome) + " (" + esc(e.tipo) + ")</option>";
-      }).join("");
-    $("campoAtividade").innerHTML = REGRAS.atividades.map(function (a) {
-      return "<option>" + esc(a) + "</option>";
-    }).join("");
-    $("campoData").value = hoje();
-    $("campoAlarme").innerHTML = REGRAS.alarmes.map(function (a) { return "<option>" + esc(a) + "</option>"; }).join("");
-    limparSiteEscolhido();
-    $("campoSite").value = "";
-    atualizarBlocos();
-  }
-
-  function limparSiteEscolhido() {
-    estado.siteEscolhido = null;
-    $("resultadoSite").textContent = "";
-    $("sugestoesSite").innerHTML = "";
-  }
-
-  $("campoSite").addEventListener("input", function () {
-    limparSiteEscolhido();
-    const r = acharSite($("campoSite").value, estado.sites);
-    if (r.tipo === "unico") {
-      escolherSite(r.sites[0]);
-      if (r.tambem && r.tambem.length > 0) {
-        $("resultadoSite").innerHTML += ' <span class="aviso">Atenção: existe também <b>' +
-          r.tambem.map(function (x) { return esc(x.site); }).join(", ") + "</b> (outro site).</span>";
+      function celula(linha, chave) {
+        return pos[chave] < 0 ? "" : linha[pos[chave]];
       }
-    } else if (r.tipo === "sugestoes") {
-      $("resultadoSite").innerHTML = "<span>" + esc(r.pergunta || "Você quis dizer:") + "</span>";
-      $("sugestoesSite").innerHTML = r.sites.map(function (s) {
-        return '<button type="button" data-busca="' + esc(s.busca) + '">' + esc(s.site) + "</button>";
-      }).join("");
-    } else if (limparSite($("campoSite").value).length >= 2) {
-      $("resultadoSite").innerHTML = '<span class="aviso">Nenhum site encontrado na base.</span>';
-    }
-    atualizarBlocos();
-  });
-
-  $("sugestoesSite").addEventListener("click", function (e) {
-    const botao = e.target.closest("button");
-    if (!botao) return;
-    const site = estado.sites.find(function (s) { return s.busca === botao.dataset.busca; });
-    if (site) { escolherSite(site); atualizarBlocos(); }
-  });
-
-  function escolherSite(site) {
-    estado.siteEscolhido = site;
-    $("campoSite").value = site.site;
-    $("sugestoesSite").innerHTML = "";
-    $("resultadoSite").innerHTML = '<span class="ok">✓ Site reconhecido: <b>' + esc(site.site) + "</b></span>";
-  }
-
-  $("campoAtividade").addEventListener("change", atualizarBlocos);
-  $("campoSituacaoInicial").addEventListener("change", function () {
-    $("blocoChegada").classList.toggle("oculto", $("campoSituacaoInicial").value !== "site");
-  });
-
-  function atualizarBlocos() {
-    const atividade = $("campoAtividade").value;
-    const comPreventiva = atividadeTemPreventiva(atividade);
-    $("blocoDetalhe").classList.toggle("oculto", atividade === REGRAS.atividades[0]);
-
-    const wos = estado.siteEscolhido
-      ? estado.base.filter(function (l) { return l.chaveSite === estado.siteEscolhido.busca; }) : [];
-    const mostrar = comPreventiva && estado.siteEscolhido;
-    $("blocoWOs").classList.toggle("oculto", !mostrar);
-    $("avisoEndereco").innerHTML = mostrar ? htmlOutrasSiglas(estado.siteEscolhido.busca) : "";
-    if (!mostrar) return;
-
-    $("tituloWOs").textContent = wos.length + (wos.length === 1 ? " WO neste site" : " WOs neste site");
-    // MOP já vem marcada; EPS só se a equipe também vai fazer.
-    $("listaWOs").innerHTML = ["MOP", "EPS"].map(function (g) {
-      const doGrupo = wos.filter(function (l) { return grupoDaPreventiva(l.tipo) === g; });
-      if (doGrupo.length === 0) return "";
-      return '<div class="grupo-titulo">' + g + (g === "EPS" ? " (marque só se a equipe também vai fazer)" : "") + "</div>" +
-        doGrupo.map(function (l) {
-          const st = descreverStatusBase(l);
-          return '<div class="item"><input type="checkbox" ' + (g === "MOP" ? "checked " : "") + 'data-wo="' + esc(l.wo) + '" data-tipo="' + esc(l.tipo) + '">' +
-            '<span class="wo">' + esc(l.wo) + '</span><span class="tipo">' + esc(l.tipo) + "</span>" + pill(st.texto, st.classe) + "</div>";
-        }).join("");
-    }).join("");
-  }
-
-  // O botão "Registrar deslocamento" só monta o resumo para conferência.
-  // A visita só é gravada depois de "Confirmar registro".
-  function ocultarResumo() { $("resumoRegistro").classList.add("oculto"); estado.registroPendente = null; }
-  $("telaRegistrar").addEventListener("input", ocultarResumo);
-  $("telaRegistrar").addEventListener("change", ocultarResumo);
-
-  // Valida o formulário. Devolve os dados do registro, ou null (mostrando o erro na tela).
-  function montarRegistro() {
-    const msg = $("msgRegistrar");
-    msg.textContent = "";
-    const atividade = $("campoAtividade").value;
-    const comPreventiva = atividadeTemPreventiva(atividade);
-    const equipe = estado.equipes.find(function (e) { return String(e.id) === $("campoEquipe").value; });
-    function erro(texto) { msg.innerHTML = '<span class="erro">' + esc(texto) + "</span>"; return null; }
-
-    if (!equipe) return erro("Escolha a equipe.");
-    if (comPreventiva && !estado.siteEscolhido) return erro("Para preventiva, escolha um site que esteja na base.");
-    const siteTexto = estado.siteEscolhido ? estado.siteEscolhido.site : $("campoSite").value.trim().toUpperCase();
-    if (!siteTexto) return erro("Informe o site.");
-
-    const wos = [];
-    if (comPreventiva) {
-      document.querySelectorAll("#listaWOs input[type=checkbox]:checked").forEach(function (c) {
-        wos.push({ wo: c.dataset.wo, tipo: c.dataset.tipo });
-      });
-      if (wos.length === 0) return erro("Marque ao menos uma WO.");
-      if (!$("campoConferi").checked) return erro("Confirme que conferiu as WOs com o técnico.");
-    }
-
-    // Horários: o que a validadora informar vale; vazio significa "agora".
-    const dataExecucao = $("campoData").value || hoje();
-    const jaNoSite = $("campoSituacaoInicial").value === "site";
-    function horarioInformado(idCampo) {
-      const v = $(idCampo).value;                       // "HH:MM" ou ""
-      if (!v) return null;
-      const partes = v.split(":");
-      const d = new Date(dataExecucao + "T00:00:00");
-      d.setHours(Number(partes[0]), Number(partes[1]), 0, 0);
-      return d;
-    }
-    const agora = new Date();
-    let aviso = horarioInformado("campoHoraAviso");
-    let chegada = jaNoSite ? horarioInformado("campoHoraChegada") : null;
-    if (jaNoSite && !chegada) chegada = agora;
-    if (!aviso) aviso = (chegada && chegada < agora) ? chegada : agora;
-    if (aviso.getTime() > agora.getTime() + 60000) return erro("O horário do aviso não pode estar no futuro.");
-    if (chegada && chegada.getTime() > agora.getTime() + 60000) return erro("O horário de chegada não pode estar no futuro.");
-    if (chegada && chegada.getTime() < aviso.getTime() - 60000) return erro("A chegada não pode ser antes do aviso.");
-
-    return { equipe: equipe, atividade: atividade, comPreventiva: comPreventiva, siteTexto: siteTexto, wos: wos,
-             dataExecucao: dataExecucao, jaNoSite: jaNoSite, aviso: aviso, chegada: chegada,
-             detalhe: $("campoDetalhe").value.trim(), alarme: $("campoAlarme").value, observacao: $("campoObservacao").value.trim() };
-  }
-
-  // Aviso sobre outras siglas no mesmo endereço (sempre responde, com ou sem outras siglas).
-  function htmlEnderecoResumo(chave) {
-    if (!estado.enderecoPorSigla[chave]) {
-      return '<div class="faixa">Este site não está no cadastro de endereços; não é possível saber se há outras siglas no mesmo endereço.</div>';
-    }
-    return htmlOutrasSiglas(chave) || '<div class="faixa">Neste endereço existe somente esta sigla.</div>';
-  }
-
-  function pillAlarme(alarme) {
-    const classes = { "Externou": "p-verde", "Não externou": "p-vermelho", "Site sem alarme": "p-azul" };
-    return pill(alarme || "Não verificado", classes[alarme] || "p-cinza");
-  }
-
-  function mostrarResumo(r) {
-    const chave = limparSite(r.siteTexto);
-    const marcadas = {};
-    r.wos.forEach(function (w) { marcadas[w.wo] = true; });
-    const naoIncluidas = r.comPreventiva ? (estado.wosPorChave[chave] || []).filter(function (l) { return !marcadas[l.wo]; }) : [];
-
-    const hora = function (d) { return d ? horaCurta(d.toISOString()) : "—"; };
-    let html = '<h2 class="secao">Confira antes de registrar</h2><dl class="resumo-grid">' +
-      "<dt>Site</dt><dd><b>" + esc(r.siteTexto) + "</b></dd>" +
-      "<dt>Equipe</dt><dd>" + esc(r.equipe.nome) + "</dd>" +
-      "<dt>Atividade</dt><dd>" + esc(r.atividade) + (r.detalhe ? " · " + esc(r.detalhe) : "") + "</dd>" +
-      "<dt>Data da execução</dt><dd>" + esc(r.dataExecucao.split("-").reverse().join("/")) + "</dd>" +
-      "<dt>Situação</dt><dd>" + (r.jaNoSite ? "Já está no site" : "Em deslocamento") + "</dd>" +
-      "<dt>Aviso no grupo</dt><dd>" + hora(r.aviso) + "</dd>" +
-      "<dt>Chegada no site</dt><dd>" + (r.jaNoSite ? hora(r.chegada) : "será registrada quando a equipe chegar") + "</dd>" +
-      "<dt>Alarme de porta aberta</dt><dd>" + pillAlarme(r.alarme) + "</dd>" +
-      "<dt>Observações</dt><dd>" + (r.observacao ? esc(r.observacao) : "—") + "</dd></dl>";
-
-    if (r.comPreventiva) {
-      html += '<h2 class="secao">WOs deste registro (' + r.wos.length + ")</h2><div class=\"lista-wo\">" +
-        r.wos.map(function (w) {
-          const st = descreverStatusBase(estado.porWO[w.wo]);
-          return '<div class="item"><span class="wo">' + esc(w.wo) + '</span><span class="tipo">' + esc(w.tipo) + "</span>" +
-            pill(grupoDaPreventiva(w.tipo), "p-cinza") + pill(st.texto, st.classe) + "</div>";
-        }).join("") + "</div>";
-      if (naoIncluidas.length > 0) {
-        html += '<div class="faixa-endereco"><b>WOs deste site que ficaram de fora deste registro: ' + naoIncluidas.length + "</b>" +
-          naoIncluidas.map(function (l) {
-            return '<div class="sigla-linha">' + esc(l.wo) + " · " + esc(l.tipo) + " (" + grupoDaPreventiva(l.tipo) + ")</div>";
-          }).join("") + "</div>";
+      function texto(valor) {
+        const t = String(valor == null ? "" : valor).trim();
+        return t === "" ? null : t;
       }
-      html += htmlEnderecoResumo(chave);
-    }
 
-    html += '<div class="linha-botoes"><button class="principal" data-acao="confirmar">Confirmar registro</button>' +
-      '<button class="secundario" data-acao="corrigir">Corrigir</button></div>';
-    $("resumoRegistro").innerHTML = html;
-    $("resumoRegistro").classList.remove("oculto");
-    $("resumoRegistro").scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
+      const porWO = {};
+      for (let i = posCabecalho + 1; i < matriz.length; i++) {
+        const linha = matriz[i];
+        const wo = texto(celula(linha, "wo"));
+        if (!wo || !/^WO\d+/i.test(wo)) { resultado.semWO++; continue; }
+        resultado.total++;
 
-  $("botaoRegistrar").addEventListener("click", function () {
-    const r = montarRegistro();
-    if (!r) { ocultarResumo(); return; }
-    estado.registroPendente = r;
-    mostrarResumo(r);
-  });
-
-  $("resumoRegistro").addEventListener("click", async function (e) {
-    const botao = e.target.closest("button[data-acao]");
-    if (!botao) return;
-    if (botao.dataset.acao === "corrigir") { ocultarResumo(); return; }
-    const r = estado.registroPendente;
-    if (!r) return;
-    const msg = $("msgRegistrar");
-    botao.disabled = true;
-    try {
-      const abertas = await carregarEmCampo();
-      const jaEmCampo = abertas.find(function (v) { return v.equipe_id === r.equipe.id; });
-      if (jaEmCampo) {
-        msg.innerHTML = '<span class="erro">A equipe ' + esc(r.equipe.nome) + " já está em campo (" + esc(jaEmCampo.site) +
-          "). Registre a saída ou cancele antes.</span>";
-        ocultarResumo();
-        return;
-      }
-      const visita = {
-        site: r.siteTexto, equipe: r.equipe.nome, equipe_id: r.equipe.id, atividade: r.atividade,
-        atividade_detalhe: r.detalhe || null,
-        data_execucao: r.dataExecucao,
-        situacao: r.jaNoSite ? REGRAS.situacaoNoSite : REGRAS.situacaoDeslocamento,
-        hora_aviso: r.aviso.toISOString(),
-        alarme_porta: r.alarme,
-        observacao: r.observacao || null
-      };
-      if (r.jaNoSite) visita.hora_entrada = r.chegada.toISOString();
-      await criarVisita(visita, r.wos);
-      ocultarResumo();
-      msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + ". Acompanhe em “Equipes em campo”.</span>";
-      mostrarAviso((r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome);
-      $("campoSite").value = ""; $("campoDetalhe").value = ""; $("campoConferi").checked = false; $("campoObservacao").value = "";
-      $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoData").value = hoje(); $("campoAlarme").selectedIndex = 0;
-      $("campoSituacaoInicial").value = "desloc"; $("campoHoraAviso").value = ""; $("campoHoraChegada").value = "";
-      $("blocoChegada").classList.add("oculto");
-      limparSiteEscolhido();
-      atualizarBlocos();
-    } catch (err) {
-      msg.innerHTML = '<span class="erro">Erro ao registrar: ' + esc(err.message) + "</span>";
-      botao.disabled = false;
-    }
-  });
-
-  // ---- tela EQUIPES EM CAMPO ------------------------------------------------
-  async function atualizarCampo() {
-    try {
-      const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje(), carregarSaidasPendentes()]);
-      estado.emCampo = resultados[0];
-      estado.saidasPendentes = resultados[2];
-      const digitando = $("gradeCampo").contains(document.activeElement) || $("gradeCampo").querySelector("details[open]");
-      if (!digitando) desenharCampo(resultados[0], resultados[1], resultados[2]);
-      $("subCampo").textContent = "MOP · atualiza sozinha a cada 30 segundos · última leitura às " + horaCurta(new Date().toISOString());
-    } catch (e) {
-      mostrarAviso("Não consegui atualizar: " + e.message, "erro");
-    }
-  }
-
-  // Equipes em campo mostra só o MOP: visitas com WO MOP (ou sem WO, como as corretivas) e só as WOs MOP de cada uma.
-  function soMOP(visitas) {
-    return visitas.filter(function (v) {
-      const w = v.wos_visita || [];
-      return w.length === 0 || w.some(function (x) { return grupoDaPreventiva(x.tipo) === "MOP"; });
-    }).map(function (v) {
-      return Object.assign({}, v, { wos_visita: (v.wos_visita || []).filter(function (x) { return grupoDaPreventiva(x.tipo) === "MOP"; }) });
-    });
-  }
-
-  function desenharCampo(emCampo, saidas, pendentes) {
-    pendentes = soMOP(pendentes || []);
-    emCampo = soMOP(emCampo);
-    saidas = soMOP(saidas);
-    const emDesloc = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoDeslocamento; });
-    const noSite = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoNoSite; });
-    const longos = noSite.filter(function (v) { return minutosDesde(v.hora_entrada) > REGRAS.horasLongaPermanencia * 60; });
-    $("azulejos").innerHTML =
-      azulejo(emDesloc.length, "Em deslocamento", "a-azul") + azulejo(noSite.length, "No site", "a-azul") +
-      azulejo(longos.length, "Há mais de " + REGRAS.horasLongaPermanencia + " h no site", "a-laranja") +
-      azulejo(pendentes.length, "Saídas a ajustar", pendentes.length ? "a-laranja" : "a-verde") +
-      azulejo(saidas.length, "Saíram hoje", "a-verde");
-    $("gradeAjustar").innerHTML = pendentes.length
-      ? pendentes.map(cartaoAjustar).join("") : '<div class="vazio">Nenhuma saída pendente de ajuste.</div>';
-    $("gradeCampo").innerHTML = emCampo.length
-      ? emCampo.map(cartaoEmCampo).join("") : '<div class="vazio">Nenhuma equipe em campo agora.</div>';
-    $("gradeSaidas").innerHTML = saidas.length
-      ? saidas.map(cartaoSaida).join("") : '<div class="vazio">Ninguém saiu de um site hoje ainda.</div>';
-  }
-
-  function azulejo(numero, rotulo, classe) {
-    return '<div class="azulejo ' + classe + '"><div class="num">' + numero + '</div><div class="rot">' + esc(rotulo) + "</div></div>";
-  }
-
-  function listaWOsCartao(v) {
-    const wos = v.wos_visita || [];
-    if (wos.length === 0) return "";
-    return '<div class="lista-wo">' + wos.map(function (w) {
-      const st = descreverStatusBase(estado.porWO[w.wo]);
-      return '<div class="item"><span class="wo">' + esc(w.wo) + '</span><span class="tipo">' + esc(w.tipo) + "</span>" +
-        pill(st.texto, st.classe) + "</div>";
-    }).join("") + "</div>";
-  }
-
-  // Alarme de porta aberta e observações: dá para registrar ou corrigir enquanto a equipe está em campo.
-  function notasDoCartao(v) {
-    const opcoes = REGRAS.alarmes.map(function (a) {
-      return "<option" + (a === (v.alarme_porta || "Não verificado") ? " selected" : "") + ">" + esc(a) + "</option>";
-    }).join("");
-    return '<details class="notas"><summary>Alarme: ' + esc(v.alarme_porta || "Não verificado") +
-      (v.observacao ? " · com observação" : "") + "</summary>" +
-      '<select data-campo="alarme">' + opcoes + "</select>" +
-      '<textarea data-campo="obs" rows="2" placeholder="Observações">' + esc(v.observacao || "") + "</textarea>" +
-      '<div class="linha-botoes"><button class="secundario" data-acao="notas" data-id="' + esc(v.id) + '">Salvar alarme e observação</button></div></details>';
-  }
-
-  function cartaoEmCampo(v) {
-    const noSite = v.situacao === REGRAS.situacaoNoSite;
-    const minutos = noSite ? minutosDesde(v.hora_entrada) : minutosDesde(v.hora_aviso);
-    const longo = noSite && minutos > REGRAS.horasLongaPermanencia * 60;
-    const botoes = noSite
-      ? '<button class="principal" data-acao="saida" data-id="' + esc(v.id) + '">Registrar saída</button>'
-      : '<button class="principal" data-acao="chegada" data-id="' + esc(v.id) + '">Chegou no site</button>';
-    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
-      esc(v.equipe) + "</div></div><div>" +
-      (longo ? pill("Longa permanência", "p-laranja") + " " : "") + pill(v.situacao, "p-azul") + "</div></div>" +
-      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") +
-      (v.atividade_detalhe ? ' <span class="nome">' + esc(v.atividade_detalhe) + "</span>" : "") + "</div>" +
-      '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
-      "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
-      '<div class="duracao"><span>' + (noSite ? "Tempo no site" : "Em deslocamento há") + "</span><b>" + formatarDuracao(minutos) + "</b></div>" +
-      listaWOsCartao(v) + htmlOutrasSiglas(limparSite(v.site)) + notasDoCartao(v) +
-      '<div class="linha-botoes">' + botoes + '<button class="secundario" data-acao="cancelar" data-id="' + esc(v.id) + '">Cancelar</button></div></div>';
-  }
-
-  function cartaoSaida(v) {
-    const permanencia = v.hora_entrada ? formatarDuracao((new Date(v.hora_saida) - new Date(v.hora_entrada)) / 60000) : "—";
-    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
-      esc(v.equipe) + "</div></div>" + pill("Saiu do Site", "p-verde") + "</div>" +
-      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") + "</div>" +
-      '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
-      "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
-      '<div class="duracao"><span>Tempo no site</span><b>' + permanencia + "</b></div>" +
-      '<div class="duracao"><span>Alarme de porta aberta</span>' + pillAlarme(v.alarme_porta) + "</div>" +
-      (v.observacao ? '<div class="detalhe" style="margin:6px 0 0">Obs.: ' + esc(v.observacao) + "</div>" : "") + listaWOsCartao(v) + "</div>";
-  }
-
-  function cartaoAjustar(v) {
-    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
-      esc(v.equipe) + "</div></div>" + pill("Saída não registrada", "p-laranja") + "</div>" +
-      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") + "</div>" +
-      '<div class="tempos"><span>Dia<b>' + (v.hora_entrada ? new Date(v.hora_entrada).toLocaleDateString("pt-BR") : "—") +
-      "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) + "</b></span><span>Saída<b>—</b></span></div>" +
-      (v.observacao ? '<div class="detalhe" style="margin:6px 0 0">Obs.: ' + esc(v.observacao) + "</div>" : "") + listaWOsCartao(v) +
-      '<div class="linha-botoes"><button class="principal" data-acao="ajustar" data-id="' + esc(v.id) + '">Informar saída</button></div></div>';
-  }
-
-  // Pergunta a saída de uma visita de outro dia. Aceita "HH:MM" (no dia da entrada) ou "DD/MM/AAAA HH:MM".
-  function perguntarSaidaAjuste(visita) {
-    const ent = new Date(visita.hora_entrada);
-    const dia = ent.toLocaleDateString("pt-BR");
-    const resposta = window.prompt("Horário real de saída de " + visita.equipe + " em " + visita.site + " (entrada " + dia + " " + horaCurta(visita.hora_entrada) +
-      ").\nDigite HH:MM (no mesmo dia) ou DD/MM/AAAA HH:MM.", "");
-    if (resposta === null || resposta.trim() === "") return null;
-    const m = resposta.trim().match(/^(?:(\d{1,2})\/(\d{1,2})\/(\d{4})\s+)?(\d{1,2}):(\d{2})$/);
-    if (!m || Number(m[4]) > 23 || Number(m[5]) > 59) { mostrarAviso("Formato inválido. Use HH:MM ou DD/MM/AAAA HH:MM.", "erro"); return null; }
-    const quando = m[1] ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), 0, 0)
-                        : new Date(ent.getFullYear(), ent.getMonth(), ent.getDate(), Number(m[4]), Number(m[5]), 0, 0);
-    if (quando.getTime() > Date.now() + 60000) { mostrarAviso("A saída não pode estar no futuro.", "erro"); return null; }
-    if (quando.getTime() < ent.getTime()) { mostrarAviso("A saída não pode ser antes da entrada.", "erro"); return null; }
-    if (quando.getTime() - ent.getTime() > 16 * 3600000 &&
-        !window.confirm("A permanência ficou em mais de 16 horas. Confirma esse horário?")) return null;
-    return quando.toISOString();
-  }
-
-  $("gradeAjustar").addEventListener("click", async function (e) {
-    const botao = e.target.closest("button[data-acao=ajustar]");
-    if (!botao) return;
-    const visita = (estado.saidasPendentes || []).find(function (v) { return String(v.id) === botao.dataset.id; });
-    if (!visita) return;
-    const quando = perguntarSaidaAjuste(visita);
-    if (!quando) return;
-    botao.disabled = true;
-    try {
-      await atualizarVisita(visita.id, { hora_saida: quando });
-      mostrarAviso("Saída registrada.");
-      atualizarCampo();
-    } catch (err) {
-      botao.disabled = false;
-      mostrarAviso("Erro ao gravar: " + err.message, "erro");
-    }
-  });
-
-  // Pergunta o horário (padrão: agora). Devolve uma data ISO, ou null se cancelou.
-  function perguntarHorario(rotulo, minimoIso) {
-    const agora = new Date();
-    const padrao = String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0");
-    const resposta = window.prompt(rotulo + " (HH:MM). Deixe como está para usar agora.", padrao);
-    if (resposta === null) return null;
-    const m = resposta.trim().match(/^(\d{1,2}):(\d{2})$/);
-    if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) { mostrarAviso("Horário inválido. Use o formato HH:MM.", "erro"); return null; }
-    const quando = new Date();
-    quando.setHours(Number(m[1]), Number(m[2]), 0, 0);
-    if (quando.getTime() > Date.now() + 60000) { mostrarAviso("O horário não pode estar no futuro.", "erro"); return null; }
-    if (minimoIso && quando.getTime() < new Date(minimoIso).getTime() - 60000) {
-      mostrarAviso("O horário não pode ser antes de " + horaCurta(minimoIso) + ".", "erro"); return null;
-    }
-    return quando.toISOString();
-  }
-
-  $("gradeCampo").addEventListener("click", async function (e) {
-    const botao = e.target.closest("button[data-acao]");
-    if (!botao) return;
-    const visita = estado.emCampo.find(function (v) { return String(v.id) === botao.dataset.id; });
-    if (!visita) return;
-    let campos = null;
-    if (botao.dataset.acao === "chegada") {
-      const quando = perguntarHorario("Hora da chegada no site", visita.hora_aviso);
-      if (!quando) return;
-      campos = { situacao: REGRAS.situacaoNoSite, hora_entrada: quando };
-    } else if (botao.dataset.acao === "saida") {
-      // Alerta de execução parcial: parte das WOs do endereço já consta executada na base e parte não.
-      const wosDaVisita = (visita.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; })
-        .map(function (w) { return w.wo; });
-      const faltam = wosDaVisita.filter(function (wo) {
-        const l = estado.porWO[wo];
-        return !l || String(l.status_final || "").trim().toLowerCase() !== "executada";
-      });
-      const parcial = faltam.length > 0 && faltam.length < wosDaVisita.length;
-      const irmasPendentes = atividadeTemPreventiva(visita.atividade)
-        ? outrasSiglasDoEndereco(limparSite(visita.site)).filter(function (s) { return s.pendentes.length > 0; }) : [];
-      if (parcial || irmasPendentes.length > 0) {
-        let texto = "ATENÇÃO:\n\n";
-        if (parcial) {
-          texto += (wosDaVisita.length - faltam.length) + " de " + wosDaVisita.length +
-            " WOs desta visita já constam executadas na base, mas faltam:\n" + faltam.join("\n") + "\n\n";
+        if (limpar(celula(linha, "equipeEngemon")) !== limpar(EQUIPE_ENGEMON_ATIVA)) {
+          resultado.foraDoSetor++;
+          continue;
         }
-        if (irmasPendentes.length > 0) {
-          texto += "Outras siglas do MESMO endereço com WO pendente:\n" +
-            irmasPendentes.map(function (s) { return s.sigla + ": " + s.pendentes.join(", "); }).join("\n") + "\n\n";
-        }
-        texto += "Confirme com a equipe se falta alguma tecnologia ANTES de liberar a saída.\n\nRegistrar a saída mesmo assim?";
-        if (!window.confirm(texto)) return;
-      }
-      const entradaOutroDia = visita.hora_entrada && new Date(visita.hora_entrada).toDateString() !== new Date().toDateString();
-      const quando = entradaOutroDia ? perguntarSaidaAjuste(visita) : perguntarHorario("Hora da saída do site", visita.hora_entrada);
-      if (!quando) return;
-      campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando };
-    } else if (botao.dataset.acao === "notas") {
-      const caixa = botao.closest("details");
-      campos = { alarme_porta: caixa.querySelector("[data-campo=alarme]").value,
-                 observacao: caixa.querySelector("[data-campo=obs]").value.trim() || null };
-    } else if (botao.dataset.acao === "cancelar") {
-      if (!window.confirm("Cancelar o deslocamento de " + visita.equipe + " para " + visita.site + "?")) return;
-      campos = { situacao: REGRAS.situacaoCancelado };
-    }
-    botao.disabled = true;
-    try {
-      await atualizarVisita(visita.id, campos);
-      const aberta = botao.closest("details");
-      if (aberta) aberta.open = false;
-      mostrarAviso("Registrado.");
-      atualizarCampo();
-    } catch (err) {
-      botao.disabled = false;
-      mostrarAviso("Erro ao gravar: " + err.message, "erro");
-    }
-  });
 
-  // ---- ao abrir a página: se já houver sessão salva, pede para confirmar a entrada ----------
-  (async function () {
-    try {
-      const r = await banco.auth.getSession();
-      if (r.data && r.data.session) {
-        estado.sessaoSalva = r.data.session.user;
-        $("emailSalvo").textContent = estado.sessaoSalva.email;
-        $("blocoLoginForm").classList.add("oculto");
-        $("blocoSessao").classList.remove("oculto");
+        // Cada coluna do banco guarda EXATAMENTE a coluna de mesmo nome da planilha (sem misturar).
+        const siteHelix = texto(celula(linha, "site"));
+        if (!siteHelix) { resultado.semWO++; continue; }
+
+        if (porWO[wo.toUpperCase()]) resultado.duplicadas++;
+        porWO[wo.toUpperCase()] = {
+          wo: wo.toUpperCase(),
+          clr_sdr_site_helix: siteHelix,
+          programado_infratel: texto(celula(linha, "siteInfratel")),
+          tipo: texto(celula(linha, "tipo")),
+          equipe_responsavel: texto(celula(linha, "equipeResponsavel")),
+          equipe_engemon: texto(celula(linha, "equipeEngemon")),
+          expurgo: texto(celula(linha, "expurgo")),
+          status_final: texto(celula(linha, "statusFinal")),
+          data_fim: converterData(celula(linha, "dataFim"))
+        };
       }
-    } catch (e) { /* sem sessão: fica na tela de login */ }
-  })();
-  $("botaoContinuar").addEventListener("click", function () {
-    if (estado.sessaoSalva) iniciarSistema(estado.sessaoSalva);
-  });
-  $("botaoOutraConta").addEventListener("click", async function () {
-    await banco.auth.signOut();
-    estado.sessaoSalva = null;
-    $("blocoSessao").classList.add("oculto");
-    $("blocoLoginForm").classList.remove("oculto");
-  });
+      resultado.linhas = Object.keys(porWO).map(function (k) { return porWO[k]; });
+      return resultado;
+    }
+    // ---- LISTA DE SITES: mesma regra do Power Query (uma sigla por linha) ----------
+    // Só entram os endereços do setor EQUIPE_ENGEMON_ATIVA (coluna "Equipe Responsável - Engemon"), o mesmo da base.
+
+    // Colunas que guardam siglas (cada uma vira uma linha por endereço).
+    const COLUNAS_SIGLAS = ["id_ebt", "id_claro_fixo", "id_net", "id_claro_omr", "id_site_main"];
+
+    // Outras colunas lidas (nome na planilha, sem acento e em minúsculas).
+    const COLUNAS_SITES = {
+      id:                "id",
+      unidade:           "unidade_responsavel",
+      equipeResponsavel: "equipe responsavel",
+      endereco:          "endereco_cep",
+      municipio:         "municipio",
+      estado:            "estado",
+      latitude:          "latitude",
+      longitude:         "longitude"
+    };
+
+    // Só letras e números, em maiúsculas: "spo pr", "SPO PR" e "SPO-PR" viram a mesma chave: SPOPR.
+    // IMPORTANTE: o app.html usa a mesma regra (limparSite). Se mudar aqui, mude lá.
+    function chaveDeSigla(texto) {
+      return String(texto == null ? "" : texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase().replace(/[^A-Z0-9]/g, "");
+    }
+
+    function acharCabecalhoSites(matriz) {
+      for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+        const nomes = matriz[i].map(limpar);
+        if (nomes.includes("id") && nomes.includes(COLUNAS_SITES.unidade) && nomes.includes("id_ebt")) return i;
+      }
+      return -1;
+    }
+
+    function numeroOuNulo(valor) {
+      const n = Number(String(valor == null ? "" : valor).replace(",", "."));
+      return String(valor == null ? "" : valor).trim() !== "" && isFinite(n) ? n : null;
+    }
+
+    // Devolve uma linha por sigla: { chave_busca, chave, id_endereco, origem_id, ... }
+    function montarSites(matriz) {
+      const resultado = { linhas: [], lidas: 0, foraDaUnidade: 0, enderecos: 0, enderecosComVarias: 0,
+                          exemplos: [], conflitos: 0, erro: null,
+                          // diagnóstico para conferir contagens
+                          porUnidade: 0, porEngemon: 0, nosDois: 0, semSigla: 0, semEndereco: 0, listaConflitos: [], idsSemSigla: [] };
+
+      const posCabecalho = acharCabecalhoSites(matriz);
+      if (posCabecalho < 0) {
+        resultado.erro = "Não encontrei o cabeçalho (colunas ID, UNIDADE_RESPONSAVEL e ID_EBT) nesta planilha.";
+        return resultado;
+      }
+      const nomes = matriz[posCabecalho].map(limpar);
+      const pos = {};
+      for (const chave in COLUNAS_SITES) pos[chave] = nomes.indexOf(COLUNAS_SITES[chave]);
+      const posEngemon = nomes.indexOf("equipe responsavel - engemon");
+      if (posEngemon < 0) { resultado.erro = "Não encontrei a coluna Equipe Responsável - Engemon na lista de sites."; return resultado; }
+      const colunasDeSigla = COLUNAS_SIGLAS.map(function (n) { return { nome: n, indice: nomes.indexOf(n) }; })
+        .filter(function (c) { return c.indice >= 0; });
+      if (colunasDeSigla.length === 0) { resultado.erro = "Não encontrei nenhuma coluna de sigla (ID_EBT, ID_NET...)."; return resultado; }
+
+      function celula(linha, chave) { return pos[chave] < 0 ? "" : linha[pos[chave]]; }
+      function texto(valor) { const t = String(valor == null ? "" : valor).trim(); return t === "" ? null : t; }
+
+      const porChave = {};          // chave: sigla|id  (a mesma sigla pode estar em mais de um endereço)
+      const idsDaSigla = {};        // sigla -> ids onde ela aparece
+      const siglasPorEndereco = {};
+      for (let i = posCabecalho + 1; i < matriz.length; i++) {
+        const linha = matriz[i];
+        const id = texto(celula(linha, "id"));
+        if (!id) continue;
+        resultado.lidas++;
+        const naUnidade = limpar(celula(linha, "unidade")) === limpar(EQUIPE_ENGEMON_ATIVA);
+        const noEngemon = posEngemon >= 0 && limpar(linha[posEngemon]) === limpar(EQUIPE_ENGEMON_ATIVA);
+        if (naUnidade) resultado.porUnidade++;
+        if (noEngemon) resultado.porEngemon++;
+        if (naUnidade && noEngemon) resultado.nosDois++;
+        if (!noEngemon) { resultado.foraDaUnidade++; continue; }
+        if (!texto(celula(linha, "endereco"))) resultado.semEndereco++;
+
+        const vistas = {};
+        let achouSigla = false;
+        colunasDeSigla.forEach(function (c) {
+          const sigla = texto(linha[c.indice]);
+          if (!sigla) return;
+          const busca = chaveDeSigla(sigla);
+          if (vistas[busca]) return;               // a mesma sigla repetida na mesma linha conta uma vez (como List.Distinct)
+          vistas[busca] = true;
+          achouSigla = true;
+          const outros = idsDaSigla[busca] = idsDaSigla[busca] || [];
+          if (outros.length > 0 && outros.indexOf(id) < 0) {
+            resultado.conflitos++;
+            if (resultado.listaConflitos.length < 10) resultado.listaConflitos.push(sigla + " (IDs " + outros.concat([id]).join(", ") + ")");
+          }
+          if (outros.indexOf(id) < 0) outros.push(id);
+          porChave[busca + "|" + id] = {
+            chave_busca: busca,
+            chave: sigla,
+            id_endereco: id,
+            origem_id: c.nome.toUpperCase(),
+            unidade_responsavel: texto(celula(linha, "unidade")),
+            equipe_responsavel: texto(celula(linha, "equipeResponsavel")),
+            endereco_cep: texto(celula(linha, "endereco")),
+            municipio: texto(celula(linha, "municipio")),
+            estado: texto(celula(linha, "estado")),
+            latitude: numeroOuNulo(celula(linha, "latitude")),
+            longitude: numeroOuNulo(celula(linha, "longitude"))
+          };
+        });
+        if (!achouSigla) { resultado.semSigla++; if (resultado.idsSemSigla.length < 10) resultado.idsSemSigla.push(id); }
+      }
+      resultado.linhas = Object.keys(porChave).map(function (k) { return porChave[k]; });
+      resultado.linhas.forEach(function (l) {
+        (siglasPorEndereco[l.id_endereco] = siglasPorEndereco[l.id_endereco] || []).push(l.chave);
+      });
+      const ids = Object.keys(siglasPorEndereco);
+      resultado.enderecos = ids.length;
+      const varias = ids.filter(function (id) { return siglasPorEndereco[id].length > 1; });
+      resultado.enderecosComVarias = varias.length;
+      resultado.exemplos = varias.slice(0, 8).map(function (id) { return { id: id, siglas: siglasPorEndereco[id] }; });
+      return resultado;
+    }
+    // ==== FIM DAS FUNCOES PURAS ==================================================
+
+    // ==== TELA ===================================================================
+    if (typeof document !== "undefined") {
+      const banco = supabase.createClient(ENDERECO, CHAVE);
+      let linhasParaGravar = [];
+      let pastaDeTrabalho = null;
+
+      const $ = function (id) { return document.getElementById(id); };
+
+      $("botaoEntrar").addEventListener("click", async function () {
+        $("msgLogin").textContent = "Entrando...";
+        const login = await banco.auth.signInWithPassword({
+          email: $("email").value.trim(), password: $("senha").value
+        });
+        if (login.error) {
+          $("msgLogin").innerHTML = '<span class="erro">Erro no login: ' + login.error.message + "</span>";
+          return;
+        }
+        $("msgLogin").innerHTML = '<span class="ok">Login feito.</span>';
+        $("caixaArquivo").classList.remove("oculto");
+        $("caixaSites").classList.remove("oculto");
+        mostrarUltimaAtualizacao();
+        mostrarUltimaSites();
+      });
+
+      async function mostrarUltimaAtualizacao() {
+        const r = await banco.from("base_preventiva")
+          .select("atualizado_em").order("atualizado_em", { ascending: false }).limit(1);
+        if (r.error) { $("ultimaAtualizacao").textContent = "Não consegui ler a última atualização: " + r.error.message; return; }
+        $("ultimaAtualizacao").textContent = r.data.length
+          ? "Última atualização da base: " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
+          : "A base ainda está vazia.";
+      }
+
+      $("arquivo").addEventListener("change", async function (evento) {
+        const arquivo = evento.target.files[0];
+        if (!arquivo) return;
+        $("msgArquivo").textContent = "Lendo o arquivo...";
+        try {
+          const dados = await arquivo.arrayBuffer();
+          pastaDeTrabalho = XLSX.read(dados, { type: "array", cellDates: true });
+        } catch (e) {
+          $("msgArquivo").innerHTML = '<span class="erro">Não consegui abrir o arquivo: ' + e.message + "</span>";
+          return;
+        }
+        // lista de abas; escolhe a que parece ser a da base
+        const seletor = $("seletorAba");
+        seletor.innerHTML = "";
+        let padrao = 0;
+        pastaDeTrabalho.SheetNames.forEach(function (nome, i) {
+          const opcao = document.createElement("option");
+          opcao.value = nome; opcao.textContent = nome;
+          seletor.appendChild(opcao);
+          if (limpar(nome).includes("atualiza")) padrao = i;
+        });
+        seletor.selectedIndex = padrao;
+        seletor.classList.toggle("oculto", pastaDeTrabalho.SheetNames.length < 2);
+        $("msgArquivo").textContent = "";
+        processarAba();
+      });
+
+      $("seletorAba").addEventListener("change", processarAba);
+
+      function processarAba() {
+        const nomeAba = $("seletorAba").value;
+        const matriz = XLSX.utils.sheet_to_json(pastaDeTrabalho.Sheets[nomeAba], { header: 1, raw: true, defval: "" });
+        const r = montarLinhas(matriz);
+        $("caixaPrevia").classList.remove("oculto");
+        linhasParaGravar = r.linhas;
+
+        if (r.erro) {
+          $("resumo").innerHTML = '<span class="erro">' + r.erro + "</span>";
+          $("tabelaPrevia").innerHTML = "";
+          $("botaoGravar").disabled = true;
+          return;
+        }
+
+        // contagem por status
+        const porStatus = {};
+        r.linhas.forEach(function (l) { const s = l.status_final || "(vazio)"; porStatus[s] = (porStatus[s] || 0) + 1; });
+        const textoStatus = Object.keys(porStatus).map(function (s) { return s + ": " + porStatus[s]; }).join(" · ");
+
+        $("resumo").innerHTML =
+          "<p>WOs lidas na planilha: <b>" + r.total + "</b><br>" +
+          "Do setor " + EQUIPE_ENGEMON_ATIVA + " (vão para o banco): <b>" + r.linhas.length + "</b><br>" +
+          "De outros setores (ignoradas): " + r.foraDoSetor + "<br>" +
+          "Por status: " + (textoStatus || "-") + "</p>" +
+          (r.duplicadas ? '<p class="aviso">Havia ' + r.duplicadas + " WO repetida(s); ficou a última.</p>" : "") +
+          (r.linhas.length === 0 ? '<p class="erro">Nenhuma linha do setor ' + EQUIPE_ENGEMON_ATIVA + " encontrada.</p>" : "");
+
+        const amostra = r.linhas.slice(0, 5);
+        $("tabelaPrevia").innerHTML =
+          "<tr><th>Site</th><th>WO</th><th>Tipo</th><th>Status</th><th>Data fim</th></tr>" +
+          amostra.map(function (l) {
+            return "<tr><td>" + (l.programado_infratel || l.clr_sdr_site_helix) + "</td><td>" + l.wo + "</td><td>" + (l.tipo || "") +
+              "</td><td>" + (l.status_final || "") + "</td><td>" + (l.data_fim || "") + "</td></tr>";
+          }).join("");
+        $("botaoGravar").disabled = r.linhas.length === 0;
+        $("msgGravar").textContent = "";
+      }
+
+      $("botaoGravar").addEventListener("click", async function () {
+        $("botaoGravar").disabled = true;
+        const carimbo = new Date().toISOString();
+        const lote = 500;
+        let gravadas = 0;
+
+        // 1) grava (ou atualiza) as WOs, em lotes, todas com o mesmo carimbo
+        for (let i = 0; i < linhasParaGravar.length; i += lote) {
+          const parte = linhasParaGravar.slice(i, i + lote).map(function (l) {
+            return Object.assign({}, l, { atualizado_em: carimbo });
+          });
+          const r = await banco.from("base_preventiva").upsert(parte, { onConflict: "wo" });
+          if (r.error) {
+            $("msgGravar").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message +
+              " (a base anterior foi mantida)</span>";
+            $("botaoGravar").disabled = false;
+            return;
+          }
+          gravadas += parte.length;
+          $("msgGravar").textContent = "Gravando... " + gravadas + " de " + linhasParaGravar.length;
+        }
+
+        // 2) remove as WOs antigas que não vieram nesta planilha
+        const limpeza = await banco.from("base_preventiva").delete().lt("atualizado_em", carimbo);
+        if (limpeza.error) {
+          $("msgGravar").innerHTML = '<span class="aviso">Gravei ' + gravadas +
+            " WOs, mas não consegui remover as antigas: " + limpeza.error.message + "</span>";
+        } else {
+          $("msgGravar").innerHTML = '<span class="ok">Pronto: ' + gravadas + " WOs gravadas.</span>";
+        }
+        mostrarUltimaAtualizacao();
+        $("botaoGravar").disabled = false;
+      });
+
+      // ---- lista de sites --------------------------------------------------------
+      let sitesParaGravar = [];
+
+      async function mostrarUltimaSites() {
+        const r = await banco.from("sites").select("atualizado_em").order("atualizado_em", { ascending: false }).limit(1);
+        if (r.error) { $("ultimaSites").innerHTML = '<span class="erro">Não consegui ler o cadastro (a tabela "sites" já foi criada?): ' + r.error.message + "</span>"; return; }
+        $("ultimaSites").textContent = r.data.length
+          ? "Última atualização do cadastro: " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
+          : "O cadastro de sites ainda está vazio.";
+      }
+      $("arquivoSites").addEventListener("change", async function (evento) {
+        const arquivo = evento.target.files[0];
+        if (!arquivo) return;
+        $("msgSites").textContent = "Lendo o arquivo...";
+        $("botaoGravarSites").disabled = true;
+        let pasta;
+        try {
+          pasta = XLSX.read(await arquivo.arrayBuffer(), { type: "array", cellDates: true });
+        } catch (e) {
+          $("msgSites").innerHTML = '<span class="erro">Não consegui abrir o arquivo: ' + e.message + "</span>";
+          return;
+        }
+        // usa a primeira aba que tiver o cabeçalho esperado
+        let r = null;
+        for (const nome of pasta.SheetNames) {
+          const matriz = XLSX.utils.sheet_to_json(pasta.Sheets[nome], { header: 1, raw: true, defval: "" });
+          if (acharCabecalhoSites(matriz) >= 0) { r = montarSites(matriz); break; }
+        }
+        if (!r) { $("msgSites").innerHTML = '<span class="erro">Nenhuma aba tem as colunas ID, UNIDADE_RESPONSAVEL e ID_EBT.</span>'; return; }
+        $("msgSites").textContent = "";
+        if (r.erro) { $("resumoSites").innerHTML = '<span class="erro">' + r.erro + "</span>"; return; }
+
+        sitesParaGravar = r.linhas;
+        $("resumoSites").innerHTML =
+          "<p>Endereços lidos: <b>" + r.lidas + "</b> (de outros setores, ignorados: " + r.foraDaUnidade + ")<br>" +
+          "Setor " + EQUIPE_ENGEMON_ATIVA + ": <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
+          "Endereços com mais de uma sigla: <b>" + r.enderecosComVarias + "</b></p>" +
+          '<p class="pequeno"><b>Conferência de contagem</b><br>' +
+          "Equipe Responsável - Engemon = " + EQUIPE_ENGEMON_ATIVA + " (filtro usado): <b>" + r.porEngemon + "</b> · para comparação, UNIDADE_RESPONSAVEL = " + EQUIPE_ENGEMON_ATIVA + ": " + r.porUnidade + "<br>" +
+          "Endereços do setor com ENDERECO_CEP vazio: " + r.semEndereco + "<br>" +
+          "Endereços do setor sem nenhuma sigla (não gravados): " + r.semSigla +
+          (r.idsSemSigla.length ? " (IDs: " + r.idsSemSigla.join(", ") + ")" : "") + "</p>" +
+          (r.conflitos ? '<p class="aviso">' + r.conflitos + " sigla(s) aparecem em mais de um endereço (guardei todos): " +
+            r.listaConflitos.join("; ") + "</p>" : "");
+        $("tabelaSites").innerHTML = "<tr><th>ID do endereço</th><th>Siglas</th></tr>" +
+          r.exemplos.map(function (e) { return "<tr><td>" + e.id + "</td><td>" + e.siglas.join(", ") + "</td></tr>"; }).join("");
+        $("botaoGravarSites").disabled = r.linhas.length === 0;
+        $("msgGravarSites").textContent = "";
+      });
+
+      $("botaoGravarSites").addEventListener("click", async function () {
+        $("botaoGravarSites").disabled = true;
+        const carimbo = new Date().toISOString();
+        const lote = 500;
+        let gravadas = 0;
+        for (let i = 0; i < sitesParaGravar.length; i += lote) {
+          const parte = sitesParaGravar.slice(i, i + lote).map(function (l) { return Object.assign({}, l, { atualizado_em: carimbo }); });
+          const r = await banco.from("sites").upsert(parte, { onConflict: "chave_busca,id_endereco" });
+          if (r.error) {
+            $("msgGravarSites").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message + "</span>";
+            $("botaoGravarSites").disabled = false;
+            return;
+          }
+          gravadas += parte.length;
+          $("msgGravarSites").textContent = "Gravando... " + gravadas + " de " + sitesParaGravar.length;
+        }
+        const limpeza = await banco.from("sites").delete().lt("atualizado_em", carimbo);
+        $("msgGravarSites").innerHTML = limpeza.error
+          ? '<span class="aviso">Gravei ' + gravadas + " siglas, mas não consegui remover as antigas: " + limpeza.error.message + "</span>"
+          : '<span class="ok">Pronto: ' + gravadas + " siglas gravadas.</span>";
+        mostrarUltimaSites();
+        $("botaoGravarSites").disabled = false;
+      });
+    }
   </script>
 </body>
 </html>
