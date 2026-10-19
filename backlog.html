@@ -214,9 +214,9 @@
     if (!l.data) motivos.push("data inválida ou vazia");
     if (!l.site) motivos.push("sem site (ex.: treinamento, deslocamento)");
     if (!l.entrada) motivos.push("sem horário de entrada");
-    if (!l.saida) motivos.push("sem horário de saída");
-    else if (l.saida === "00:00:00") motivos.push("saída 00:00:00 (provável saída não registrada)");
-    if (l.entrada && l.saida && l.saida !== "00:00:00" && l.saida < l.entrada) motivos.push("saída antes da entrada");
+    // Saída vazia ou 00:00:00 = não registrada: a visita entra sem saída e a validadora informa depois (Equipes em campo > Saídas a ajustar).
+    const saidaPendente = !l.saida || l.saida === "00:00:00";
+    if (!saidaPendente && l.entrada && l.saida < l.entrada) motivos.push("saída antes da entrada");
 
     r.atividade = lerAtividade(l.atividadeTexto);
     if (!r.atividade) motivos.push(l.atividadeTexto ? "atividade não reconhecida: " + l.atividadeTexto : "sem atividade");
@@ -254,7 +254,8 @@
       else { r.estado = "escolher"; r.dicaWos = "planilha diz " + n + " WO(s); o site tem " + c.length + " de MOP"; }
     }
     r.entradaIso = l.data + "T" + l.entrada + ctx.fuso;
-    r.saidaIso = l.data + "T" + l.saida + ctx.fuso;
+    r.saidaPendente = saidaPendente;
+    r.saidaIso = saidaPendente ? null : l.data + "T" + l.saida + ctx.fuso;
     r.chaveDup = limparSite(l.site) + "|" + new Date(r.entradaIso).getTime();
     if (ctx.jaGravadas[r.chaveDup]) r.estado = "duplicada";
     return r;
@@ -381,6 +382,7 @@
         '<span class="tile"><b class="aviso">' + es.length + "</b>escolher WO</span>" +
         '<span class="tile"><b class="erro">' + re.length + "</b>reservadas</span>" +
         '<span class="tile"><b>' + du.length + "</b>já gravadas</span>" +
+        '<span class="tile"><b>' + pr.filter(function (r) { return r.saidaPendente; }).length + "</b>sem saída (a ajustar no sistema)</span>" +
         '<span class="tile"><b>' + estado.foraPeriodo + "</b>antes da data inicial</span>";
       $("botaoGravar").disabled = pr.length === 0;
       $("botaoExcel").disabled = re.length === 0;
@@ -392,7 +394,7 @@
       const cel = function (r) {
         const l = r.l;
         return "<td>" + l.linha + "</td><td>" + dataBr(l.data) + "</td><td>" + esc(l.equipe) + "</td><td>" + esc(l.atividadeTexto) + "</td><td>" + esc(l.site) +
-          "</td><td>" + (l.entrada || "") + "</td><td>" + (l.saida || "") + "</td><td>" + (l.nWo == null ? "" : l.nWo) + "</td><td>" + esc(l.obs) + "</td>";
+          "</td><td>" + (l.entrada || "") + "</td><td>" + (l.saida || "") + (l.saida === "00:00:00" ? " (sem saída)" : "") + "</td><td>" + (l.nWo == null ? "" : l.nWo) + "</td><td>" + esc(l.obs) + "</td>";
       };
       let corpo = "";
       if (estado.aba === "prontas") {
