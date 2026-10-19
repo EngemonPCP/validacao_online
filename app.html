@@ -140,13 +140,22 @@
     .periodo label { margin:0; }
     .periodo select { width:auto; padding:6px 10px; }
     .tabela-rolagem { overflow-x:auto; background:#fff; border:1px solid var(--borda); border-radius:6px; }
-    #tabelaConf { border-collapse:collapse; width:100%; font-size:14px; }
-    #tabelaConf th { text-align:left; background:#f6f7f9; color:var(--suave); font-size:13px; font-weight:500; padding:10px 12px; border-bottom:1px solid var(--borda); white-space:nowrap; }
-    #tabelaConf td { padding:10px 12px; border-bottom:1px solid #e8ecf0; vertical-align:top; }
-    #tabelaConf tr:last-child td { border-bottom:0; }
-    #tabelaConf tr.linha-pendente td:first-child { box-shadow:inset 3px 0 0 var(--vermelho); }
-    #tabelaConf .wo { font-weight:600; white-space:nowrap; }
+    #tabelaConf, #tabelaEPS { border-collapse:collapse; width:100%; font-size:14px; }
+    #tabelaConf th, #tabelaEPS th { text-align:left; background:#f6f7f9; color:var(--suave); font-size:13px; font-weight:500; padding:10px 12px; border-bottom:1px solid var(--borda); white-space:nowrap; }
+    #tabelaConf td, #tabelaEPS td { padding:10px 12px; border-bottom:1px solid #e8ecf0; vertical-align:top; }
+    #tabelaConf tr:last-child td, #tabelaEPS tr:last-child td { border-bottom:0; }
+    #tabelaConf tr.linha-pendente td:first-child, #tabelaEPS tr.linha-pendente td:first-child { box-shadow:inset 3px 0 0 var(--vermelho); }
+    #tabelaConf .wo, #tabelaEPS .wo { font-weight:600; white-space:nowrap; }
     .detalhe { display:block; color:var(--suave); font-size:12px; margin-top:3px; }
+  
+    .periodo { flex-wrap:wrap; }
+    .periodo input[type=text] { width:240px; padding:6px 10px; }
+    #tabelaEPS .arquivo { font-size:13px; word-break:break-word; }
+    #tabelaEPS .arquivo + .arquivo { margin-top:8px; }
+    #tabelaEPS td select, #tabelaEPS td input[type=text] { width:auto; max-width:240px; padding:4px 8px; font-size:13px; }
+    #tabelaEPS td .acoes { display:flex; gap:6px; flex-wrap:wrap; }
+    #tabelaEPS .esmaecido { color:var(--suave); }
+    #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #c58a1b; }
   </style>
 </head>
 <body>
@@ -160,7 +169,7 @@
       <button id="botaoGrupoPreventiva" class="grupo" aria-expanded="false">Preventiva <span class="seta">▾</span></button>
       <div id="submenuPreventiva" class="submenu oculto">
         <button data-tela="Conferencia" data-grupo="MOP">MOP</button>
-        <button data-tela="Conferencia" data-grupo="EPS">EPS</button>
+        <button data-tela="EPS" data-grupo="">EPS</button>
       </div>
       <button data-tela="Conferencia" data-grupo="">Conferência</button>
     </nav>
@@ -260,6 +269,35 @@
       <div class="grade-cartoes" id="gradeSaidas"></div>
     </section>
 
+    <!-- EPS: relatorios das terceiras -->
+    <section id="telaEPS" class="tela oculto">
+      <h1>Preventiva EPS: relatórios das terceiras</h1>
+      <p class="sub" id="subEPS">Relatórios que as terceiras colocaram nas pastas do SharePoint, comparados com a base do cliente. O que estiver em “Falta lançar” é trabalho da planejadora no Infratel.</p>
+      <div id="faixaEPS" class="faixa"></div>
+      <div class="azulejos" id="azulejosEPS"></div>
+      <div class="barra-filtros">
+        <div class="chips" id="chipsEPS">
+          <button data-filtro="falta" class="chip ativo">Falta lançar</button>
+          <button data-filtro="aguardando" class="chip">Aguardando relatório</button>
+          <button data-filtro="lancada" class="chip">Lançadas</button>
+          <button data-filtro="revisar" class="chip">Revisar</button>
+          <button data-filtro="todos" class="chip">Todos</button>
+        </div>
+        <div class="periodo">
+          <label for="mesEPS">Mês</label>
+          <select id="mesEPS"></select>
+          <label for="empresaEPS">Empresa</label>
+          <select id="empresaEPS"><option value="">Todas</option></select>
+          <input type="text" id="buscaEPS" placeholder="Buscar site, WO ou arquivo">
+          <button id="botaoAtualizarEPS" class="secundario">Atualizar</button>
+        </div>
+      </div>
+      <div class="tabela-rolagem">
+        <table id="tabelaEPS"></table>
+      </div>
+      <p class="detalhe" id="notaEPS"></p>
+    </section>
+
     <!-- CONFERENCIA -->
     <section id="telaConferencia" class="tela oculto">
       <h1 id="tituloConf">Conferência de relatórios</h1>
@@ -324,7 +362,32 @@
     // --- Grupos de preventiva ---
     // Tipo de preventiva que contém uma destas palavras (sem acento) é MOP; todo o resto é EPS.
     palavrasMOP: ["energia", "climatiza"],
-    horasBaseDesatualizada: 4          // avisa quando a base está mais velha que isso
+    horasBaseDesatualizada: 4,         // avisa quando a base está mais velha que isso
+
+    // --- Painel EPS (relatórios que as terceiras colocam no SharePoint) ---
+    eps: {
+      // Subpastas que NÃO são preventiva (sem acento, minúsculas): os arquivos delas são ignorados.
+      ignorarSubpastas: ["corretiv", "servic"],
+      diasAlerta: 2,            // relatório entregue e ainda não lançado há mais que isso fica em destaque
+      diasHistorico: 150,       // quantos dias de arquivos o painel carrega
+      horasColetaDesatualizada: 3,   // avisa quando o robô de coleta não roda há mais que isso
+      // Pasta da terceira -> palavras do TIPO da WO na base (sem acento, minúsculas).
+      // Só serve para escolher a WO certa quando o site tem mais de uma WO EPS. Ajuste conforme os tipos da sua base.
+      pastas: [
+        { pasta: "ENERG - GERADORES",            palavras: ["gerador", "gmg"] },
+        { pasta: "ENGEMON - SDAI",               palavras: ["sdai", "incendio"] },
+        { pasta: "ENGEMON - TERMOGRAFIA & SPDA", palavras: ["termograf", "spda"] },
+        { pasta: "FCS SERVIÇOS - ZELADORIA",     palavras: ["zelador", "limpeza"] },
+        { pasta: "PISTEKER - SPDA",              palavras: ["spda", "termograf", "cabine", "manuten"] }
+      ],
+      // Código no NOME do arquivo -> palavras do tipo da WO. Quando o site tem mais de uma WO EPS,
+      // o código escolhe a certa (ex.: RT-ENGEMON-SPOIG-MANU-2026.pdf é a manutenção da cabine primária).
+      servicosNoNome: [
+        { codigos: ["TERM", "TERMO", "THERMO", "TRMGRF"], palavras: ["termograf"] },
+        { codigos: ["MANU"],                              palavras: ["cabine", "manuten"] },
+        { codigos: ["SPDA"],                              palavras: ["spda", "para-raio", "para raio"] }
+      ]
+    }
   };
 
   // Deixa só letras e números, em maiúsculas: "grs riv", "GRS-RIV" e "grs.riv" viram "GRSRIV".
@@ -463,6 +526,28 @@
     return todas;
   }
 
+
+  // Relatórios que o robô de coleta registrou a partir das pastas do SharePoint.
+  async function carregarRelatorios() {
+    const desde = new Date(Date.now() - REGRAS.eps.diasHistorico * 86400000).toISOString();
+    const todas = [];
+    const passo = 1000;
+    for (let de = 0; ; de += passo) {
+      const dados = conferir(await banco.from("relatorios_drive")
+        .select("caminho,pasta_raiz,subpasta,nome_arquivo,data_arquivo,visto_em,wo,vinculado_por")
+        .gte("data_arquivo", desde).order("caminho").range(de, de + passo - 1));
+      for (const linha of dados) todas.push(linha);
+      if (dados.length < passo) break;
+    }
+    return todas;
+  }
+
+  // Liga um relatório a uma WO (wo = "IGNORAR" tira o arquivo do painel).
+  async function vincularRelatorio(caminho, wo, quem) {
+    conferir(await banco.from("relatorios_drive")
+      .update({ wo: wo, vinculado_por: quem, vinculado_em: new Date().toISOString() }).eq("caminho", caminho));
+  }
+
   async function carregarEquipes() {
     return conferir(await banco.from("equipes_lista")
       .select("id,nome,tipo").eq("ativa", true).order("nome"));
@@ -507,7 +592,8 @@
   // ===========================================================================
   const $ = function (id) { return document.getElementById(id); };
   const estado = { base: [], sites: [], porWO: {}, equipes: [], siteEscolhido: null, emCampo: [], pollId: null,
-                   usuarioEmail: "", filtroConf: "pendentes", linhasConf: [], grupoAtual: "" };
+                   usuarioEmail: "", filtroConf: "pendentes", linhasConf: [], grupoAtual: "",
+                   filtroEPS: "falta", mesEPS: "", relatoriosEPS: [] };
 
   function esc(texto) {
     return String(texto == null ? "" : texto).replace(/[&<>"']/g, function (c) {
@@ -662,7 +748,7 @@
     document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
       b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo);
     });
-    if (nome === "Conferencia" && grupo) definirSubmenu(true);
+    if ((nome === "Conferencia" && grupo) || nome === "EPS") definirSubmenu(true);
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("tela" + nome).classList.remove("oculto");
     clearInterval(estado.pollId);
@@ -673,6 +759,10 @@
     if (nome === "Conferencia") {
       atualizarConferencia();
       estado.pollId = setInterval(atualizarConferencia, 120000);
+    }
+    if (nome === "EPS") {
+      atualizarEPS();
+      estado.pollId = setInterval(atualizarEPS, 300000);
     }
   }
 
@@ -809,6 +899,347 @@
       await marcarCobrado(botao.dataset.id, estado.usuarioEmail);
       mostrarAviso("Marcado como cobrado.");
       atualizarConferencia();
+    } catch (err) {
+      botao.disabled = false;
+      mostrarAviso("Erro ao gravar: " + err.message, "erro");
+    }
+  });
+
+
+  // ---- tela EPS -------------------------------------------------------------
+  // Fluxo: a terceira coloca o relatório na pasta -> o robô registra -> aqui ele aparece ligado à WO do site.
+  //   Aguardando relatório = WO EPS aberta na base e nenhum relatório do mês na pasta
+  //   Falta lançar         = WO aberta na base, mas o relatório já está na pasta (trabalho da planejadora)
+  //   Lançada              = a base já mostra a WO como executada
+  //   Revisar              = relatório que o sistema não conseguiu ligar a uma WO com segurança
+  const MESES = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  function semAcento(t) { return String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function doisDigitos(n) { return String(n).padStart(2, "0"); }
+
+  // Mês do serviço = mês escrito na pasta ("10 - Outubro", "AGOSTO - 2026"); se não houver, o mês da data do arquivo.
+  // Ano: o que estiver na pasta; senão o ano da data do arquivo (menos 1 se o mês da pasta for depois do mês do arquivo).
+  function competenciaDoRelatorio(r) {
+    const caminho = semAcento(r.subpasta).toLowerCase();
+    const data = r.data_arquivo ? new Date(r.data_arquivo) : new Date();
+    let mes = 0;
+    for (let i = 0; i < 12; i++) {
+      if (new RegExp("(^|[^a-z])" + MESES[i] + "([^a-z]|$)").test(caminho)) { mes = i + 1; break; }
+    }
+    if (!mes) return data.getFullYear() + "-" + doisDigitos(data.getMonth() + 1);
+    const ano = caminho.match(/(^|[^0-9])(20[0-9][0-9])([^0-9]|$)/);
+    let anoFinal = ano ? Number(ano[2]) : data.getFullYear();
+    if (!ano && mes > data.getMonth() + 1) anoFinal -= 1;
+    return anoFinal + "-" + doisDigitos(mes);
+  }
+
+  // Possíveis siglas de site dentro de um texto: cada pedaço, e dois ou três pedaços colados
+  // ("THERMO - SMMOO - 93" -> SMMOO93).
+  function candidatasDeSite(texto) {
+    const t = semAcento(texto).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+    const lista = [];
+    for (let i = 0; i < t.length; i++) {
+      lista.push(t[i]);
+      if (i + 1 < t.length) lista.push(t[i] + t[i + 1]);
+      if (i + 2 < t.length) lista.push(t[i] + t[i + 1] + t[i + 2]);
+    }
+    return lista.filter(function (k, i) { return k.length >= 4 && lista.indexOf(k) === i; });
+  }
+
+  function palavrasDaPasta(pasta) {
+    const chave = limparSite(pasta);
+    const achada = REGRAS.eps.pastas.filter(function (p) { return limparSite(p.pasta) === chave; })[0];
+    return achada ? achada.palavras : [];
+  }
+  function tipoCombina(tipo, palavras) {
+    const t = semAcento(tipo).toLowerCase();
+    return palavras.some(function (p) { return t.indexOf(p) >= 0; });
+  }
+  // Serviço indicado pelo código no nome do arquivo (TERM, MANU, SPDA...). Devolve as palavras do tipo da WO.
+  function palavrasDoServico(nome) {
+    const pedacos = semAcento(nome).toUpperCase().split(/[^A-Z0-9]+/);
+    let palavras = [];
+    REGRAS.eps.servicosNoNome.forEach(function (s) {
+      if (s.codigos.some(function (c) { return pedacos.indexOf(c) >= 0; })) palavras = palavras.concat(s.palavras);
+    });
+    return palavras;
+  }
+  function wosEPSDaChave(chave) {
+    return (estado.wosPorChave[chave] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "EPS"; });
+  }
+
+  // Descobre a WO de um relatório. Só liga sozinho quando tem certeza.
+  //   { wo }                      -> ligado
+  //   { motivo, candidatas, ... } -> precisa de revisão
+  function ligarRelatorio(r) {
+    if (r.wo && estado.porWO[r.wo]) return { wo: r.wo, manual: true };
+    const nome = String(r.nome_arquivo || "").replace(/\.[^.]+$/, "");
+    const ultima = String(r.subpasta || "").split("/").pop();
+    let sigla = "";
+    let chaves = candidatasDeSite(nome).filter(function (k) { return wosEPSDaChave(k).length > 0; });
+    if (chaves.length === 0) {   // plano B: a sigla pode estar no nome da pasta ("1 - SPO IG")
+      chaves = candidatasDeSite(ultima).filter(function (k) { return wosEPSDaChave(k).length > 0; });
+    }
+    if (chaves.length === 0) {
+      // Existe com o prefixo SM? Só sugere, nunca liga sozinho (FAV01 e SMFAV01 podem ser sites diferentes).
+      const prov = candidatasDeSite(nome).concat(candidatasDeSite(ultima)).filter(function (k) {
+        return wosEPSDaChave(REGRAS.prefixoSite + k).length > 0;
+      });
+      if (prov.length > 0) {
+        const cand = wosEPSDaChave(REGRAS.prefixoSite + prov[0]);
+        return { motivo: "Site provável: " + REGRAS.prefixoSite + prov[0] + " (confirme)", candidatas: cand, sigla: REGRAS.prefixoSite + prov[0] };
+      }
+      return { motivo: "Site não identificado no nome do arquivo", candidatas: [] };
+    }
+    let cand = [];
+    chaves.forEach(function (k) {
+      wosEPSDaChave(k).forEach(function (l) { if (cand.indexOf(l) < 0) cand.push(l); });
+    });
+    sigla = chaves[0];
+    if (chaves.length > 1) return { motivo: "Mais de um site no nome: " + chaves.join(", "), candidatas: cand, sigla: sigla };
+    const servico = palavrasDoServico(nome);
+    const palavras = palavrasDaPasta(r.pasta_raiz);
+    if (cand.length === 1) {
+      const palavrasConferir = servico.length > 0 ? servico : palavras;
+      return { wo: cand[0].wo, tipoConfere: palavrasConferir.length === 0 || tipoCombina(cand[0].tipo, palavrasConferir) };
+    }
+    // Mais de uma WO EPS no site: o código no nome do arquivo (TERM, MANU...) decide; sem código, vale a pasta.
+    if (servico.length > 0) {
+      const porServico = cand.filter(function (l) { return tipoCombina(l.tipo, servico); });
+      if (porServico.length === 1) return { wo: porServico[0].wo, tipoConfere: true };
+      if (porServico.length > 1) return { motivo: "Mais de uma WO desse serviço no site: escolha a certa", candidatas: porServico, sigla: sigla };
+    }
+    const filtradas = cand.filter(function (l) { return tipoCombina(l.tipo, palavras); });
+    if (filtradas.length === 1) return { wo: filtradas[0].wo, tipoConfere: true };
+    return { motivo: "O site tem " + cand.length + " WOs EPS: escolha a certa", candidatas: filtradas.length > 1 ? filtradas : cand, sigla: sigla };
+  }
+
+  function empresaDoTipo(tipo) {
+    const achada = REGRAS.eps.pastas.filter(function (p) { return tipoCombina(tipo, p.palavras); })[0];
+    return achada ? achada.pasta : "";
+  }
+
+  async function atualizarEPS() {
+    try {
+      const resultados = await Promise.all([carregarBase(), carregarRelatorios()]);
+      estado.base = resultados[0];
+      prepararBase();
+      prepararRelatoriosEPS(resultados[1]);
+      desenharEPS();
+    } catch (e) {
+      mostrarAviso("Não consegui atualizar o painel EPS: " + e.message, "erro");
+    }
+  }
+
+  function prepararRelatoriosEPS(lista) {
+    let baseAtualizadaEm = null;
+    estado.base.forEach(function (l) {
+      if (l.atualizado_em && (!baseAtualizadaEm || l.atualizado_em > baseAtualizadaEm)) baseAtualizadaEm = l.atualizado_em;
+    });
+    estado.baseAtualizadaEm = baseAtualizadaEm;
+    // Só vale o que o robô viu na última coleta (arquivo apagado do SharePoint some do painel).
+    let ultimoVisto = 0;
+    lista.forEach(function (r) { const t = new Date(r.visto_em).getTime(); if (t > ultimoVisto) ultimoVisto = t; });
+    estado.ultimaColeta = ultimoVisto ? new Date(ultimoVisto).toISOString() : null;
+    estado.epsIgnorados = 0;
+    estado.relatoriosEPS = [];
+    lista.forEach(function (r) {
+      if (ultimoVisto - new Date(r.visto_em).getTime() > 30 * 60000) return;
+      if (r.wo === "IGNORAR") return;
+      const sub = semAcento(r.subpasta).toLowerCase();
+      if (REGRAS.eps.ignorarSubpastas.some(function (p) { return sub.indexOf(p) >= 0; })) { estado.epsIgnorados++; return; }
+      r.competencia = competenciaDoRelatorio(r);
+      estado.relatoriosEPS.push(r);
+    });
+    // Opções de mês (mês atual sempre aparece) e de empresa
+    const mesAtual = new Date().getFullYear() + "-" + doisDigitos(new Date().getMonth() + 1);
+    const meses = {};
+    meses[mesAtual] = true;
+    estado.relatoriosEPS.forEach(function (r) { meses[r.competencia] = true; });
+    const listaMeses = Object.keys(meses).sort().reverse();
+    if (!estado.mesEPS || !meses[estado.mesEPS]) estado.mesEPS = mesAtual;
+    $("mesEPS").innerHTML = listaMeses.map(function (m) {
+      return '<option value="' + m + '"' + (m === estado.mesEPS ? " selected" : "") + ">" + m.slice(5) + "/" + m.slice(0, 4) + "</option>";
+    }).join("");
+    const empresas = {};
+    estado.relatoriosEPS.forEach(function (r) { empresas[r.pasta_raiz] = true; });
+    REGRAS.eps.pastas.forEach(function (p) { empresas[p.pasta] = true; });
+    const antes = $("empresaEPS").value;
+    $("empresaEPS").innerHTML = '<option value="">Todas</option>' + Object.keys(empresas).sort().map(function (e) {
+      return '<option value="' + esc(e) + '"' + (e === antes ? " selected" : "") + ">" + esc(e) + "</option>";
+    }).join("");
+  }
+
+  // Monta as linhas do painel para o mês escolhido.
+  function montarLinhasEPS() {
+    const mes = estado.mesEPS;
+    const porWo = {};
+    estado.base.forEach(function (l) {
+      if (grupoDaPreventiva(l.tipo) === "EPS") porWo[l.wo] = { base: l, relatorios: [] };
+    });
+    const revisar = [];
+    estado.relatoriosEPS.forEach(function (r) {
+      if (r.competencia !== mes) return;
+      const lig = ligarRelatorio(r);
+      if (lig.wo) {
+        if (!porWo[lig.wo] && estado.porWO[lig.wo]) porWo[lig.wo] = { base: estado.porWO[lig.wo], relatorios: [] };
+        porWo[lig.wo].relatorios.push(r);
+        if (lig.tipoConfere === false) r.tipoNaoConfere = true;
+      } else {
+        revisar.push({ r: r, motivo: lig.motivo, candidatas: lig.candidatas || [], sigla: lig.sigla || "" });
+      }
+    });
+    const linhas = [];
+    Object.keys(porWo).forEach(function (wo) {
+      const e = porWo[wo];
+      const status = String(e.base.status_final || "").trim().toLowerCase();
+      let grupo = status === "executada" ? "lancada" : (e.relatorios.length > 0 ? "falta" : "aguardando");
+      // Executadas só entram no mês em que foram lançadas (ou se tiverem relatório do mês).
+      if (grupo === "lancada" && e.relatorios.length === 0 && !String(e.base.data_fim || "").startsWith(mes)) return;
+      const empresas = [];
+      e.relatorios.forEach(function (r) { if (empresas.indexOf(r.pasta_raiz) < 0) empresas.push(r.pasta_raiz); });
+      let prevista = false;
+      if (empresas.length === 0) { const p = empresaDoTipo(e.base.tipo); if (p) { empresas.push(p); prevista = true; } }
+      const maisAntigo = e.relatorios.reduce(function (m, r) { return !m || r.data_arquivo < m ? r.data_arquivo : m; }, null);
+      linhas.push({ tipo: "wo", grupo: grupo, base: e.base, relatorios: e.relatorios, empresas: empresas, prevista: prevista, maisAntigo: maisAntigo });
+    });
+    revisar.forEach(function (x) {
+      linhas.push({ tipo: "revisar", grupo: "revisar", rev: x, empresas: [x.r.pasta_raiz], maisAntigo: x.r.data_arquivo });
+    });
+    const ordem = { falta: 0, revisar: 1, aguardando: 2, lancada: 3 };
+    linhas.sort(function (a, b) {
+      const d = ordem[a.grupo] - ordem[b.grupo];
+      if (d !== 0) return d;
+      if (a.maisAntigo && b.maisAntigo && a.maisAntigo !== b.maisAntigo) return a.maisAntigo < b.maisAntigo ? -1 : 1;
+      return String(nomeSiteEPS(a)).localeCompare(String(nomeSiteEPS(b)));
+    });
+    return linhas;
+  }
+
+  function nomeSiteEPS(l) {
+    if (l.tipo === "wo") return l.base.programado_infratel || l.base.clr_sdr_site_helix || "";
+    return l.rev.sigla || "";
+  }
+  function diasDesde(iso) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+
+  function desenharEPS() {
+    // Faixa: base do cliente + última coleta do robô
+    const faixa = $("faixaEPS");
+    const horasBase = estado.baseAtualizadaEm ? minutosDesde(estado.baseAtualizadaEm) / 60 : null;
+    const horasColeta = estado.ultimaColeta ? minutosDesde(estado.ultimaColeta) / 60 : null;
+    const baseVelha = horasBase === null || horasBase > REGRAS.horasBaseDesatualizada;
+    const coletaVelha = horasColeta === null || horasColeta > REGRAS.eps.horasColetaDesatualizada;
+    faixa.className = "faixa" + (baseVelha || coletaVelha ? " alerta" : "");
+    faixa.innerHTML = (estado.baseAtualizadaEm ? "Base do cliente atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>" : "<b>A base do cliente está vazia.</b>") +
+      (baseVelha && estado.baseAtualizadaEm ? " (desatualizada há " + formatarDuracao(horasBase * 60) + ")" : "") + ". " +
+      (estado.ultimaColeta ? "Última coleta de relatórios em <b>" + formatarDataHora(estado.ultimaColeta) + "</b>" +
+        (coletaVelha ? " (<b>o robô não coleta há " + formatarDuracao(horasColeta * 60) + "</b>)" : "") + "."
+        : "<b>Nenhum relatório coletado ainda.</b> Confira o robô de coleta no computador.");
+
+    let linhas = montarLinhasEPS();
+    const empresa = $("empresaEPS").value;
+    if (empresa) linhas = linhas.filter(function (l) { return l.empresas.indexOf(empresa) >= 0; });
+    const contar = function (g) { return linhas.filter(function (l) { return l.grupo === g; }).length; };
+    $("azulejosEPS").innerHTML =
+      azulejo(contar("falta"), "Falta lançar no Infratel", "a-laranja") +
+      azulejo(contar("aguardando"), "Aguardando relatório", "a-azul") +
+      azulejo(contar("lancada"), "Lançadas no Infratel", "a-verde") +
+      azulejo(contar("revisar"), "Relatórios para revisar", contar("revisar") ? "a-vermelho" : "a-azul");
+
+    const filtro = estado.filtroEPS;
+    const busca = semAcento($("buscaEPS").value).toLowerCase().trim();
+    const visiveis = linhas.filter(function (l) {
+      if (filtro !== "todos" && l.grupo !== filtro) return false;
+      if (!busca) return true;
+      const texto = [nomeSiteEPS(l), l.tipo === "wo" ? l.base.wo : "", (l.relatorios || [l.rev.r]).map(function (r) { return r.nome_arquivo; }).join(" ")].join(" ");
+      return semAcento(texto).toLowerCase().indexOf(busca) >= 0;
+    });
+
+    $("notaEPS").textContent = "Mês " + estado.mesEPS.slice(5) + "/" + estado.mesEPS.slice(0, 4) + ": só valem relatórios da pasta desse mês. " +
+      (estado.epsIgnorados ? estado.epsIgnorados + " arquivos de corretiva e serviços avulsos foram ignorados." : "");
+    if (visiveis.length === 0) {
+      $("tabelaEPS").innerHTML = '<tr><td class="vazio">Nada para mostrar neste filtro.</td></tr>';
+      return;
+    }
+    $("tabelaEPS").innerHTML =
+      "<tr><th>Site</th><th>WO</th><th>Tipo</th><th>Situação</th><th>Relatório</th><th>Empresa</th><th></th></tr>" +
+      visiveis.map(linhaHtmlEPS).join("");
+  }
+
+  function htmlArquivosEPS(relatorios) {
+    if (relatorios.length === 0) return '<span class="esmaecido">—</span>';
+    return relatorios.map(function (r) {
+      const dias = diasDesde(r.data_arquivo);
+      return '<div class="arquivo" title="' + esc(r.pasta_raiz + "/" + r.subpasta + "/" + r.nome_arquivo) + '">' + esc(r.nome_arquivo) +
+        '<span class="detalhe">entregue ' + formatarDataHora(r.data_arquivo) + (dias > 0 ? " · há " + dias + (dias === 1 ? " dia" : " dias") : " · hoje") + "</span></div>";
+    }).join("");
+  }
+
+  function linhaHtmlEPS(l) {
+    const empresas = l.empresas.map(function (e) { return esc(e); }).join("<br>");
+    if (l.tipo === "revisar") {
+      const x = l.rev;
+      const opcoes = x.candidatas.map(function (c) {
+        return '<option value="' + esc(c.wo) + '">' + esc(c.wo) + " · " + esc(c.tipo) + "</option>";
+      }).join("");
+      const escolha = x.candidatas.length > 0
+        ? '<select data-escolha>' + '<option value="">Escolha a WO...</option>' + opcoes + "</select>"
+        : '<input type="text" data-escolha placeholder="Número da WO">';
+      return '<tr data-caminho="' + esc(x.r.caminho) + '"><td><b>' + esc(x.sigla || "—") + "</b></td><td>" + escolha + "</td><td>—</td><td>" +
+        pill("Revisar", "p-vermelho") + '<span class="detalhe">' + esc(x.motivo) + "</span></td><td>" + htmlArquivosEPS([x.r]) + "</td><td>" + empresas +
+        '</td><td><div class="acoes"><button class="secundario" data-acao="vincular">Vincular</button>' +
+        '<button class="secundario" data-acao="ignorar" title="Não é preventiva ou não interessa">Ignorar</button></div></td></tr>';
+    }
+    const b = l.base;
+    let situacao;
+    if (l.grupo === "falta") {
+      const dias = diasDesde(l.maisAntigo);
+      situacao = pill("Falta lançar", "p-laranja") +
+        (dias >= REGRAS.eps.diasAlerta ? ' <span class="pill p-vermelho">há ' + dias + " dias</span>" : "") +
+        '<span class="detalhe">Status na base: ' + esc(b.status_final || "sem status") + "</span>";
+    } else if (l.grupo === "lancada") {
+      situacao = pill("Lançada", "p-verde") + (b.data_fim ? '<span class="detalhe">Relatório no Infratel em ' + formatarDataCurta(b.data_fim) + "</span>" : "");
+    } else {
+      situacao = pill("Aguardando relatório", "p-azul") + '<span class="detalhe">Status na base: ' + esc(b.status_final || "sem status") + "</span>";
+    }
+    const alertaTipo = l.relatorios.some(function (r) { return r.tipoNaoConfere; })
+      ? '<span class="detalhe">Confira: o tipo da WO não parece ser o do relatório.</span>' : "";
+    return '<tr class="' + (l.grupo === "falta" ? "linha-falta" : "") + '"><td><b>' + esc(nomeSiteEPS(l)) + '</b></td><td class="wo">' + esc(b.wo) +
+      "</td><td>" + esc(b.tipo || "") + "</td><td>" + situacao + alertaTipo + "</td><td>" + htmlArquivosEPS(l.relatorios) + "</td><td" +
+      (l.prevista ? ' class="esmaecido"' : "") + ">" + (empresas || "—") + "</td><td></td></tr>";
+  }
+
+  $("chipsEPS").addEventListener("click", function (e) {
+    const botao = e.target.closest("button[data-filtro]");
+    if (!botao) return;
+    estado.filtroEPS = botao.dataset.filtro;
+    document.querySelectorAll("#chipsEPS .chip").forEach(function (c) { c.classList.toggle("ativo", c === botao); });
+    desenharEPS();
+  });
+  $("mesEPS").addEventListener("change", function () { estado.mesEPS = $("mesEPS").value; desenharEPS(); });
+  $("empresaEPS").addEventListener("change", desenharEPS);
+  $("buscaEPS").addEventListener("input", desenharEPS);
+  $("botaoAtualizarEPS").addEventListener("click", atualizarEPS);
+
+  $("tabelaEPS").addEventListener("click", async function (e) {
+    const botao = e.target.closest("button[data-acao]");
+    if (!botao) return;
+    const linha = botao.closest("tr");
+    const caminho = linha.dataset.caminho;
+    let wo;
+    if (botao.dataset.acao === "ignorar") {
+      if (!confirm("Ignorar este arquivo? Ele deixa de aparecer no painel.")) return;
+      wo = "IGNORAR";
+    } else {
+      const campo = linha.querySelector("[data-escolha]");
+      wo = campo ? campo.value.trim() : "";
+      if (!wo) { mostrarAviso("Escolha ou digite a WO antes de vincular.", "erro"); return; }
+      if (!estado.porWO[wo]) { mostrarAviso("A WO " + wo + " não está na base do cliente.", "erro"); return; }
+    }
+    botao.disabled = true;
+    try {
+      await vincularRelatorio(caminho, wo, estado.usuarioEmail);
+      mostrarAviso(wo === "IGNORAR" ? "Arquivo ignorado." : "Relatório vinculado à WO " + wo + ".");
+      atualizarEPS();
     } catch (err) {
       botao.disabled = false;
       mostrarAviso("Erro ao gravar: " + err.message, "erro");
