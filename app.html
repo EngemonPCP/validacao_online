@@ -265,6 +265,9 @@
       <p class="sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</p>
       <div class="azulejos" id="azulejos"></div>
       <div class="grade-cartoes" id="gradeCampo"></div>
+      <h2 class="secao">Saídas a ajustar</h2>
+      <p class="sub">Visitas sem horário de saída (equipe ainda no site às 18h, ou histórico carregado sem saída). Informe a saída real aqui.</p>
+      <div class="grade-cartoes" id="gradeAjustar"></div>
       <h2 class="secao">Saíram hoje</h2>
       <div class="grade-cartoes" id="gradeSaidas"></div>
     </section>
@@ -561,6 +564,12 @@
   async function carregarSaidasDeHoje() {
     return conferir(await banco.from("visitas").select("*, wos_visita(*)")
       .eq("situacao", REGRAS.situacaoSaiu).gte("hora_saida", inicioDoDia()).order("hora_saida", { ascending: false }));
+  }
+
+  // Visitas que "saíram", mas sem horário de saída (a validadora informa depois).
+  async function carregarSaidasPendentes() {
+    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
+      .eq("situacao", REGRAS.situacaoSaiu).is("hora_saida", null).order("hora_entrada", { ascending: false }).limit(300));
   }
 
   async function criarVisita(visita, wos) {
@@ -1494,10 +1503,11 @@
   // ---- tela EQUIPES EM CAMPO ------------------------------------------------
   async function atualizarCampo() {
     try {
-      const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje()]);
+      const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje(), carregarSaidasPendentes()]);
       estado.emCampo = resultados[0];
+      estado.saidasPendentes = resultados[2];
       const digitando = $("gradeCampo").contains(document.activeElement) || $("gradeCampo").querySelector("details[open]");
-      if (!digitando) desenharCampo(resultados[0], resultados[1]);
+      if (!digitando) desenharCampo(resultados[0], resultados[1], resultados[2]);
       $("subCampo").textContent = "MOP · atualiza sozinha a cada 30 segundos · última leitura às " + horaCurta(new Date().toISOString());
     } catch (e) {
       mostrarAviso("Não consegui atualizar: " + e.message, "erro");
@@ -1514,7 +1524,8 @@
     });
   }
 
-  function desenharCampo(emCampo, saidas) {
+  function desenharCampo(emCampo, saidas, pendentes) {
+    pendentes = soMOP(pendentes || []);
     emCampo = soMOP(emCampo);
     saidas = soMOP(saidas);
     const emDesloc = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoDeslocamento; });
@@ -1523,7 +1534,10 @@
     $("azulejos").innerHTML =
       azulejo(emDesloc.length, "Em deslocamento", "a-azul") + azulejo(noSite.length, "No site", "a-azul") +
       azulejo(longos.length, "Há mais de " + REGRAS.horasLongaPermanencia + " h no site", "a-laranja") +
+      azulejo(pendentes.length, "Saídas a ajustar", pendentes.length ? "a-laranja" : "a-verde") +
       azulejo(saidas.length, "Saíram hoje", "a-verde");
+    $("gradeAjustar").innerHTML = pendentes.length
+      ? pendentes.map(cartaoAjustar).join("") : '<div class="vazio">Nenhuma saída pendente de ajuste.</div>';
     $("gradeCampo").innerHTML = emCampo.length
       ? emCampo.map(cartaoEmCampo).join("") : '<div class="vazio">Nenhuma equipe em campo agora.</div>';
     $("gradeSaidas").innerHTML = saidas.length
@@ -1587,6 +1601,52 @@
       (v.observacao ? '<div class="detalhe" style="margin:6px 0 0">Obs.: ' + esc(v.observacao) + "</div>" : "") + listaWOsCartao(v) + "</div>";
   }
 
+  function cartaoAjustar(v) {
+    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
+      esc(v.equipe) + "</div></div>" + pill("Saída não registrada", "p-laranja") + "</div>" +
+      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") + "</div>" +
+      '<div class="tempos"><span>Dia<b>' + (v.hora_entrada ? new Date(v.hora_entrada).toLocaleDateString("pt-BR") : "—") +
+      "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) + "</b></span><span>Saída<b>—</b></span></div>" +
+      (v.observacao ? '<div class="detalhe" style="margin:6px 0 0">Obs.: ' + esc(v.observacao) + "</div>" : "") + listaWOsCartao(v) +
+      '<div class="linha-botoes"><button class="principal" data-acao="ajustar" data-id="' + esc(v.id) + '">Informar saída</button></div></div>';
+  }
+
+  // Pergunta a saída de uma visita de outro dia. Aceita "HH:MM" (no dia da entrada) ou "DD/MM/AAAA HH:MM".
+  function perguntarSaidaAjuste(visita) {
+    const ent = new Date(visita.hora_entrada);
+    const dia = ent.toLocaleDateString("pt-BR");
+    const resposta = window.prompt("Horário real de saída de " + visita.equipe + " em " + visita.site + " (entrada " + dia + " " + horaCurta(visita.hora_entrada) +
+      ").\nDigite HH:MM (no mesmo dia) ou DD/MM/AAAA HH:MM.", "");
+    if (resposta === null || resposta.trim() === "") return null;
+    const m = resposta.trim().match(/^(?:(\d{1,2})\/(\d{1,2})\/(\d{4})\s+)?(\d{1,2}):(\d{2})$/);
+    if (!m || Number(m[4]) > 23 || Number(m[5]) > 59) { mostrarAviso("Formato inválido. Use HH:MM ou DD/MM/AAAA HH:MM.", "erro"); return null; }
+    const quando = m[1] ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), 0, 0)
+                        : new Date(ent.getFullYear(), ent.getMonth(), ent.getDate(), Number(m[4]), Number(m[5]), 0, 0);
+    if (quando.getTime() > Date.now() + 60000) { mostrarAviso("A saída não pode estar no futuro.", "erro"); return null; }
+    if (quando.getTime() < ent.getTime()) { mostrarAviso("A saída não pode ser antes da entrada.", "erro"); return null; }
+    if (quando.getTime() - ent.getTime() > 16 * 3600000 &&
+        !window.confirm("A permanência ficou em mais de 16 horas. Confirma esse horário?")) return null;
+    return quando.toISOString();
+  }
+
+  $("gradeAjustar").addEventListener("click", async function (e) {
+    const botao = e.target.closest("button[data-acao=ajustar]");
+    if (!botao) return;
+    const visita = (estado.saidasPendentes || []).find(function (v) { return String(v.id) === botao.dataset.id; });
+    if (!visita) return;
+    const quando = perguntarSaidaAjuste(visita);
+    if (!quando) return;
+    botao.disabled = true;
+    try {
+      await atualizarVisita(visita.id, { hora_saida: quando });
+      mostrarAviso("Saída registrada.");
+      atualizarCampo();
+    } catch (err) {
+      botao.disabled = false;
+      mostrarAviso("Erro ao gravar: " + err.message, "erro");
+    }
+  });
+
   // Pergunta o horário (padrão: agora). Devolve uma data ISO, ou null se cancelou.
   function perguntarHorario(rotulo, minimoIso) {
     const agora = new Date();
@@ -1638,7 +1698,8 @@
         texto += "Confirme com a equipe se falta alguma tecnologia ANTES de liberar a saída.\n\nRegistrar a saída mesmo assim?";
         if (!window.confirm(texto)) return;
       }
-      const quando = perguntarHorario("Hora da saída do site", visita.hora_entrada);
+      const entradaOutroDia = visita.hora_entrada && new Date(visita.hora_entrada).toDateString() !== new Date().toDateString();
+      const quando = entradaOutroDia ? perguntarSaidaAjuste(visita) : perguntarHorario("Hora da saída do site", visita.hora_entrada);
       if (!quando) return;
       campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando };
     } else if (botao.dataset.acao === "notas") {
