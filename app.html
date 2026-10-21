@@ -162,10 +162,10 @@
     #telaResumoDia .rd-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaResumoDia .rd-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
     #telaResumoDia .rd-titulo h1 { font-size:20px; font-weight:400; margin:0; }
-    #telaResumoDia .rd-barra { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .rd-barra { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     #telaResumoDia .rd-barra input[type=date] { border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:6px 8px; font:inherit; }
-    #telaResumoDia .rd-barra button { border-radius:0; background:#0f62fe; color:#fff; border:0; padding:7px 16px; font:inherit; cursor:pointer; }
-    #telaResumoDia .rd-barra button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; }
+    .rd-barra button { border-radius:0; background:#0f62fe; color:#fff; border:0; padding:7px 16px; font:inherit; cursor:pointer; }
+    .rd-barra button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; }
     #telaResumoDia .rd-campos { display:flex; gap:24px; flex-wrap:wrap; margin:12px 0 14px; }
     #telaResumoDia .rd-campo { flex:1 1 180px; }
     #telaResumoDia .rd-campo .r { color:#525252; font-size:11px; }
@@ -196,20 +196,61 @@
     #telaResumoDia { --rd-min:880px; }
     #telaResumoDia .rd-outra { flex:1; display:flex; align-items:center; padding:7px 12px; background:#e0e0e0; color:#393939; border-left:1px solid #c6c6c6; }
     #telaResumoDia .rd-outra b { margin-right:8px; }
-    #telaResumoDia .rd-escala { margin-top:18px; border-top:1px solid #e0e0e0; padding-top:10px; }
-    #telaResumoDia .rd-escala summary { cursor:pointer; font-size:14px; font-weight:600; padding:4px 0; }
-    #telaResumoDia .rd-escala select, #telaResumoDia .rd-escala input[type=text] { border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:6px 8px; font:inherit; width:100%; box-sizing:border-box; margin:0; }
-    #telaResumoDia .rd-etab { display:grid; grid-template-columns:minmax(200px,1.4fr) minmax(150px,1fr) minmax(110px,.7fr) minmax(160px,1.4fr); gap:2px 10px; align-items:center; max-width:900px; }
-    #telaResumoDia .rd-etab .h { font-weight:600; background:#e0e0e0; padding:7px 8px; }
-    #telaResumoDia .rd-nova { border:1px solid #e0e0e0; background:#fafafa; padding:10px 12px; margin:6px 0 12px; max-width:900px; }
-    #telaResumoDia .rd-nova-t { font-weight:600; margin-bottom:2px; }
-    #telaResumoDia .rd-nova-campos { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-    #telaResumoDia .rd-nova-campos input { border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 8px; font:inherit; flex:1 1 150px; margin:0; }
-    #telaResumoDia .rd-nova-campos button { border-radius:0; background:#0f62fe; color:#fff; border:0; padding:7px 16px; font:inherit; cursor:pointer; margin:0; }
+    /* ---- REGISTRAR (estilo IBM: cantos retos, campos com linha inferior) ---- */
+    #telaRegistrar { font-size:12px; color:#161616; max-width:1000px; }
+    #telaRegistrar .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
+    #telaRegistrar .ib-trilha span { color:#161616; }
+    #telaRegistrar .ib-titulo { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:8px; margin:0 0 2px; }
+    #telaRegistrar h1 { font-size:20px; font-weight:400; margin:0; }
+    #telaRegistrar .ib-sub { color:#525252; margin:2px 0 0; font-size:12px; }
+    #telaRegistrar .ib-dia { display:flex; align-items:center; gap:8px; }
+    #telaRegistrar .ib-dia label { margin:0; }
+    #telaRegistrar .ib-secao { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border-bottom:1px solid #e0e0e0; padding:0 0 6px; margin:20px 0 12px; font-size:14px; font-weight:600; }
+    #telaRegistrar .ib-secao .ib-aux { font-weight:400; color:#525252; font-size:12px; }
+    #telaRegistrar .ib-grade { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px 28px; margin-bottom:6px; }
+    #telaRegistrar .ib-campo > label { display:block; font-size:11px; font-weight:400; color:#525252; margin:0 0 2px; }
+    #telaRegistrar .ib-campo.larg { grid-column:1 / -1; }
+    #telaRegistrar .req { color:#da1e28; }
+    #telaRegistrar input[type=text], #telaRegistrar input[type=date], #telaRegistrar input[type=time], #telaRegistrar select, #telaRegistrar textarea {
+      width:100%; font:inherit; font-size:13px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:8px 8px; margin:0; color:#161616; }
+    #telaRegistrar input:focus, #telaRegistrar select:focus, #telaRegistrar textarea:focus { outline:2px solid #0f62fe; outline-offset:-2px; border-bottom-color:transparent; }
+    #telaRegistrar input:disabled { background:#e8e8e8; color:#8d8d8d; cursor:not-allowed; }
+    #telaRegistrar button.principal { border-radius:0; background:#0f62fe; padding:11px 40px 11px 16px; font-weight:400; font-size:13px; }
+    #telaRegistrar button.principal:hover { background:#0353e9; }
+    #telaRegistrar button.secundario { border-radius:0; background:#fff; color:#0f62fe; border:1px solid #0f62fe; padding:8px 16px; font-weight:400; font-size:12px; }
+    #telaRegistrar button.secundario:hover { background:#e5f0ff; }
+    #telaRegistrar .ib-link { background:none; border:0; color:#0f62fe; padding:4px 0 0; font:inherit; font-size:12px; cursor:pointer; }
+    #telaRegistrar .ib-link:hover { text-decoration:underline; }
+    #telaRegistrar .ib-painel { border:1px solid #e0e0e0; border-left:3px solid #0f62fe; background:#fff; padding:12px 14px; margin:10px 0 4px; }
+    #telaRegistrar .ib-painel .ib-grade { margin:8px 0; }
+    #telaRegistrar .msg { margin-top:4px; font-size:12px; }
+    #telaRegistrar .sugestoes button { border-radius:0; padding:4px 10px; font-size:12px; }
+    #telaRegistrar .pill { border-radius:0; }
+    #telaRegistrar .faixa, #telaRegistrar .faixa-endereco { border-radius:0; font-size:12px; }
+    #telaRegistrar .resumo { border-radius:0; border:1px solid #e0e0e0; border-left:3px solid #0f62fe; padding:14px 16px; }
+    #telaRegistrar .resumo h2.secao { font-size:14px; font-weight:600; margin:14px 0 8px; }
+    #telaRegistrar .resumo-grid dt { font-size:11px; }
+    #telaRegistrar .lista-wo .item { border-bottom:1px solid #e0e0e0; }
+    #telaRegistrar .check { font-size:12px; }
+    #telaRegistrar .linha-botoes { margin-top:18px; gap:2px; }
+    #telaRegistrar .ib-tab { border-top:0; }
+    #telaRegistrar .ib-tab .l { display:grid; grid-template-columns:minmax(190px,1.5fr) minmax(150px,1fr) minmax(100px,.7fr) minmax(150px,1.4fr) 90px; align-items:center; border-bottom:1px solid #e0e0e0; min-height:40px; }
+    #telaRegistrar .ib-tab .l > div { padding:3px 8px; min-width:0; }
+    #telaRegistrar .ib-tab .cab { background:#e0e0e0; font-weight:600; min-height:34px; }
+    #telaRegistrar .ib-tab .l:not(.cab):nth-child(even) { background:#f9f9f9; }
+    #telaRegistrar .ib-tab .l select, #telaRegistrar .ib-tab .l input[type=text] { background:transparent; border-bottom-color:#c6c6c6; padding:6px 6px; font-size:12px; }
+    #telaRegistrar .ib-tab .l select:hover, #telaRegistrar .ib-tab .l input[type=text]:hover { background:#e8e8e8; }
+    #telaRegistrar .ib-tab .rm { background:none; border:0; color:#da1e28; cursor:pointer; font:inherit; font-size:12px; padding:4px 6px; }
+    #telaRegistrar .ib-tab .rm:hover { text-decoration:underline; }
+    #telaRegistrar .ib-tab .vazio { padding:14px 8px; color:#525252; }
+    @media (max-width:820px) {
+      #telaRegistrar .ib-tab .l { grid-template-columns:1fr 1fr; gap:2px 0; padding:6px 0; }
+      #telaRegistrar .ib-tab .cab { display:none; }
+    }
     @media print {
-      #telaResumoDia .rd-escala { display:none; }
+      #telaRegistrar { display:none; }
       #topo, .barra-aviso { display:none !important; }
-      #telaResumoDia .rd-barra { display:none; }
+      .rd-barra { display:none; }
       body { background:#fff; }
     }
 </style>
@@ -260,60 +301,99 @@
 
     <!-- REGISTRAR -->
     <section id="telaRegistrar" class="tela oculto">
-      <h1>Registrar deslocamento</h1>
-      <p class="sub">Informe o site que o técnico avisou no grupo. O sistema traz as WOs sozinho.</p>
-      <div class="cartao">
-        <label for="campoSite">Site (pode digitar sem o "SM")</label>
-        <input id="campoSite" type="text" autocomplete="off" placeholder="ex.: moo27">
-        <div id="resultadoSite" class="msg"></div>
-        <div id="sugestoesSite" class="sugestoes"></div>
-
-        <label for="campoEquipe">Equipe</label>
-        <select id="campoEquipe"></select>
-
-        <label for="campoAtividade">Atividade</label>
-        <select id="campoAtividade"></select>
-
-        <div id="blocoDetalhe" class="oculto">
-          <label for="campoDetalhe">Detalhe da atividade (ex.: nº do chamado)</label>
-          <input id="campoDetalhe" type="text">
-        </div>
-
-        <label for="campoData">Data da execução</label>
-        <input id="campoData" type="date">
-
-        <label for="campoSituacaoInicial">Situação da equipe agora</label>
-        <select id="campoSituacaoInicial">
-          <option value="desloc">Em deslocamento</option>
-          <option value="site">Já está no site</option>
-        </select>
-
-        <label for="campoHoraAviso">Horário em que o técnico avisou no grupo (vazio = agora)</label>
-        <input id="campoHoraAviso" type="time">
-
-        <div id="blocoChegada" class="oculto">
-          <label for="campoHoraChegada">Horário em que chegou ao site (vazio = agora)</label>
-          <input id="campoHoraChegada" type="time">
-        </div>
-
-        <label for="campoAlarme">Alarme de porta aberta</label>
-        <select id="campoAlarme"></select>
-        <div class="msg" style="margin-top:4px;color:var(--suave)">Se o site não tem alarme configurado, escolha “Site sem alarme”: assim fica registrado que a falta do alarme não é falha da equipe.</div>
-
-        <label for="campoObservacao">Observações (opcional)</label>
-        <textarea id="campoObservacao" rows="2"></textarea>
-
-        <div id="blocoWOs" class="oculto">
-          <h2 class="secao" id="tituloWOs"></h2>
-          <div id="avisoEndereco"></div>
-          <div id="listaWOs" class="lista-wo"></div>
-          <label class="check"><input id="campoConferi" type="checkbox"> Conferi as WOs com o técnico</label>
-        </div>
-
-        <div class="linha-botoes"><button id="botaoRegistrar" class="principal">Registrar deslocamento</button></div>
-        <div id="msgRegistrar" class="msg"></div>
-        <div id="resumoRegistro" class="resumo oculto"></div>
+      <div class="ib-trilha">Painel / <span>Registrar</span></div>
+      <div class="ib-titulo">
+        <h1>Registrar</h1>
+        <div class="ib-dia"><label for="campoData">Dia</label><input id="campoData" type="date"></div>
       </div>
+      <p class="ib-sub">Escolha a equipe e o que ela vai fazer. Para preventiva e corretiva informe o site: o sistema traz as WOs sozinho. As demais atividades (treinamento, folga etc.) só marcam a equipe no dia.</p>
+
+      <div class="ib-secao"><span>Equipe e atividade</span></div>
+      <div class="ib-grade">
+        <div class="ib-campo">
+          <label for="campoEquipe">Equipe <span class="req">*</span></label>
+          <select id="campoEquipe"></select>
+          <button type="button" class="ib-link" id="rdNovaAbrir">+ Nova equipe ou dupla</button>
+        </div>
+        <div class="ib-campo">
+          <label for="campoAtividade">Atividade <span class="req">*</span></label>
+          <select id="campoAtividade"></select>
+        </div>
+        <div class="ib-campo">
+          <label for="campoSite" id="rotuloSite">Site <span class="req">*</span></label>
+          <input id="campoSite" type="text" autocomplete="off" placeholder="ex.: moo27 (pode digitar sem o SM)">
+          <div id="resultadoSite" class="msg"></div>
+          <div id="sugestoesSite" class="sugestoes"></div>
+        </div>
+      </div>
+
+      <div id="rdNova" class="ib-painel oculto">
+        <b>Nova equipe ou dupla</b>
+        <div class="pequeno" style="color:#525252">Digite os técnicos (escolha da lista ou escreva um nome novo). Se a equipe já existir, ela é reaproveitada e já fica escolhida acima.</div>
+        <div class="ib-grade">
+          <div class="ib-campo"><label for="rdTec1">Técnico 1</label><input type="text" list="rdTecnicos" id="rdTec1"></div>
+          <div class="ib-campo"><label for="rdTec2">Técnico 2</label><input type="text" list="rdTecnicos" id="rdTec2"></div>
+          <div class="ib-campo"><label for="rdTec3">Técnico 3 (opcional)</label><input type="text" list="rdTecnicos" id="rdTec3"></div>
+          <div class="ib-campo"><label for="rdTec4">Técnico 4 (opcional)</label><input type="text" list="rdTecnicos" id="rdTec4"></div>
+        </div>
+        <datalist id="rdTecnicos"></datalist>
+        <button type="button" class="secundario" id="rdCriarEquipe">Criar equipe</button>
+        <div id="rdNovaMsg" class="msg"></div>
+      </div>
+
+      <div id="blocoCampo">
+        <div class="ib-secao"><span>Deslocamento</span></div>
+        <div class="ib-grade">
+          <div class="ib-campo">
+            <label for="campoSituacaoInicial">Situação da equipe agora</label>
+            <select id="campoSituacaoInicial">
+              <option value="desloc">Em deslocamento</option>
+              <option value="site">Já está no site</option>
+            </select>
+          </div>
+          <div class="ib-campo">
+            <label for="campoHoraAviso">Horário do aviso no grupo (vazio = agora)</label>
+            <input id="campoHoraAviso" type="time">
+          </div>
+          <div class="ib-campo oculto" id="blocoChegada">
+            <label for="campoHoraChegada">Horário de chegada ao site (vazio = agora)</label>
+            <input id="campoHoraChegada" type="time">
+          </div>
+          <div class="ib-campo">
+            <label for="campoAlarme">Alarme de porta aberta</label>
+            <select id="campoAlarme"></select>
+          </div>
+          <div class="ib-campo oculto" id="blocoDetalhe">
+            <label for="campoDetalhe">Detalhe da atividade (ex.: nº do chamado)</label>
+            <input id="campoDetalhe" type="text">
+          </div>
+        </div>
+        <div class="pequeno" style="color:#525252;margin-top:2px">Se o site não tem alarme configurado, escolha “Site sem alarme”: assim fica registrado que a falta do alarme não é falha da equipe.</div>
+      </div>
+
+      <div class="ib-secao"><span>Observações</span></div>
+      <div class="ib-campo larg">
+        <label for="campoObservacao" id="rotuloObs">Observações (opcional)</label>
+        <textarea id="campoObservacao" rows="2"></textarea>
+      </div>
+
+      <div id="blocoWOs" class="oculto">
+        <div class="ib-secao"><span id="tituloWOs"></span></div>
+        <div id="avisoEndereco"></div>
+        <div id="listaWOs" class="lista-wo"></div>
+        <label class="check"><input id="campoConferi" type="checkbox"> Conferi as WOs com o técnico</label>
+      </div>
+
+      <div class="linha-botoes"><button id="botaoRegistrar" class="principal">Registrar deslocamento</button></div>
+      <div id="msgRegistrar" class="msg"></div>
+      <div id="resumoRegistro" class="resumo oculto"></div>
+
+      <div class="ib-secao">
+        <span>Equipes do dia <span class="ib-aux" id="escResumo" style="margin-left:8px"></span></span>
+        <button type="button" class="secundario" id="rdCopiar">Copiar do dia anterior</button>
+      </div>
+      <div class="ib-tab" id="rdEscalaTabela"></div>
+      <div id="rdEscalaMsg" class="msg" style="color:#525252"></div>
     </section>
 
     <!-- RESUMO DIA -->
@@ -333,29 +413,7 @@
       <div class="rd-campos" id="rdCampos"></div>
       <div class="rd-tabela" id="rdTabela"></div>
 
-      <details class="rd-escala" id="rdEscalaBox">
-        <summary>Equipes do dia (quem trabalha na preventiva e o que está fazendo)</summary>
-        <p class="pequeno">Para cada equipe, escolha o que ela faz neste dia. "— fora da preventiva —" tira a equipe do resumo. A equipe pode mudar a cada dia.</p>
-        <div class="rd-nova">
-          <div class="rd-nova-t">Nova equipe ou dupla</div>
-          <div class="pequeno">Digite os técnicos (escolha da lista ou escreva um nome novo). Se a equipe já existir, ela é reaproveitada.</div>
-          <div class="rd-nova-campos">
-            <input type="text" list="rdTecnicos" id="rdTec1" placeholder="Técnico 1">
-            <input type="text" list="rdTecnicos" id="rdTec2" placeholder="Técnico 2">
-            <input type="text" list="rdTecnicos" id="rdTec3" placeholder="Técnico 3 (opcional)">
-            <input type="text" list="rdTecnicos" id="rdTec4" placeholder="Técnico 4 (opcional)">
-            <button id="rdCriarEquipe">Criar equipe</button>
-          </div>
-          <datalist id="rdTecnicos"></datalist>
-          <div id="rdNovaMsg" class="pequeno"></div>
-        </div>
-        <div id="rdEscalaTabela"></div>
-        <div class="rd-barra" style="margin-top:8px">
-          <button id="rdCopiar" class="sec">Copiar do dia anterior</button>
-          <button id="rdSalvarEscala">Salvar equipes do dia</button>
-        </div>
-        <div id="rdEscalaMsg" class="pequeno"></div>
-      </details>
+      <p class="pequeno" style="margin-top:14px">As equipes do dia (quem trabalha na preventiva e o que está fazendo) são registradas na tela <a href="#" id="rdIrRegistrar">Registrar</a>, de manhã.</p>
     </section>
 
     <!-- EQUIPES EM CAMPO -->
@@ -448,7 +506,9 @@
   const REGRAS = {
     prefixoSite: "SM",                 // prefixo padrão dos sites
     horasLongaPermanencia: 3,          // alerta de "longa permanência" no site
-    atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva", "Outra"],
+    // Atividades que EXIGEM site (a equipe vai a campo). As outras só marcam o que a equipe faz no dia.
+    atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva"],
+    atividadesSemSite: ["Treinamento", "Revisão de carro", "Folga", "Férias", "Atestado", "Outra atividade"],
     atividadesComPreventiva: ["Preventiva", "Preventiva + Corretiva"],
     situacaoDeslocamento: "Em Deslocamento",
     situacaoNoSite: "No Site",
@@ -476,7 +536,7 @@
       ],
       nomeOutros: "Outras equipes",
       // O que cada equipe pode estar fazendo no dia. "Preventiva" conta como equipe de preventiva em campo; as demais ficam listadas com o motivo.
-      situacoes: ["Preventiva", "Treinamento", "Revisão de carro", "Folga", "Férias", "Atestado", "Outra atividade"],
+      situacoes: [],                   // preenchido logo abaixo: todas as atividades (com e sem site)
       situacaoPreventiva: "Preventiva",
       minSites: 3                      // colunas de site mínimas (cresce sozinha conforme a equipe que mais visitou)
     },
@@ -506,6 +566,8 @@
       ]
     }
   };
+
+  REGRAS.resumoDia.situacoes = REGRAS.atividades.concat(REGRAS.atividadesSemSite);
 
   // Deixa só letras e números, em maiúsculas: "grs riv", "GRS-RIV" e "grs.riv" viram "GRSRIV".
   // IMPORTANTE: a base.html usa a mesma regra (chaveDeSigla). Se mudar aqui, mude lá.
@@ -545,6 +607,9 @@
 
   function atividadeTemPreventiva(atividade) {
     return REGRAS.atividadesComPreventiva.includes(atividade);
+  }
+  function atividadeExigeSite(atividade) {
+    return REGRAS.atividades.includes(atividade);
   }
 
   // Minutos -> "1 h 42 min"
@@ -787,6 +852,7 @@
     prepararBase();
     prepararCadastro();
     prepararFormulario();
+    atualizarEscalaRegistrar();
     irParaTela("Registrar");
   }
 
@@ -883,6 +949,7 @@
       atualizarConferencia();
       estado.pollId = setInterval(atualizarConferencia, 120000);
     }
+    if (nome === "Registrar") atualizarEscalaRegistrar();
     if (nome === "ResumoDia") {
       atualizarResumoDia();
       estado.pollId = setInterval(atualizarResumoDia, 120000);
@@ -1375,13 +1442,11 @@
 
   // ---- tela REGISTRAR -------------------------------------------------------
   function prepararFormulario() {
-    $("campoEquipe").innerHTML = '<option value="">Escolha a equipe...</option>' +
-      estado.equipes.map(function (e) {
-        return '<option value="' + esc(e.id) + '">' + esc(e.nome) + " (" + esc(e.tipo) + ")</option>";
-      }).join("");
-    $("campoAtividade").innerHTML = REGRAS.atividades.map(function (a) {
-      return "<option>" + esc(a) + "</option>";
-    }).join("");
+    atualizarOpcoesEquipe();
+    const opA = function (a) { return "<option>" + esc(a) + "</option>"; };
+    $("campoAtividade").innerHTML = '<option value="">Escolha a atividade...</option>' +
+      '<optgroup label="Em campo (exige site)">' + REGRAS.atividades.map(opA).join("") + "</optgroup>" +
+      '<optgroup label="Sem site">' + REGRAS.atividadesSemSite.map(opA).join("") + "</optgroup>";
     $("campoData").value = hoje();
     $("campoAlarme").innerHTML = REGRAS.alarmes.map(function (a) { return "<option>" + esc(a) + "</option>"; }).join("");
     limparSiteEscolhido();
@@ -1436,8 +1501,17 @@
 
   function atualizarBlocos() {
     const atividade = $("campoAtividade").value;
+    const exige = atividadeExigeSite(atividade);
     const comPreventiva = atividadeTemPreventiva(atividade);
-    $("blocoDetalhe").classList.toggle("oculto", atividade === REGRAS.atividades[0]);
+    // Site: só é obrigatório para preventiva e corretiva.
+    $("campoSite").disabled = !exige;
+    $("campoSite").placeholder = !atividade ? "Escolha a atividade primeiro" : exige ? "ex.: moo27 (pode digitar sem o SM)" : "Não necessário para esta atividade";
+    $("rotuloSite").innerHTML = exige ? 'Site <span class="req">*</span>' : "Site";
+    if (!exige && $("campoSite").value) { $("campoSite").value = ""; limparSiteEscolhido(); }
+    $("blocoCampo").classList.toggle("oculto", !exige);
+    $("blocoDetalhe").classList.toggle("oculto", !exige || atividade === REGRAS.atividades[0]);
+    $("rotuloObs").textContent = exige ? "Observações (opcional)" : "Observações (ex.: curso na base, oficina)";
+    $("botaoRegistrar").textContent = exige ? "Registrar deslocamento" : "Salvar atividade do dia";
 
     const wos = estado.siteEscolhido
       ? estado.base.filter(function (l) { return l.chaveSite === estado.siteEscolhido.busca; }) : [];
@@ -1476,6 +1550,7 @@
     function erro(texto) { msg.innerHTML = '<span class="erro">' + esc(texto) + "</span>"; return null; }
 
     if (!equipe) return erro("Escolha a equipe.");
+    if (!atividade) return erro("Escolha a atividade.");
     if (comPreventiva && !estado.siteEscolhido) return erro("Para preventiva, escolha um site que esteja na base.");
     const siteTexto = estado.siteEscolhido ? estado.siteEscolhido.site : $("campoSite").value.trim().toUpperCase();
     if (!siteTexto) return erro("Informe o site.");
@@ -1568,7 +1643,8 @@
     $("resumoRegistro").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
-  $("botaoRegistrar").addEventListener("click", function () {
+  $("botaoRegistrar").addEventListener("click", async function () {
+    if (!atividadeExigeSite($("campoAtividade").value)) { await salvarAtividadeSemSite(); return; }
     const r = montarRegistro();
     if (!r) { ocultarResumo(); return; }
     estado.registroPendente = r;
@@ -1603,11 +1679,13 @@
       };
       if (r.jaNoSite) visita.hora_entrada = r.chegada.toISOString();
       await criarVisita(visita, r.wos);
+      try { await marcarEscalaPelaVisita(r); }
+      catch (e2) { mostrarAviso("Visita gravada, mas não consegui marcar a equipe no dia: " + e2.message, "erro"); }
       ocultarResumo();
       msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + ". Acompanhe em “Equipes em campo”.</span>";
       mostrarAviso((r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome);
       $("campoSite").value = ""; $("campoDetalhe").value = ""; $("campoConferi").checked = false; $("campoObservacao").value = "";
-      $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoData").value = hoje(); $("campoAlarme").selectedIndex = 0;
+      $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoAlarme").selectedIndex = 0;
       $("campoSituacaoInicial").value = "desloc"; $("campoHoraAviso").value = ""; $("campoHoraChegada").value = "";
       $("blocoChegada").classList.add("oculto");
       limparSiteEscolhido();
@@ -1895,7 +1973,6 @@
       const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia)]);
       estado.rd = { dia: dia, visitas: r[0], base: r[1], ligadas: r[2], equipes: r[3], escala: r[4] };
       desenharResumoDia();
-      if (!$("rdEscalaBox").open) desenharEditorEscala(r[4]);
     } catch (e) {
       mostrarAviso("Não consegui montar o Resumo Dia: " + e.message, "erro");
     }
@@ -1946,10 +2023,11 @@
       eqs.sort(function (a, b) { return a.nome.localeCompare(b.nome); });
       eqs.forEach(function (e) {
         contagem[e.situacao] = (contagem[e.situacao] || 0) + 1;
-        const ePrev = e.situacao === cfg.situacaoPreventiva;
-        if (!ePrev && e.visitas.length === 0) {
+        const ePrev = atividadeTemPreventiva(e.situacao) || e.visitas.some(function (v) { return atividadeTemPreventiva(v.atividade); });
+        if (!ePrev) {
+          const locais = e.visitas.map(function (v) { return v.site; }).join(", ");
           linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">—</div><div class="rd-sites"><div class="rd-outra"><b>' +
-            esc(e.situacao) + "</b>" + esc(e.obs) + '</div></div><div class="rd-real">—</div></div>';
+            esc(e.situacao) + "</b>" + esc([locais, e.obs].filter(Boolean).join(" · ")) + '</div></div><div class="rd-real">—</div></div>';
           return;
         }
         nPrev++;
@@ -1968,7 +2046,7 @@
       });
     });
     if (!linhasHtml) {
-      linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Abra "Equipes do dia" abaixo e escolha o que cada equipe faz.</div>';
+      linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Registre as equipes na tela Registrar.</div>';
     }
     $("rdTabela").style.setProperty("--rd-min", (210 + 54 + 64 + maxSites * 175) + "px");
     $("telaResumoDia").style.setProperty("--rd-min", (210 + 54 + 64 + maxSites * 175) + "px");
@@ -1994,64 +2072,135 @@
       " · divergências = WOs MOP executadas (" + execSemVisita + ") ou em andamento (" + andamentoSemVisita + ") sem visita ligada";
   }
 
-  // ---- editor das equipes do dia ----
-  function lerEditor() {
-    const ov = {};
-    $("rdEscalaTabela").querySelectorAll("[data-eq]").forEach(function (el) {
-      const k = el.dataset.eq; ov[k] = ov[k] || {};
-      ov[k][el.dataset.campo] = el.value;
-    });
-    return ov;
+  // ---- Equipes do dia: preenchidas pelo próprio fluxo do Registrar ----------------
+  estado.escalaDia = [];
+  estado.escalaDiaData = "";
+
+  async function gravarEscala(dia, equipe, situacao, grupo, obs) {
+    const linha = { data: dia, equipe_id: equipe.id, equipe: equipe.nome, situacao: situacao,
+                    grupo: grupo || grupoDaEquipe(equipe.nome), observacao: obs || null,
+                    atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() };
+    conferir(await banco.from("escala_dia").upsert([linha], { onConflict: "data,equipe_id" }));
+    if (dia === estado.escalaDiaData) {
+      estado.escalaDia = estado.escalaDia.filter(function (e) { return String(e.equipe_id) !== String(equipe.id); }).concat([linha]);
+      desenharEscalaDia(); atualizarOpcoesEquipe();
+    }
+    return linha;
   }
 
-  function desenharEditorEscala(escala, ov) {
-    const R = estado.rd;
-    const porId = {};
-    escala.forEach(function (e) { porId[String(e.equipe_id)] = e; });
+  async function escalaDaEquipe(dia, equipeId) {
+    const lista = dia === estado.escalaDiaData ? estado.escalaDia : await carregarEscalaDoDia(dia);
+    return lista.find(function (e) { return String(e.equipe_id) === String(equipeId); });
+  }
+
+  // Quem registra uma visita em campo passa a constar no dia (sem rebaixar quem já está na preventiva).
+  async function marcarEscalaPelaVisita(r) {
+    const atual = await escalaDaEquipe(r.dataExecucao, r.equipe.id);
+    const sit = (atual && atividadeTemPreventiva(atual.situacao)) ? atual.situacao : r.atividade;
+    await gravarEscala(r.dataExecucao, r.equipe, sit, atual && atual.grupo, atual && atual.observacao);
+  }
+
+  // Atividade sem site (treinamento, folga...): só marca a equipe no dia.
+  async function salvarAtividadeSemSite() {
+    const msg = $("msgRegistrar");
+    const equipe = estado.equipes.find(function (e) { return String(e.id) === $("campoEquipe").value; });
+    const atividade = $("campoAtividade").value;
+    if (!equipe) { msg.innerHTML = '<span class="erro">Escolha a equipe.</span>'; return; }
+    if (!atividade) { msg.innerHTML = '<span class="erro">Escolha a atividade.</span>'; return; }
+    const dia = $("campoData").value || hoje();
+    $("botaoRegistrar").disabled = true;
+    try {
+      const atual = await escalaDaEquipe(dia, equipe.id);
+      await gravarEscala(dia, equipe, atividade, atual && atual.grupo, $("campoObservacao").value.trim());
+      msg.innerHTML = '<span class="ok">Salvo: ' + esc(equipe.nome) + " · " + esc(atividade) + " em " + esc(dia.split("-").reverse().join("/")) + ".</span>";
+      mostrarAviso("Equipe do dia salva: " + equipe.nome + " · " + atividade);
+      $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoObservacao").value = "";
+      atualizarBlocos();
+    } catch (e) {
+      msg.innerHTML = '<span class="erro">Não salvou: ' + esc(e.message) + "</span>";
+    }
+    $("botaoRegistrar").disabled = false;
+  }
+
+  function desenharEscalaDia() {
+    const lista = estado.escalaDia.slice();
+    const ordem = REGRAS.resumoDia.grupos.map(function (g) { return g.nome; }).concat([REGRAS.resumoDia.nomeOutros]);
+    lista.sort(function (a, b) {
+      const ia = ordem.indexOf(a.grupo), ib = ordem.indexOf(b.grupo);
+      return (ia - ib) || String(a.equipe).localeCompare(String(b.equipe));
+    });
+    const nCampo = lista.filter(function (e) { return atividadeExigeSite(e.situacao); }).length;
+    $("escResumo").textContent = lista.length
+      ? lista.length + " equipe(s) · " + nCampo + " em campo (preventiva/corretiva) · " + (lista.length - nCampo) + " em outra atividade"
+      : "";
+    if (estado.escalaErro) {
+      $("rdEscalaTabela").innerHTML = "";
+      $("rdEscalaMsg").textContent = "A tabela das equipes do dia ainda não existe no banco (rode o SQL escala_dia). Detalhe: " + estado.escalaErro;
+      return;
+    }
+    $("rdEscalaMsg").textContent = "";
     const opSit = function (sel) {
-      return '<option value="">— fora da preventiva —</option>' + REGRAS.resumoDia.situacoes.map(function (s) {
-        return "<option" + (s === sel ? " selected" : "") + ">" + esc(s) + "</option>";
-      }).join("");
+      return REGRAS.resumoDia.situacoes.map(function (s) { return "<option" + (s === sel ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("");
     };
-    const grupos = REGRAS.resumoDia.grupos.map(function (g) { return g.nome; }).concat([REGRAS.resumoDia.nomeOutros]);
-    const opGrupo = function (sel) {
+    const grupos = ordem;
+    const opGrp = function (sel) {
       return grupos.map(function (g) { return "<option" + (g === sel ? " selected" : "") + ">" + esc(g) + "</option>"; }).join("");
     };
-    let html = '<div class="rd-etab"><div class="h">Equipe</div><div class="h">O que está fazendo</div><div class="h">Grupo</div><div class="h">Onde / observação</div>';
-    R.equipes.forEach(function (eq) {
-      let e = porId[String(eq.id)];
-      const o = ov && ov[String(eq.id)];
-      if (o) e = { situacao: o.sit, grupo: o.grp, observacao: o.obs };
-      html += '<div>' + esc(eq.nome) + '</div><div><select data-eq="' + esc(eq.id) + '" data-campo="sit">' + opSit(e ? e.situacao : "") + "</select></div>" +
-        '<div><select data-eq="' + esc(eq.id) + '" data-campo="grp">' + opGrupo(e && e.grupo ? e.grupo : grupoDaEquipe(eq.nome)) + "</select></div>" +
-        '<div><input type="text" data-eq="' + esc(eq.id) + '" data-campo="obs" value="' + esc(e ? e.observacao || "" : "") + '" placeholder="ex.: curso na base, oficina"></div>';
+    let html = '<div class="l cab"><div>Equipe</div><div>Atividade</div><div>Grupo</div><div>Observação</div><div></div></div>';
+    if (lista.length === 0) {
+      html += '<div class="vazio">Nenhuma equipe registrada neste dia. Use o formulário acima ou “Copiar do dia anterior”.</div>';
+    }
+    lista.forEach(function (e) {
+      const id = esc(e.equipe_id);
+      html += '<div class="l" data-eq="' + id + '"><div>' + esc(e.equipe) + "</div>" +
+        '<div><select data-campo="sit">' + opSit(e.situacao) + "</select></div>" +
+        '<div><select data-campo="grp">' + opGrp(e.grupo || grupoDaEquipe(e.equipe)) + "</select></div>" +
+        '<div><input type="text" data-campo="obs" value="' + esc(e.observacao || "") + '" placeholder="ex.: curso na base"></div>' +
+        '<div><button type="button" class="rm" data-acao="remover">Remover</button></div></div>';
     });
-    $("rdEscalaTabela").innerHTML = html + "</div>";
-    $("rdEscalaMsg").textContent = estado.escalaErro ? "A tabela das equipes do dia ainda não existe no banco (rode o SQL escala_dia). Detalhe: " + estado.escalaErro : "";
+    $("rdEscalaTabela").innerHTML = html;
   }
 
-  $("rdSalvarEscala").addEventListener("click", async function () {
-    const R = estado.rd; if (!R) return;
-    const box = $("rdEscalaTabela");
-    const grava = [], apaga = [];
-    R.equipes.forEach(function (eq) {
-      const sel = function (c) { return box.querySelector('[data-eq="' + eq.id + '"][data-campo="' + c + '"]'); };
-      const sit = sel("sit").value;
-      if (!sit) { apaga.push(eq.id); return; }
-      grava.push({ data: R.dia, equipe_id: eq.id, equipe: eq.nome, situacao: sit, grupo: sel("grp").value,
-                   observacao: sel("obs").value.trim() || null, atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() });
-    });
+  $("rdEscalaTabela").addEventListener("change", async function (e) {
+    const linha = e.target.closest(".l[data-eq]");
+    if (!linha) return;
+    const eq = estado.escalaDia.find(function (x) { return String(x.equipe_id) === linha.dataset.eq; });
+    if (!eq) return;
+    const v = function (c) { return linha.querySelector('[data-campo="' + c + '"]').value; };
     try {
-      if (grava.length) conferir(await banco.from("escala_dia").upsert(grava, { onConflict: "data,equipe_id" }));
-      if (apaga.length) conferir(await banco.from("escala_dia").delete().eq("data", R.dia).in("equipe_id", apaga));
-      $("rdEscalaMsg").textContent = "Equipes do dia salvas (" + grava.length + " na preventiva).";
-      mostrarAviso("Equipes do dia salvas.");
-      $("rdEscalaBox").open = false;
-      atualizarResumoDia();
-    } catch (e) {
-      $("rdEscalaMsg").textContent = "Não salvou: " + e.message;
-      mostrarAviso("Não salvou: " + e.message, "erro");
-    }
+      await gravarEscala(estado.escalaDiaData, { id: eq.equipe_id, nome: eq.equipe }, v("sit"), v("grp"), v("obs").trim());
+    } catch (err) { mostrarAviso("Não salvou: " + err.message, "erro"); }
+  });
+
+  $("rdEscalaTabela").addEventListener("click", async function (e) {
+    const botao = e.target.closest('button[data-acao="remover"]');
+    if (!botao) return;
+    const linha = botao.closest(".l[data-eq]");
+    try {
+      conferir(await banco.from("escala_dia").delete().eq("data", estado.escalaDiaData).eq("equipe_id", linha.dataset.eq));
+      estado.escalaDia = estado.escalaDia.filter(function (x) { return String(x.equipe_id) !== linha.dataset.eq; });
+      desenharEscalaDia(); atualizarOpcoesEquipe();
+    } catch (err) { mostrarAviso("Não removeu: " + err.message, "erro"); }
+  });
+
+  $("rdCopiar").addEventListener("click", async function () {
+    const dia = estado.escalaDiaData || $("campoData").value || hoje();
+    try {
+      const antes = conferir(await banco.from("escala_dia").select("*").lt("data", dia).order("data", { ascending: false }).limit(80));
+      if (antes.length === 0) { $("rdEscalaMsg").textContent = "Não há equipes registradas em dias anteriores."; return; }
+      const diaRef = antes[0].data;
+      const jaTem = {};
+      estado.escalaDia.forEach(function (x) { jaTem[String(x.equipe_id)] = true; });
+      const novas = antes.filter(function (x) { return x.data === diaRef && !jaTem[String(x.equipe_id)]; }).map(function (x) {
+        return { data: dia, equipe_id: x.equipe_id, equipe: x.equipe, situacao: x.situacao, grupo: x.grupo, observacao: x.observacao,
+                 atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() };
+      });
+      if (novas.length === 0) { $("rdEscalaMsg").textContent = "As equipes de " + diaRef.split("-").reverse().join("/") + " já estão neste dia."; return; }
+      conferir(await banco.from("escala_dia").upsert(novas, { onConflict: "data,equipe_id" }));
+      estado.escalaDia = estado.escalaDia.concat(novas);
+      desenharEscalaDia(); atualizarOpcoesEquipe();
+      $("rdEscalaMsg").textContent = novas.length + " equipe(s) copiada(s) de " + diaRef.split("-").reverse().join("/") + ". Ajuste o que mudou na tabela.";
+    } catch (e) { $("rdEscalaMsg").textContent = "Não copiou: " + e.message; }
   });
 
   async function carregarListaTecnicos() {
@@ -2059,39 +2208,59 @@
     $("rdTecnicos").innerHTML = r.error ? "" : r.data.map(function (t) { return '<option value="' + esc(t.nome) + '">'; }).join("");
   }
 
+  $("rdNovaAbrir").addEventListener("click", function () {
+    $("rdNova").classList.toggle("oculto");
+    if (!$("rdNova").classList.contains("oculto")) { carregarListaTecnicos(); $("rdTec1").focus(); }
+  });
+
   $("rdCriarEquipe").addEventListener("click", async function () {
     const nomes = ["rdTec1", "rdTec2", "rdTec3", "rdTec4"].map(function (id) { return $(id).value.trim(); }).filter(Boolean);
-    if (nomes.length === 0) { $("rdNovaMsg").textContent = "Digite ao menos um técnico."; return; }
+    if (nomes.length === 0) { $("rdNovaMsg").innerHTML = '<span class="erro">Digite ao menos um técnico.</span>'; return; }
     const unicos = nomes.filter(function (n, i) { return nomes.findIndex(function (x) { return x.toLowerCase() === n.toLowerCase(); }) === i; });
     try {
-      const antesIds = estado.rd.equipes.map(function (e) { return String(e.id); });
+      const antesIds = estado.equipes.map(function (e) { return String(e.id); });
       const id = conferir(await banco.rpc("criar_equipe", { nomes: unicos }));
-      const ov = lerEditor();
       estado.equipes = await carregarEquipes();
-      estado.rd.equipes = estado.equipes;
-      ov[String(id)] = { sit: REGRAS.resumoDia.situacaoPreventiva, grp: grupoDaEquipe(unicos.join("/")), obs: "" };
-      desenharEditorEscala(estado.rd.escala, ov);
+      atualizarOpcoesEquipe();
+      $("campoEquipe").value = String(id);
       ["rdTec1", "rdTec2", "rdTec3", "rdTec4"].forEach(function (i) { $(i).value = ""; });
       const nova = antesIds.indexOf(String(id)) < 0;
-      $("rdNovaMsg").textContent = (nova ? "Equipe criada: " : "Equipe já existia: ") + unicos.join("/") + ". Ela já está marcada como Preventiva abaixo; ajuste e clique em Salvar.";
+      $("rdNovaMsg").innerHTML = '<span class="ok">' + (nova ? "Equipe criada: " : "Equipe já existia: ") + esc(unicos.join("/")) + ". Já está escolhida acima; agora escolha a atividade.</span>";
       carregarListaTecnicos();
     } catch (e) {
-      $("rdNovaMsg").textContent = "Não criou: " + e.message + " (rodou o SQL criar_equipe?)";
+      $("rdNovaMsg").innerHTML = '<span class="erro">Não criou: ' + esc(e.message) + " (rodou o SQL criar_equipe?)</span>";
     }
   });
 
-  $("rdEscalaBox").addEventListener("toggle", function () { if ($("rdEscalaBox").open) carregarListaTecnicos(); });
-
-  $("rdCopiar").addEventListener("click", async function () {
-    const R = estado.rd; if (!R) return;
+  async function atualizarEscalaRegistrar() {
     try {
-      const antes = conferir(await banco.from("escala_dia").select("*").lt("data", R.dia).order("data", { ascending: false }).limit(60));
-      if (antes.length === 0) { $("rdEscalaMsg").textContent = "Não há equipes registradas em dias anteriores."; return; }
-      const diaRef = antes[0].data;
-      desenharEditorEscala(antes.filter(function (e) { return e.data === diaRef; }));
-      $("rdEscalaMsg").textContent = "Copiado de " + diaRef.split("-").reverse().join("/") + ". Ajuste o que mudou e clique em Salvar.";
-    } catch (e) { $("rdEscalaMsg").textContent = "Não copiou: " + e.message; }
-  });
+      if (!$("campoData").value) $("campoData").value = hoje();
+      const dia = $("campoData").value;
+      estado.escalaDia = await carregarEscalaDoDia(dia);
+      estado.escalaDiaData = dia;
+      desenharEscalaDia();
+      atualizarOpcoesEquipe();
+    } catch (e) {
+      mostrarAviso("Não consegui carregar as equipes do dia: " + e.message, "erro");
+    }
+  }
+  $("campoData").addEventListener("change", atualizarEscalaRegistrar);
+
+  // Lista de equipes do formulário: primeiro as já registradas no dia, depois as demais.
+  function atualizarOpcoesEquipe() {
+    const sel = $("campoEquipe"), atual = sel.value;
+    const noDia = {};
+    estado.escalaDia.forEach(function (e) { noDia[String(e.equipe_id)] = true; });
+    const op = function (e) { return '<option value="' + esc(e.id) + '">' + esc(e.nome) + " (" + esc(e.tipo) + ")</option>"; };
+    const hojeEq = estado.equipes.filter(function (e) { return noDia[String(e.id)]; });
+    const resto = estado.equipes.filter(function (e) { return !noDia[String(e.id)]; });
+    sel.innerHTML = '<option value="">Escolha a equipe...</option>' +
+      (hojeEq.length ? '<optgroup label="Já registradas no dia">' + hojeEq.map(op).join("") + '</optgroup><optgroup label="Outras equipes">' + resto.map(op).join("") + "</optgroup>"
+                     : estado.equipes.map(op).join(""));
+    sel.value = atual;
+  }
+
+  $("rdIrRegistrar").addEventListener("click", function (e) { e.preventDefault(); irParaTela("Registrar"); });
 
   $("rdAtualizar").addEventListener("click", atualizarResumoDia);
   $("rdData").addEventListener("change", atualizarResumoDia);
