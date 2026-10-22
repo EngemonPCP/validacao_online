@@ -517,7 +517,6 @@
       <div class="ib-trilha">Painel / <span>Divergências</span></div>
       <h1>Divergências: base do cliente x visitas</h1>
       <p class="ib-sub">WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
-      <div id="dvFaixa" class="faixa oculto"></div>
       <div class="ib-campos" id="dvCampos"></div>
 
       <div class="ib-secao"><span>Por motivo provável</span><span class="aux">clique numa linha para filtrar a lista</span></div>
@@ -1437,13 +1436,6 @@
       campo("Relatório em data diferente", cont("data_diferente")) +
       campo("Com motivo confirmado", tratadas + " <small style=\"font-size:12px;font-weight:400\">de " + base.length + "</small>", "verde");
 
-    const faixa = $("dvFaixa");
-    const avisos = [];
-    if (D.nVisitas === 0) avisos.push("Nenhuma visita registrada ainda.");
-    else avisos.push("Visitas registradas de <b>" + dataBR(D.minData) + "</b> a <b>" + dataBR(D.maxData) + "</b> (" + D.nVisitas + "). WOs executadas fora desse período não têm visita para ligar.");
-    if (D.tratErro) avisos.push('<b>Para confirmar motivos, rode o SQL <code>divergencias_sql.txt</code> no Supabase.</b> (Detalhe: ' + esc(D.tratErro) + ")");
-    faixa.innerHTML = avisos.join(" "); faixa.classList.remove("oculto");
-
     // resumo por motivo provável (conta o que está aberto, no grupo/busca escolhidos)
     const porMotivo = {};
     base.forEach(function (l) {
@@ -1477,7 +1469,7 @@
         "<div>" + pill(l.status, l.status === "Executada" ? "p-verde" : "p-laranja") + '<span class="dv-sub">' + (l.dataFim ? "relatório " + dataBR(l.dataFim) : "sem data") + "</span></div>" +
         "<div>" + pill(cat[0], cat[1]) + "</div>" +
         "<div>" + esc(l.motivo) + (l.visita ? '<span class="dv-sub">Visita: ' + esc(l.visita.site) + " · " + esc(l.visita.equipe) + " · " + dataBR(l.visita.data_execucao) + "</span>" : "") + "</div>" +
-        '<div class="dv-trat"><select data-campo="motivo"' + (estado.dv.tratErro ? " disabled" : "") + ">" + opMotivo(t.motivo || "") + "</select>" +
+        '<div class="dv-trat"><select data-campo="motivo"' + (estado.dv.tratErro ? ' disabled title="Rode o SQL divergencias_sql.txt no Supabase para liberar"' : "") + ">" + opMotivo(t.motivo || "") + "</select>" +
         '<input type="text" data-campo="obs" placeholder="observação" value="' + esc(t.observacao || "") + '"' + (estado.dv.tratErro ? " disabled" : "") + "></div></div>";
     });
     $("dvTabela").innerHTML = html;
@@ -2464,6 +2456,39 @@
     return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; }).length;
   }
 
+  // Mesma equipe, mesmo site e horários que se sobrepõem = o registro foi corrigido depois.
+  // Vale o mais recente (maior id); se o id não for numérico, vale o de menor duração.
+  // As WOs da visita que sai são somadas à que fica (sem repetir), então nada deixa de contar.
+  function sobreporVisitas(lista) {
+    const ini = function (v) { return new Date(v.hora_entrada || v.hora_aviso).getTime(); };
+    const fim = function (v) { return v.hora_saida ? new Date(v.hora_saida).getTime() : Infinity; };
+    const vence = function (x, y) {            // true se x substitui y
+      const nx = Number(x.id), ny = Number(y.id);
+      if (isFinite(nx) && isFinite(ny) && nx !== ny) return nx > ny;
+      return (fim(x) - ini(x)) <= (fim(y) - ini(y));
+    };
+    let atual = lista.slice();
+    for (let mudou = true; mudou;) {
+      mudou = false;
+      for (let i = 0; i < atual.length && !mudou; i++) {
+        for (let j = i + 1; j < atual.length && !mudou; j++) {
+          const x = atual[i], y = atual[j];
+          if (limparSite(x.site_base || x.site) !== limparSite(y.site_base || y.site)) continue;
+          if (!(ini(x) < fim(y) && ini(y) < fim(x))) continue;
+          const fica = vence(x, y) ? x : y, sai = fica === x ? y : x;
+          const vistas = {};
+          const juntas = (fica.wos_visita || []).concat(sai.wos_visita || []).filter(function (w) {
+            if (vistas[w.wo]) return false; vistas[w.wo] = true; return true;
+          });
+          const novo = Object.assign({}, fica, { wos_visita: juntas });
+          atual = atual.filter(function (v) { return v !== x && v !== y; }).concat([novo]);
+          mudou = true;
+        }
+      }
+    }
+    return atual.sort(function (x, y) { return ini(x) - ini(y); });
+  }
+
   function desenharResumoDia() {
     const R = estado.rd, dia = R.dia, visitas = R.visitas, base = R.base, ligadas = R.ligadas, equipes = R.equipes, escala = R.escala, ativs = R.atividades || [];
     const cfg = REGRAS.resumoDia;
@@ -2494,6 +2519,7 @@
       if (!linhas[k]) linhas[k] = { id: k, nome: a.equipe, situacao: a.atividade, obs: "", grupo: grupoDaEquipe(a.equipe), visitas: [], semEscala: true };
       (linhas[k].atividades = linhas[k].atividades || []).push(a);
     });
+    Object.keys(linhas).forEach(function (k) { linhas[k].visitas = sobreporVisitas(linhas[k].visitas); });
     const lista = Object.keys(linhas).map(function (k) { return linhas[k]; });
     let maxSites = cfg.minSites;
     lista.forEach(function (e) { if (e.visitas.length > maxSites) maxSites = e.visitas.length; });
@@ -2517,17 +2543,16 @@
           const per = a.inicio ? " " + hm(a.inicio) + (a.fim ? "–" + hm(a.fim) : "…") : (a.fim ? " até " + hm(a.fim) : "");
           return '<div class="rd-chip" title="' + esc(a.observacao || "") + '"><b>' + esc(a.atividade) + "</b>" + esc(per) + "</div>";
         }).join("");
-        const colAtiv = '<div class="rd-ativ">' + (chips || "") + "</div>";
-        if (!ePrev) {
-          const locais = e.visitas.map(function (v) { return v.site; }).join(", ");
-          const rotulo = chips ? "Fora da preventiva" : e.situacao;
-          linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">—</div>' + colAtiv + '<div class="rd-sites"><div class="rd-outra"><b>' +
-            esc(rotulo) + "</b>" + esc([locais, e.obs].filter(Boolean).join(" · ")) + '</div></div><div class="rd-real">—</div></div>';
-          return;
+        // Atividade sem site (treinamento, folga...) vai na coluna "Outras atividades", nunca na área dos sites.
+        // Registros antigos (sem horário) entram como uma etiqueta com a atividade do dia.
+        let chipsTxt = chips;
+        if (!chipsTxt && !atividadeExigeSite(e.situacao)) {
+          chipsTxt = '<div class="rd-chip" title="' + esc(e.obs || "") + '"><b>' + esc(e.situacao) + "</b>" + (e.obs ? " " + esc(e.obs) : "") + "</div>";
         }
-        nPrev++;
+        const colAtiv = '<div class="rd-ativ">' + (chipsTxt || "") + "</div>";
+        // Os sites são só as visitas (o que exige site). Equipe sem visita fica com a área de sites vazia.
         const wosEq = e.visitas.reduce(function (s, v) { return s + nMop(v); }, 0);
-        totalPrev += cfg.previstoPorEquipe; totalReal += wosEq;
+        if (ePrev) { nPrev++; totalPrev += cfg.previstoPorEquipe; totalReal += wosEq; }
         let sites = "";
         for (let i = 0; i < maxSites; i++) {
           const v = e.visitas[i];
@@ -2537,10 +2562,10 @@
           const desloc = !v.hora_entrada && v.situacao === REGRAS.situacaoDeslocamento;
           const entrada = desloc ? '<span title="Avisou no grupo às ' + hh(v.hora_aviso) + '; chegada ainda não confirmada">av. ' + hh(v.hora_aviso) + "</span>" : hh(v.hora_entrada || v.hora_aviso);
           sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
-            entrada + '</div><div class="c">' + hh(v.hora_saida) + '</div><div class="d">' + nMop(v) + "</div></div>";
+            entrada + '</div><div class="c">' + hh(v.hora_saida) + '</div><div class="d">' + (ePrev ? nMop(v) : "") + "</div></div>";
         }
-        linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">' + cfg.previstoPorEquipe +
-          "</div>" + colAtiv + '<div class="rd-sites">' + sites + '</div><div class="rd-real">' + wosEq + "</div></div>";
+        linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">' + (ePrev ? cfg.previstoPorEquipe : "—") +
+          "</div>" + colAtiv + '<div class="rd-sites">' + sites + '</div><div class="rd-real">' + (ePrev ? wosEq : "—") + "</div></div>";
       });
     });
     if (!linhasHtml) {
