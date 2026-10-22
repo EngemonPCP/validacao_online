@@ -188,6 +188,15 @@
     #telaResumoDia .rd-site .d { flex:.5; }
     #telaResumoDia .rd-verde { background:#a7f0ba; }
     #telaResumoDia .rd-amarelo { background:#fddc69; }
+    #telaResumoDia .rd-azul { background:#d0e2ff; }
+    #telaResumoDia .rd-vermelho { background:#ffd7d9; }
+    #telaResumoDia .rd-ocorr { margin-top:12px; border-left:3px solid #da1e28; background:#fff1f1; padding:8px 12px; font-size:12px; }
+    #telaResumoDia .rd-ocorr ul { margin:4px 0 0; padding-left:18px; }
+    #telaResumoDia .rd-azul .b { color:#0043ce; font-style:italic; }
+    #telaResumoDia .rd-ativ { width:200px; flex-shrink:0; padding:4px 6px; box-sizing:border-box; border-left:1px solid #e0e0e0; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+    #telaResumoDia .rd-cab .rd-ativ { justify-content:center; padding:8px 6px; text-align:center; }
+    #telaResumoDia .rd-chip { background:#e0e0e0; color:#262626; padding:3px 6px; font-size:11px; line-height:1.3; }
+    #telaResumoDia .rd-chip b { font-weight:600; }
     #telaResumoDia .rd-real { width:64px; display:flex; align-items:center; justify-content:center; border-left:1px solid #e0e0e0; font-weight:600; flex-shrink:0; }
     #telaResumoDia .rd-cab > div { padding-top:8px; padding-bottom:8px; }
     #telaResumoDia .rd-total { background:#e0e0e0; font-weight:600; align-items:center; min-height:34px; }
@@ -243,10 +252,105 @@
     #telaRegistrar .ib-tab .rm { background:none; border:0; color:#da1e28; cursor:pointer; font:inherit; font-size:12px; padding:4px 6px; }
     #telaRegistrar .ib-tab .rm:hover { text-decoration:underline; }
     #telaRegistrar .ib-tab .vazio { padding:14px 8px; color:#525252; }
+    #telaRegistrar .ib-tab.ativ .l { grid-template-columns:minmax(190px,1.5fr) minmax(150px,1fr) 110px 110px minmax(150px,1.4fr) 90px; }
+    #telaRegistrar .ib-tab .l input[type=time] { background:transparent; border-bottom-color:#c6c6c6; padding:6px 6px; font-size:12px; }
     @media (max-width:820px) {
       #telaRegistrar .ib-tab .l { grid-template-columns:1fr 1fr; gap:2px 0; padding:6px 0; }
       #telaRegistrar .ib-tab .cab { display:none; }
     }
+    /* ---- EQUIPES EM CAMPO (estilo IBM) ---- */
+    #telaCampo { font-size:12px; color:#161616; max-width:none; }
+    main:has(#telaCampo:not(.oculto)) { max-width:1280px; }
+    #telaCampo .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
+    #telaCampo .ib-trilha span { color:#161616; }
+    #telaCampo .ib-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 6px; }
+    #telaCampo h1 { font-size:20px; font-weight:400; margin:0; }
+    #telaCampo .ib-sub { color:#525252; font-size:12px; }
+    #telaCampo .ib-campos { display:flex; gap:24px; flex-wrap:wrap; margin:10px 0 6px; }
+    #telaCampo .ib-campo { flex:1 1 150px; }
+    #telaCampo .ib-campo .r { color:#525252; font-size:11px; }
+    #telaCampo .ib-campo .v { border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:6px 8px; font-size:16px; font-weight:600; }
+    #telaCampo .ib-campo.laranja .v { color:#8e6a00; border-bottom-color:#f1c21b; background:#fcf4d6; }
+    #telaCampo .ib-campo.verde .v { color:#198038; }
+    #telaCampo .ib-campo.azul .v { color:#0043ce; }
+    #telaCampo .ib-secao { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border-bottom:1px solid #e0e0e0; padding:0 0 6px; margin:20px 0 0; font-size:14px; font-weight:600; }
+    #telaCampo .ib-secao .aux { font-weight:400; color:#525252; font-size:12px; }
+    #telaCampo .cp-tab { overflow-x:auto; }
+    #telaCampo .cp-l { display:grid; grid-template-columns:var(--cols); align-items:center; min-width:1000px; }
+    #telaCampo .cp-l > div { padding:8px 8px; min-width:0; }
+    #telaCampo .cp-cab { background:#e0e0e0; font-weight:600; }
+    #telaCampo .cp-item { border-bottom:1px solid #e0e0e0; }
+    #telaCampo .cp-item:nth-child(even) { background:#f9f9f9; }
+    #telaCampo .cp-item.longo { box-shadow:inset 3px 0 0 #f1c21b; }
+    #telaCampo .cp-item.semexec { box-shadow:inset 3px 0 0 #da1e28; }
+    #telaCampo .cp-site { font-size:13px; font-weight:600; }
+    #telaCampo .cp-sub { display:block; color:#525252; font-size:11px; margin-top:1px; }
+    #telaCampo .pill { border-radius:0; }
+    #telaCampo .cp-acoes { display:flex; gap:2px; justify-content:flex-end; flex-wrap:wrap; }
+    #telaCampo button.principal { border-radius:0; background:#0f62fe; padding:7px 14px; font-weight:400; font-size:12px; }
+    #telaCampo button.principal:hover { background:#0353e9; }
+    #telaCampo button.secundario { border-radius:0; background:#fff; color:#0f62fe; border:1px solid #0f62fe; padding:6px 12px; font-weight:400; font-size:12px; }
+    #telaCampo button.secundario:hover { background:#e5f0ff; }
+    #telaCampo .cp-det { display:flex; gap:24px; flex-wrap:wrap; padding:0 8px 8px 8px; min-width:1000px; }
+    #telaCampo .cp-det .lista-wo { flex:1 1 380px; margin:0; }
+    #telaCampo .cp-det .lista-wo .item { padding:3px 0; border-bottom:1px solid #e8e8e8; gap:8px; }
+    #telaCampo .cp-det .lista-wo .tipo { min-width:120px; font-size:11px; }
+    #telaCampo .cp-det .extras { flex:1 1 320px; display:flex; flex-direction:column; gap:4px; }
+    #telaCampo details.notas { margin:0; border-top:0; padding-top:0; }
+    #telaCampo details.notas summary { font-size:12px; color:#0f62fe; }
+    #telaCampo details.notas select, #telaCampo details.notas input[type=time], #telaCampo details.notas textarea { width:100%; font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 8px; margin-top:4px; }
+    #telaCampo details.notas label { font-size:11px; color:#525252; font-weight:400; margin:8px 0 0; }
+    #telaCampo .faixa-endereco, #telaCampo .faixa { border-radius:0; font-size:12px; margin:0; }
+    #telaCampo .vazio { padding:14px 8px; color:#525252; border-bottom:1px solid #e0e0e0; }
+    /* ---- DIVERGENCIAS (estilo IBM) ---- */
+    main:has(#telaDivergencias:not(.oculto)) { max-width:none; }
+    #telaDivergencias { font-size:12px; color:#161616; max-width:none; }
+    #telaDivergencias .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
+    #telaDivergencias .ib-trilha span { color:#161616; }
+    #telaDivergencias h1 { font-size:20px; font-weight:400; margin:0 0 2px; }
+    #telaDivergencias .ib-sub { color:#525252; margin:0 0 10px; }
+    #telaDivergencias .ib-campos { display:flex; gap:24px; flex-wrap:wrap; margin:10px 0 14px; }
+    #telaDivergencias .ib-campo { flex:1 1 170px; }
+    #telaDivergencias .ib-campo .r { color:#525252; font-size:11px; }
+    #telaDivergencias .ib-campo .v { border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:6px 8px; font-size:16px; font-weight:600; }
+    #telaDivergencias .ib-campo.verm .v { border-bottom-color:#da1e28; background:#fff1f1; color:#da1e28; }
+    #telaDivergencias .ib-campo.verde .v { color:#198038; }
+    #telaDivergencias .ib-secao { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border-bottom:1px solid #e0e0e0; padding:0 0 6px; margin:18px 0 8px; font-size:14px; font-weight:600; }
+    #telaDivergencias .ib-secao .aux { font-weight:400; color:#525252; font-size:12px; }
+    #telaDivergencias .resumo-motivos { max-width:760px; }
+    #telaDivergencias .rm-l { display:flex; align-items:center; border-bottom:1px solid #e0e0e0; min-height:32px; cursor:pointer; }
+    #telaDivergencias .rm-l:hover { background:#e8e8e8; }
+    #telaDivergencias .rm-l.ativo { background:#d0e2ff; }
+    #telaDivergencias .rm-l .t { flex:1; padding:4px 8px; }
+    #telaDivergencias .rm-l .n { width:70px; text-align:right; padding:4px 8px; font-weight:600; }
+    #telaDivergencias .rm-cab { background:#e0e0e0; font-weight:600; cursor:default; }
+    #telaDivergencias .rm-cab:hover { background:#e0e0e0; }
+    #telaDivergencias .ib-barra { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin:10px 0; }
+    #telaDivergencias .ib-chips { display:flex; flex-wrap:wrap; }
+    #telaDivergencias .ib-chips button { background:#e0e0e0; border:0; border-left:1px solid #8d8d8d; padding:8px 16px; font:inherit; cursor:pointer; color:#161616; }
+    #telaDivergencias .ib-chips button:first-child { border-left:0; }
+    #telaDivergencias .ib-chips button:hover { background:#c6c6c6; }
+    #telaDivergencias .ib-chips button.ativo { background:#161616; color:#fff; }
+    #telaDivergencias .ib-ferr { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #telaDivergencias select, #telaDivergencias input[type=text] { font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 8px; width:auto; margin:0; color:#161616; }
+    #telaDivergencias input[type=text].busca { width:220px; }
+    #telaDivergencias button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; cursor:pointer; }
+    #telaDivergencias button.sec:hover { background:#e5f0ff; }
+    #telaDivergencias .dv-rolagem { overflow-x:auto; }
+    #telaDivergencias .dv-l { display:grid; grid-template-columns:140px 84px minmax(120px,1fr) 140px 170px minmax(220px,1.8fr) minmax(220px,1.4fr); min-width:1100px; border-bottom:1px solid #e0e0e0; align-items:start; }
+    #telaDivergencias .dv-l > div { padding:8px 8px; min-width:0; word-break:break-word; }
+    #telaDivergencias .dv-cab { background:#e0e0e0; font-weight:600; position:sticky; top:0; z-index:1; align-items:center; }
+    #telaDivergencias .dv-l:not(.dv-cab):nth-child(even) { background:#f9f9f9; }
+    #telaDivergencias .dv-l.trat { box-shadow:inset 3px 0 0 #198038; }
+    #telaDivergencias .dv-l.pend { box-shadow:inset 3px 0 0 #da1e28; }
+    #telaDivergencias .dv-l.med { box-shadow:inset 3px 0 0 #f1c21b; }
+    #telaDivergencias .dv-wo { font-weight:600; }
+    #telaDivergencias .dv-sub { display:block; color:#525252; font-size:11px; margin-top:2px; }
+    #telaDivergencias .dv-trat select, #telaDivergencias .dv-trat input[type=text] { width:100%; margin-bottom:3px; }
+    #telaDivergencias .dv-vazio { padding:16px 8px; color:#525252; }
+    #telaDivergencias .pill { border-radius:0; }
+    #telaDivergencias .faixa { border-radius:0; font-size:12px; }
+    @media print { #telaDivergencias { display:none; } }
     @media print {
       #telaRegistrar { display:none; }
       #topo, .barra-aviso { display:none !important; }
@@ -268,7 +372,7 @@
         <button data-tela="Conferencia" data-grupo="MOP">MOP</button>
         <button data-tela="EPS" data-grupo="">EPS</button>
       </div>
-      <button data-tela="Conferencia" data-grupo="">Conferência</button>
+      <button data-tela="Divergencias" data-grupo="">Divergências</button>
       <button data-tela="ResumoDia" data-grupo="">Resumo Dia</button>
     </nav>
     <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
@@ -371,6 +475,14 @@
         <div class="pequeno" style="color:#525252;margin-top:2px">Se o site não tem alarme configurado, escolha “Site sem alarme”: assim fica registrado que a falta do alarme não é falha da equipe.</div>
       </div>
 
+      <div id="blocoPeriodo" class="oculto">
+        <div class="ib-secao"><span>Período da atividade</span><span class="ib-aux">deixe em branco se foi o dia todo</span></div>
+        <div class="ib-grade">
+          <div class="ib-campo"><label for="campoAtivInicio">Início</label><input id="campoAtivInicio" type="time"></div>
+          <div class="ib-campo"><label for="campoAtivFim">Fim (pode preencher depois)</label><input id="campoAtivFim" type="time"></div>
+        </div>
+      </div>
+
       <div class="ib-secao"><span>Observações</span></div>
       <div class="ib-campo larg">
         <label for="campoObservacao" id="rotuloObs">Observações (opcional)</label>
@@ -394,6 +506,41 @@
       </div>
       <div class="ib-tab" id="rdEscalaTabela"></div>
       <div id="rdEscalaMsg" class="msg" style="color:#525252"></div>
+
+      <div class="ib-secao"><span>Atividades sem site do dia <span class="ib-aux" id="ativResumo" style="margin-left:8px"></span></span></div>
+      <div class="ib-tab ativ" id="rdAtivTabela"></div>
+      <div id="rdAtivMsg" class="msg" style="color:#525252"></div>
+    </section>
+
+    <!-- DIVERGENCIAS -->
+    <section id="telaDivergencias" class="tela oculto">
+      <div class="ib-trilha">Painel / <span>Divergências</span></div>
+      <h1>Divergências: base do cliente x visitas</h1>
+      <p class="ib-sub">WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
+      <div id="dvFaixa" class="faixa oculto"></div>
+      <div class="ib-campos" id="dvCampos"></div>
+
+      <div class="ib-secao"><span>Por motivo provável</span><span class="aux">clique numa linha para filtrar a lista</span></div>
+      <div class="resumo-motivos" id="dvMotivos"></div>
+
+      <div class="ib-secao"><span>WOs</span><span class="aux" id="dvContagem"></span></div>
+      <div class="ib-barra">
+        <div class="ib-chips" id="dvChips">
+          <button data-filtro="abertas" class="ativo">Sem tratativa</button>
+          <button data-filtro="exec_sem_visita">Executadas sem visita</button>
+          <button data-filtro="andamento_sem_visita">Em andamento sem visita</button>
+          <button data-filtro="data_diferente">Data diferente</button>
+          <button data-filtro="tratadas">Tratadas</button>
+          <button data-filtro="todas">Todas</button>
+        </div>
+        <div class="ib-ferr">
+          <select id="dvGrupo"><option value="MOP">MOP</option><option value="EPS">EPS</option><option value="">MOP + EPS</option></select>
+          <input type="text" class="busca" id="dvBusca" placeholder="Buscar WO, site ou equipe">
+          <button class="sec" id="dvAtualizar">Atualizar</button>
+          <button class="sec" id="dvExportar">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="dv-rolagem"><div id="dvTabela"></div></div>
     </section>
 
     <!-- RESUMO DIA -->
@@ -412,21 +559,25 @@
       <div class="pequeno" id="rdSub" style="color:#525252;margin-bottom:4px"></div>
       <div class="rd-campos" id="rdCampos"></div>
       <div class="rd-tabela" id="rdTabela"></div>
+      <div id="rdOcorrencias"></div>
 
       <p class="pequeno" style="margin-top:14px">As equipes do dia (quem trabalha na preventiva e o que está fazendo) são registradas na tela <a href="#" id="rdIrRegistrar">Registrar</a>, de manhã.</p>
     </section>
 
     <!-- EQUIPES EM CAMPO -->
     <section id="telaCampo" class="tela oculto">
-      <h1>Equipes em campo</h1>
-      <p class="sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</p>
-      <div class="azulejos" id="azulejos"></div>
-      <div class="grade-cartoes" id="gradeCampo"></div>
-      <h2 class="secao">Saídas a ajustar</h2>
-      <p class="sub">Visitas sem horário de saída (equipe ainda no site às 18h, ou histórico carregado sem saída). Informe a saída real aqui.</p>
-      <div class="grade-cartoes" id="gradeAjustar"></div>
-      <h2 class="secao">Saíram hoje</h2>
-      <div class="grade-cartoes" id="gradeSaidas"></div>
+      <div class="ib-trilha">Painel / <span>Equipes em campo</span></div>
+      <div class="ib-titulo"><h1>Equipes em campo</h1><span class="ib-sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</span></div>
+      <div class="ib-campos" id="azulejos"></div>
+
+      <div class="ib-secao"><span>Em campo agora</span></div>
+      <div class="cp-tab" id="gradeCampo"></div>
+
+      <div class="ib-secao"><span>Saídas a ajustar</span><span class="aux">visitas sem horário de saída (equipe ainda no site às 18h, ou histórico sem saída)</span></div>
+      <div class="cp-tab" id="gradeAjustar"></div>
+
+      <div class="ib-secao"><span>Saíram hoje</span></div>
+      <div class="cp-tab" id="gradeSaidas"></div>
     </section>
 
     <!-- EPS: relatorios das terceiras -->
@@ -508,7 +659,8 @@
     horasLongaPermanencia: 3,          // alerta de "longa permanência" no site
     // Atividades que EXIGEM site (a equipe vai a campo). As outras só marcam o que a equipe faz no dia.
     atividades: ["Preventiva", "Corretiva", "Preventiva + Corretiva"],
-    atividadesSemSite: ["Treinamento", "Revisão de carro", "Folga", "Férias", "Atestado", "Falta", "Base", "Outra atividade"],
+    atividadesSemSite: ["Retirada de chave", "Treinamento", "Revisão de carro", "Folga", "Férias", "Atestado", "Outra atividade"],
+    atividadesDiaTodo: ["Folga", "Férias", "Atestado"],   // não pedem horário
     atividadesComPreventiva: ["Preventiva", "Preventiva + Corretiva"],
     situacaoDeslocamento: "Em Deslocamento",
     situacaoNoSite: "No Site",
@@ -516,7 +668,7 @@
     situacaoCancelado: "Cancelado",
 
     // --- Alarme de porta aberta (confirma a chegada do técnico) ---
-    alarmes: ["Não verificado", "Externou", "Não externou", "Alarme não configurado"],
+    alarmes: ["Não verificado", "Externou", "Não externou", "Site sem alarme"],
 
     // --- Conferência ---
     carenciaMinutos: { MOP: 120, EPS: 120 },   // tempo após a saída antes de cobrar o relatório (por grupo)
@@ -539,6 +691,20 @@
       situacoes: [],                   // preenchido logo abaixo: todas as atividades (com e sem site)
       situacaoPreventiva: "Preventiva",
       minSites: 3                      // colunas de site mínimas (cresce sozinha conforme a equipe que mais visitou)
+    },
+
+    // --- Visita sem execução (a equipe chegou, mas saiu sem fazer a preventiva) ---
+    // Essas visitas NÃO contam como WO realizada nem entram na cobrança de relatório.
+    naoExecucao: {
+      motivos: ["Problema de acesso", "Chave não disponível", "Cliente não autorizou", "Condição do site (obra, chuva, risco)", "Outro"]
+    },
+
+    // --- Divergências (base do cliente x visitas) ---
+    divergencias: {
+      // Motivos que a validadora pode confirmar para cada WO (edite à vontade).
+      motivos: ["Visita não registrada", "WO marcada em outra sigla/visita", "Executada antes do sistema",
+                "Feita por outra equipe/célula", "Erro na base do cliente", "Sem ação necessária", "Outro"],
+      maxLinhas: 400                   // quantas linhas desenhar de uma vez (use os filtros para ver o resto)
     },
 
     // --- Painel EPS (relatórios que as terceiras colocam no SharePoint) ---
@@ -950,6 +1116,7 @@
       estado.pollId = setInterval(atualizarConferencia, 120000);
     }
     if (nome === "Registrar") atualizarEscalaRegistrar();
+    if (nome === "Divergencias") atualizarDivergencias();
     if (nome === "ResumoDia") {
       atualizarResumoDia();
       estado.pollId = setInterval(atualizarResumoDia, 120000);
@@ -992,7 +1159,7 @@
     estado.baseAtualizadaEm = baseAtualizadaEm;
     const agora = Date.now();
     const linhas = [];
-    visitas.forEach(function (v) {
+    visitas.filter(function (v) { return !v.motivo_nao_execucao; }).forEach(function (v) {
       (v.wos_visita || []).forEach(function (w) {
         linhas.push({ visita: v, wo: w, base: estado.porWO[w.wo],
                       resultado: avaliarWO(w, v, estado.porWO[w.wo], baseAtualizadaEm, agora) });
@@ -1099,6 +1266,271 @@
     }
   });
 
+
+  // ---- tela DIVERGENCIAS ----------------------------------------------------
+  // Cruza a base do cliente com as visitas registradas e explica, para cada WO, o motivo provável.
+  function dataBR(aaaammdd) { return aaaammdd ? String(aaaammdd).slice(0, 10).split("-").reverse().join("/") : "—"; }
+  function diasEntre(a, b) { return Math.round((new Date(a + "T12:00:00") - new Date(b + "T12:00:00")) / 86400000); }
+
+  // Função pura: recebe a base, as visitas e as WOs ligadas; devolve as divergências.
+  //   visitas  -> [{id, site, equipe, data_execucao}]    wosVisita -> [{wo, visita_id}]
+  //   irmas    -> função(chaveSite) que devolve as outras siglas do mesmo endereço (chaves)
+  function calcularDivergencias(base, visitas, wosVisita, irmas) {
+    const visitaPorId = {}, porSite = {};
+    let minData = null, maxData = null;
+    visitas.forEach(function (v) {
+      visitaPorId[v.id] = v;
+      const k = limparSite(v.site);
+      (porSite[k] = porSite[k] || []).push(v);
+      if (v.data_execucao) {
+        if (!minData || v.data_execucao < minData) minData = v.data_execucao;
+        if (!maxData || v.data_execucao > maxData) maxData = v.data_execucao;
+      }
+    });
+    const visitaDaWO = {};
+    // Visita que saiu sem executar não "cobre" a WO.
+    wosVisita.forEach(function (w) {
+      const vv = visitaPorId[w.visita_id];
+      if (!visitaDaWO[w.wo] && vv && !vv.motivo_nao_execucao) visitaDaWO[w.wo] = vv;
+    });
+
+    function maisPerto(lista, data) {
+      let melhor = null;
+      lista.forEach(function (v) {
+        if (!v.data_execucao) return;
+        if (!melhor || (data ? Math.abs(diasEntre(v.data_execucao, data)) < Math.abs(diasEntre(melhor.data_execucao, data)) : v.data_execucao > melhor.data_execucao)) melhor = v;
+      });
+      return melhor;
+    }
+
+    const saida = [];
+    base.forEach(function (l) {
+      const st = String(l.status_final || "").trim().toLowerCase();
+      const executada = st === "executada", aberta = st === "aberta";
+      if (!executada && !aberta) return;
+      const ligada = visitaDaWO[l.wo];
+      const linha = { wo: l.wo, site: l.chaveSite || limparSite(l.programado_infratel || l.clr_sdr_site_helix),
+                      siteTxt: String(l.programado_infratel || l.clr_sdr_site_helix || "").trim(), tipo: l.tipo || "",
+                      grupo: grupoDaPreventiva(l.tipo), status: executada ? "Executada" : "Aberta", dataFim: l.data_fim || null,
+                      visita: ligada || null, categoria: "", motivoCodigo: "", motivo: "" };
+      if (ligada) {
+        if (!executada || !l.data_fim || l.data_fim === ligada.data_execucao) return;      // bate: sem divergência
+        const d = diasEntre(l.data_fim, ligada.data_execucao);
+        linha.categoria = "data_diferente"; linha.motivoCodigo = "data_diferente";
+        linha.motivo = "Relatório na base em " + dataBR(l.data_fim) + " e visita em " + dataBR(ligada.data_execucao) + " (" +
+          Math.abs(d) + (Math.abs(d) === 1 ? " dia " : " dias ") + (d > 0 ? "depois" : "antes") + " da visita)";
+        saida.push(linha); return;
+      }
+      linha.categoria = executada ? "exec_sem_visita" : "andamento_sem_visita";
+      const chaves = [linha.site, limparSite(l.clr_sdr_site_helix)].filter(function (k, i, a) { return k && a.indexOf(k) === i; });
+      let doSite = [];
+      chaves.forEach(function (k) { doSite = doSite.concat(porSite[k] || []); });
+      const dataRef = executada ? l.data_fim : null;
+      const v1 = maisPerto(doSite, dataRef);
+      if (v1 && v1.motivo_nao_execucao) {
+        linha.motivoCodigo = "visita_sem_execucao"; linha.visita = v1;
+        linha.motivo = "A equipe esteve no site em " + dataBR(v1.data_execucao) + " (" + v1.equipe + ") e saiu sem executar (" + v1.motivo_nao_execucao + ")";
+      } else if (v1) {
+        linha.motivoCodigo = "site_visitado"; linha.visita = v1;
+        linha.motivo = "Há visita neste site em " + dataBR(v1.data_execucao) + " (" + v1.equipe + "), mas esta WO não foi marcada nela";
+      } else {
+        let doEnd = [], qual = "";
+        (irmas(linha.site) || []).forEach(function (k) { (porSite[k] || []).forEach(function (v) { doEnd.push(v); }); });
+        const v2 = maisPerto(doEnd, dataRef);
+        if (v2) {
+          linha.motivoCodigo = "irma_visitada"; linha.visita = v2;
+          linha.motivo = "Há visita em " + v2.site + " (mesmo endereço) em " + dataBR(v2.data_execucao) + " (" + v2.equipe + "), sem esta WO";
+        } else if (visitas.length === 0) {
+          linha.motivoCodigo = "sem_visitas"; linha.motivo = "Nenhuma visita registrada no sistema";
+        } else if (executada && l.data_fim && minData && l.data_fim < minData) {
+          linha.motivoCodigo = "anterior"; linha.motivo = "Executada antes da 1ª visita do sistema (" + dataBR(minData) + ")";
+        } else if (executada && l.data_fim && maxData && l.data_fim > maxData) {
+          linha.motivoCodigo = "posterior"; linha.motivo = "Executada depois da última visita registrada (" + dataBR(maxData) + ")";
+        } else {
+          linha.motivoCodigo = executada ? "sem_visita_site" : "aberta_sem_visita";
+          linha.motivo = executada ? "Nenhuma visita neste site (nem no mesmo endereço) no período"
+                                   : "Iniciada na base, sem visita registrada neste site";
+        }
+      }
+      saida.push(linha);
+    });
+    return { linhas: saida, minData: minData, maxData: maxData, nVisitas: visitas.length };
+  }
+
+  const NOMES_MOTIVO = {
+    data_diferente: "Relatório em data diferente da visita",
+    site_visitado: "Site foi visitado, mas a WO não foi marcada na visita",
+    visita_sem_execucao: "Equipe foi ao site e saiu sem executar",
+    irma_visitada: "Outra sigla do mesmo endereço foi visitada",
+    anterior: "Executada antes do início das visitas no sistema",
+    posterior: "Executada depois da última visita registrada",
+    sem_visita_site: "Nenhuma visita no site no período",
+    aberta_sem_visita: "Em andamento sem nenhuma visita no site",
+    sem_visitas: "Nenhuma visita registrada no sistema"
+  };
+  const NOMES_CATEGORIA = {
+    exec_sem_visita: ["Executada sem visita", "p-vermelho"],
+    andamento_sem_visita: ["Em andamento sem visita", "p-laranja"],
+    data_diferente: ["Data diferente", "p-azul"]
+  };
+
+  async function carregarTodasAsLinhas(tabela, colunas) {
+    const todas = [], passo = 1000;
+    for (let de = 0; ; de += passo) {
+      const dados = conferir(await banco.from(tabela).select(colunas).order("id").range(de, de + passo - 1));
+      dados.forEach(function (x) { todas.push(x); });
+      if (dados.length < passo) break;
+    }
+    return todas;
+  }
+
+  estado.dv = { linhas: [], trat: {}, filtro: "abertas", motivo: "", tratErro: "" };
+
+  async function atualizarDivergencias() {
+    try {
+      const r = await Promise.all([carregarBase(), carregarTodasAsLinhas("visitas", "*"),
+                                   carregarTodasAsLinhas("wos_visita", "id,wo,visita_id"),
+                                   banco.from("divergencias_tratativa").select("*")]);
+      estado.base = r[0]; prepararBase();
+      estado.dv.trat = {}; estado.dv.tratErro = "";
+      if (r[3].error) estado.dv.tratErro = r[3].error.message;
+      else r[3].data.forEach(function (t) { estado.dv.trat[t.wo] = t; });
+      const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; });
+      const irmas = function (k) { return outrasSiglasDoEndereco(k).map(function (x) { return limparSite(x.sigla); }); };
+      const res = calcularDivergencias(estado.base, visitas, r[2], irmas);
+      estado.dv.linhas = res.linhas; estado.dv.minData = res.minData; estado.dv.maxData = res.maxData; estado.dv.nVisitas = res.nVisitas;
+      desenharDivergencias();
+    } catch (e) {
+      mostrarAviso("Não consegui montar as divergências: " + e.message, "erro");
+    }
+  }
+
+  function linhasDivergenciaFiltradas(ignorarFiltro) {
+    const D = estado.dv, grupo = $("dvGrupo").value, q = semAcento($("dvBusca").value).toLowerCase().trim();
+    return D.linhas.filter(function (l) {
+      if (grupo && l.grupo !== grupo) return false;
+      if (q) {
+        const alvo = semAcento([l.wo, l.siteTxt, l.visita && l.visita.equipe, l.motivo].join(" ")).toLowerCase();
+        if (alvo.indexOf(q) < 0) return false;
+      }
+      if (ignorarFiltro) return true;
+      const tratada = !!(D.trat[l.wo] && (D.trat[l.wo].motivo || D.trat[l.wo].observacao));
+      if (D.motivo && l.motivoCodigo !== D.motivo) return false;
+      const f = D.filtro;
+      if (f === "abertas") return !tratada;
+      if (f === "tratadas") return tratada;
+      if (f === "todas") return true;
+      return l.categoria === f;
+    });
+  }
+
+  function desenharDivergencias() {
+    const D = estado.dv, cfg = REGRAS.divergencias;
+    const base = linhasDivergenciaFiltradas(true);                 // respeita grupo e busca
+    const cont = function (c) { return base.filter(function (l) { return l.categoria === c; }).length; };
+    const tratadas = base.filter(function (l) { return D.trat[l.wo] && (D.trat[l.wo].motivo || D.trat[l.wo].observacao); }).length;
+    const campo = function (rot, v, cls) { return '<div class="ib-campo ' + (cls || "") + '"><div class="r">' + esc(rot) + '</div><div class="v">' + v + "</div></div>"; };
+    const nExec = cont("exec_sem_visita"), nAnd = cont("andamento_sem_visita");
+    $("dvCampos").innerHTML =
+      campo("Divergências (executada + andamento, sem visita)", nExec + nAnd, (nExec + nAnd) ? "verm" : "") +
+      campo("Executadas sem visita", nExec) + campo("Em andamento sem visita", nAnd) +
+      campo("Relatório em data diferente", cont("data_diferente")) +
+      campo("Com motivo confirmado", tratadas + " <small style=\"font-size:12px;font-weight:400\">de " + base.length + "</small>", "verde");
+
+    const faixa = $("dvFaixa");
+    const avisos = [];
+    if (D.nVisitas === 0) avisos.push("Nenhuma visita registrada ainda.");
+    else avisos.push("Visitas registradas de <b>" + dataBR(D.minData) + "</b> a <b>" + dataBR(D.maxData) + "</b> (" + D.nVisitas + "). WOs executadas fora desse período não têm visita para ligar.");
+    if (D.tratErro) avisos.push('<b>Para confirmar motivos, rode o SQL <code>divergencias_sql.txt</code> no Supabase.</b> (Detalhe: ' + esc(D.tratErro) + ")");
+    faixa.innerHTML = avisos.join(" "); faixa.classList.remove("oculto");
+
+    // resumo por motivo provável (conta o que está aberto, no grupo/busca escolhidos)
+    const porMotivo = {};
+    base.forEach(function (l) {
+      const t = D.trat[l.wo] && (D.trat[l.wo].motivo || D.trat[l.wo].observacao);
+      if (t) return;
+      porMotivo[l.motivoCodigo] = (porMotivo[l.motivoCodigo] || 0) + 1;
+    });
+    const cods = Object.keys(porMotivo).sort(function (a, b) { return porMotivo[b] - porMotivo[a]; });
+    $("dvMotivos").innerHTML = '<div class="rm-l rm-cab"><div class="t">Motivo provável (sem tratativa)</div><div class="n">WOs</div></div>' +
+      (cods.length ? cods.map(function (c) {
+        return '<div class="rm-l' + (D.motivo === c ? " ativo" : "") + '" data-motivo="' + c + '"><div class="t">' + esc(NOMES_MOTIVO[c] || c) + '</div><div class="n">' + porMotivo[c] + "</div></div>";
+      }).join("") : '<div class="rm-l"><div class="t" style="color:#525252">Nada em aberto neste filtro.</div><div class="n"></div></div>');
+
+    const lista = linhasDivergenciaFiltradas(false);
+    $("dvContagem").textContent = lista.length + " WO(s)" + (D.motivo ? " · filtro: " + (NOMES_MOTIVO[D.motivo] || D.motivo) + " (clique de novo para limpar)" : "") +
+      (lista.length > cfg.maxLinhas ? " · mostrando as primeiras " + cfg.maxLinhas : "");
+
+    const opMotivo = function (sel) {
+      return '<option value="">— motivo real —</option>' + cfg.motivos.map(function (m) { return "<option" + (m === sel ? " selected" : "") + ">" + esc(m) + "</option>"; }).join("");
+    };
+    let html = '<div class="dv-l dv-cab"><div>WO</div><div>Site</div><div>Tipo</div><div>Na base</div><div>Divergência</div><div>Motivo provável</div><div>Tratativa</div></div>';
+    if (lista.length === 0) html += '<div class="dv-vazio">Nenhuma WO neste filtro.</div>';
+    lista.slice(0, cfg.maxLinhas).forEach(function (l) {
+      const t = D.trat[l.wo] || {};
+      const tratada = !!(t.motivo || t.observacao);
+      const cat = NOMES_CATEGORIA[l.categoria];
+      const cor = tratada ? "trat" : (l.categoria === "exec_sem_visita" ? "pend" : "med");
+      html += '<div class="dv-l ' + cor + '" data-wo="' + esc(l.wo) + '">' +
+        '<div class="dv-wo">' + esc(l.wo) + '<span class="dv-sub">' + esc(l.grupo) + "</span></div>" +
+        "<div><b>" + esc(l.siteTxt) + "</b></div><div>" + esc(l.tipo) + "</div>" +
+        "<div>" + pill(l.status, l.status === "Executada" ? "p-verde" : "p-laranja") + '<span class="dv-sub">' + (l.dataFim ? "relatório " + dataBR(l.dataFim) : "sem data") + "</span></div>" +
+        "<div>" + pill(cat[0], cat[1]) + "</div>" +
+        "<div>" + esc(l.motivo) + (l.visita ? '<span class="dv-sub">Visita: ' + esc(l.visita.site) + " · " + esc(l.visita.equipe) + " · " + dataBR(l.visita.data_execucao) + "</span>" : "") + "</div>" +
+        '<div class="dv-trat"><select data-campo="motivo"' + (estado.dv.tratErro ? " disabled" : "") + ">" + opMotivo(t.motivo || "") + "</select>" +
+        '<input type="text" data-campo="obs" placeholder="observação" value="' + esc(t.observacao || "") + '"' + (estado.dv.tratErro ? " disabled" : "") + "></div></div>";
+    });
+    $("dvTabela").innerHTML = html;
+  }
+
+  $("dvMotivos").addEventListener("click", function (e) {
+    const l = e.target.closest(".rm-l[data-motivo]"); if (!l) return;
+    estado.dv.motivo = estado.dv.motivo === l.dataset.motivo ? "" : l.dataset.motivo;
+    desenharDivergencias();
+  });
+  $("dvChips").addEventListener("click", function (e) {
+    const b = e.target.closest("button[data-filtro]"); if (!b) return;
+    estado.dv.filtro = b.dataset.filtro;
+    document.querySelectorAll("#dvChips button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
+    desenharDivergencias();
+  });
+  $("dvGrupo").addEventListener("change", desenharDivergencias);
+  $("dvBusca").addEventListener("input", desenharDivergencias);
+  $("dvAtualizar").addEventListener("click", atualizarDivergencias);
+
+  $("dvTabela").addEventListener("change", async function (e) {
+    const linha = e.target.closest(".dv-l[data-wo]"); if (!linha) return;
+    const wo = linha.dataset.wo;
+    const motivo = linha.querySelector('[data-campo="motivo"]').value, obs = linha.querySelector('[data-campo="obs"]').value.trim();
+    try {
+      if (!motivo && !obs) {
+        conferir(await banco.from("divergencias_tratativa").delete().eq("wo", wo));
+        delete estado.dv.trat[wo];
+      } else {
+        const reg = { wo: wo, motivo: motivo || null, observacao: obs || null, atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() };
+        conferir(await banco.from("divergencias_tratativa").upsert([reg], { onConflict: "wo" }));
+        estado.dv.trat[wo] = reg;
+      }
+      mostrarAviso("Tratativa salva: " + wo);
+      if (estado.dv.filtro === "abertas" || estado.dv.filtro === "tratadas") setTimeout(desenharDivergencias, 400); else desenharDivergencias();
+    } catch (err) { mostrarAviso("Não salvou: " + err.message, "erro"); }
+  });
+
+  $("dvExportar").addEventListener("click", function () {
+    const lista = linhasDivergenciaFiltradas(false);
+    const q = function (t) { return '"' + String(t == null ? "" : t).replace(/"/g, '""') + '"'; };
+    const linhas = [["WO", "Site", "Tipo", "Grupo", "Status na base", "Data relatório", "Divergência", "Motivo provável", "Visita (site)", "Visita (equipe)", "Visita (data)", "Motivo confirmado", "Observação"]]
+      .concat(lista.map(function (l) {
+        const t = estado.dv.trat[l.wo] || {};
+        return [l.wo, l.siteTxt, l.tipo, l.grupo, l.status, dataBR(l.dataFim), NOMES_CATEGORIA[l.categoria][0], l.motivo,
+                l.visita ? l.visita.site : "", l.visita ? l.visita.equipe : "", l.visita ? dataBR(l.visita.data_execucao) : "", t.motivo || "", t.observacao || ""];
+      }));
+    const csv = "﻿" + linhas.map(function (r) { return r.map(q).join(";"); }).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = "divergencias_" + hoje() + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+  });
 
   // ---- tela EPS -------------------------------------------------------------
   // Fluxo: a terceira coloca o relatório na pasta -> o robô registra -> aqui ele aparece ligado à WO do site.
@@ -1509,6 +1941,7 @@
     $("rotuloSite").innerHTML = exige ? 'Site <span class="req">*</span>' : "Site";
     if (!exige && $("campoSite").value) { $("campoSite").value = ""; limparSiteEscolhido(); }
     $("blocoCampo").classList.toggle("oculto", !exige);
+    $("blocoPeriodo").classList.toggle("oculto", exige || !atividade || REGRAS.atividadesDiaTodo.includes(atividade));
     $("blocoDetalhe").classList.toggle("oculto", !exige || atividade === REGRAS.atividades[0]);
     $("rotuloObs").textContent = exige ? "Observações (opcional)" : "Observações (ex.: curso na base, oficina)";
     $("botaoRegistrar").textContent = exige ? "Registrar deslocamento" : "Salvar atividade do dia";
@@ -1720,6 +2153,10 @@
     });
   }
 
+  const COLS_CAMPO = "110px minmax(150px,1.3fr) 130px minmax(130px,1fr) 62px 62px 100px 110px minmax(230px,1.3fr)";
+  const COLS_SAIDAS = "110px minmax(150px,1.3fr) 140px minmax(130px,1fr) 70px 70px 110px 120px";
+  const COLS_AJUSTAR = "110px minmax(150px,1.3fr) 100px 80px minmax(130px,1fr) 160px";
+
   function desenharCampo(emCampo, saidas, pendentes) {
     pendentes = soMOP(pendentes || []);
     emCampo = soMOP(emCampo);
@@ -1727,17 +2164,24 @@
     const emDesloc = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoDeslocamento; });
     const noSite = emCampo.filter(function (v) { return v.situacao === REGRAS.situacaoNoSite; });
     const longos = noSite.filter(function (v) { return minutosDesde(v.hora_entrada) > REGRAS.horasLongaPermanencia * 60; });
+    const campoIbm = function (n, rot, cls) { return '<div class="ib-campo ' + cls + '"><div class="r">' + esc(rot) + '</div><div class="v">' + n + "</div></div>"; };
     $("azulejos").innerHTML =
-      azulejo(emDesloc.length, "Em deslocamento", "a-azul") + azulejo(noSite.length, "No site", "a-azul") +
-      azulejo(longos.length, "Há mais de " + REGRAS.horasLongaPermanencia + " h no site", "a-laranja") +
-      azulejo(pendentes.length, "Saídas a ajustar", pendentes.length ? "a-laranja" : "a-verde") +
-      azulejo(saidas.length, "Saíram hoje", "a-verde");
+      campoIbm(emDesloc.length, "Em deslocamento", "azul") + campoIbm(noSite.length, "No site", "azul") +
+      campoIbm(longos.length, "Há mais de " + REGRAS.horasLongaPermanencia + " h no site", longos.length ? "laranja" : "") +
+      campoIbm(pendentes.length, "Saídas a ajustar", pendentes.length ? "laranja" : "verde") +
+      campoIbm(saidas.length, "Saíram hoje", "verde");
+    const cab = function (cols, nomes) {
+      return '<div class="cp-l cp-cab" style="--cols:' + cols + '">' + nomes.map(function (n) { return "<div>" + n + "</div>"; }).join("") + "</div>";
+    };
     $("gradeAjustar").innerHTML = pendentes.length
-      ? pendentes.map(cartaoAjustar).join("") : '<div class="vazio">Nenhuma saída pendente de ajuste.</div>';
+      ? cab(COLS_AJUSTAR, ["Site", "Equipe", "Dia", "Entrada", "Atividade", ""]) + pendentes.map(cartaoAjustar).join("")
+      : '<div class="vazio">Nenhuma saída pendente de ajuste.</div>';
     $("gradeCampo").innerHTML = emCampo.length
-      ? emCampo.map(cartaoEmCampo).join("") : '<div class="vazio">Nenhuma equipe em campo agora.</div>';
+      ? cab(COLS_CAMPO, ["Site", "Equipe", "Situação", "Atividade", "Aviso", "Entrada", "Tempo", "Alarme", ""]) + emCampo.map(cartaoEmCampo).join("")
+      : '<div class="vazio">Nenhuma equipe em campo agora.</div>';
     $("gradeSaidas").innerHTML = saidas.length
-      ? saidas.map(cartaoSaida).join("") : '<div class="vazio">Ninguém saiu de um site hoje ainda.</div>';
+      ? cab(COLS_SAIDAS, ["Site", "Equipe", "Resultado", "Atividade", "Entrada", "Saída", "Permanência", "Alarme"]) + saidas.map(cartaoSaida).join("")
+      : '<div class="vazio">Ninguém saiu de um site hoje ainda.</div>';
   }
 
   function azulejo(numero, rotulo, classe) {
@@ -1766,6 +2210,17 @@
       '<div class="linha-botoes"><button class="secundario" data-acao="notas" data-id="' + esc(v.id) + '">Salvar alarme e observação</button></div></details>';
   }
 
+  // Chegou ao site mas não conseguiu executar (ex.: problema de acesso): registra a saída sem contar as WOs como realizadas.
+  function semExecucaoDoCartao(v) {
+    const motivos = REGRAS.naoExecucao.motivos.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
+    return '<details class="notas"><summary>Não conseguiu executar (ex.: problema de acesso)</summary>' +
+      '<div class="detalhe" style="margin:6px 0 0">A equipe sai do site e as WOs desta visita <b>não</b> contam como realizadas.</div>' +
+      '<label>Motivo</label><select data-campo="motivo">' + motivos + "</select>" +
+      '<label>Horário em que saiu do site (vazio = agora)</label><input type="time" data-campo="saidasem">' +
+      '<textarea data-campo="obssem" rows="2" placeholder="Detalhe (opcional): o que aconteceu, para onde foi"></textarea>' +
+      '<div class="linha-botoes"><button class="secundario" data-acao="semexec" data-id="' + esc(v.id) + '">Registrar saída sem execução</button></div></details>';
+  }
+
   function cartaoEmCampo(v) {
     const noSite = v.situacao === REGRAS.situacaoNoSite;
     const minutos = noSite ? minutosDesde(v.hora_entrada) : minutosDesde(v.hora_aviso);
@@ -1773,38 +2228,39 @@
     const botoes = noSite
       ? '<button class="principal" data-acao="saida" data-id="' + esc(v.id) + '">Registrar saída</button>'
       : '<button class="principal" data-acao="chegada" data-id="' + esc(v.id) + '">Chegou no site</button>';
-    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
-      esc(v.equipe) + "</div></div><div>" +
-      (longo ? pill("Longa permanência", "p-laranja") + " " : "") + pill(v.situacao, "p-azul") + "</div></div>" +
-      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") +
-      (v.atividade_detalhe ? ' <span class="nome">' + esc(v.atividade_detalhe) + "</span>" : "") + "</div>" +
-      '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
-      "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
-      '<div class="duracao"><span>' + (noSite ? "Tempo no site" : "Em deslocamento há") + "</span><b>" + formatarDuracao(minutos) + "</b></div>" +
-      listaWOsCartao(v) + htmlOutrasSiglas(limparSite(v.site)) + notasDoCartao(v) +
-      '<div class="linha-botoes">' + botoes + '<button class="secundario" data-acao="cancelar" data-id="' + esc(v.id) + '">Cancelar</button></div></div>';
+    const outras = htmlOutrasSiglas(limparSite(v.site));
+    return '<div class="cp-item' + (longo ? " longo" : "") + '"><div class="cp-l" style="--cols:' + COLS_CAMPO + '">' +
+      '<div><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
+      "<div>" + pill(v.situacao, "p-azul") + (longo ? '<span class="cp-sub" style="color:#8e6a00">Longa permanência</span>' : "") + "</div>" +
+      "<div>" + pill(v.atividade, "p-cinza") + (v.atividade_detalhe ? '<span class="cp-sub">' + esc(v.atividade_detalhe) + "</span>" : "") + "</div>" +
+      "<div>" + horaCurta(v.hora_aviso) + "</div><div>" + horaCurta(v.hora_entrada) + "</div>" +
+      "<div><b>" + formatarDuracao(minutos) + '</b><span class="cp-sub">' + (noSite ? "no site" : "em deslocamento") + "</span></div>" +
+      "<div>" + pillAlarme(v.alarme_porta) + "</div>" +
+      '<div class="cp-acoes">' + botoes + '<button class="secundario" data-acao="cancelar" data-id="' + esc(v.id) + '">Cancelar</button></div></div>' +
+      '<div class="cp-det">' + listaWOsCartao(v) + '<div class="extras">' + outras + notasDoCartao(v) + (noSite ? semExecucaoDoCartao(v) : "") + "</div></div></div>";
   }
 
   function cartaoSaida(v) {
     const permanencia = v.hora_entrada ? formatarDuracao((new Date(v.hora_saida) - new Date(v.hora_entrada)) / 60000) : "—";
-    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
-      esc(v.equipe) + "</div></div>" + pill("Saiu do Site", "p-verde") + "</div>" +
-      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") + "</div>" +
-      '<div class="tempos"><span>Aviso<b>' + horaCurta(v.hora_aviso) + "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) +
-      "</b></span><span>Saída<b>" + horaCurta(v.hora_saida) + "</b></span></div>" +
-      '<div class="duracao"><span>Tempo no site</span><b>' + permanencia + "</b></div>" +
-      '<div class="duracao"><span>Alarme de porta aberta</span>' + pillAlarme(v.alarme_porta) + "</div>" +
-      (v.observacao ? '<div class="detalhe" style="margin:6px 0 0">Obs.: ' + esc(v.observacao) + "</div>" : "") + listaWOsCartao(v) + "</div>";
+    const sem = v.motivo_nao_execucao;
+    return '<div class="cp-item' + (sem ? " semexec" : "") + '"><div class="cp-l" style="--cols:' + COLS_SAIDAS + '">' +
+      '<div><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
+      "<div>" + (sem ? pill("Saiu sem executar", "p-vermelho") : pill("Saiu do Site", "p-verde")) + "</div>" +
+      "<div>" + pill(v.atividade, "p-cinza") + "</div>" +
+      "<div>" + horaCurta(v.hora_entrada) + "</div><div>" + horaCurta(v.hora_saida) + "</div><div><b>" + permanencia + "</b></div>" +
+      "<div>" + pillAlarme(v.alarme_porta) + "</div></div>" +
+      '<div class="cp-det">' + listaWOsCartao(v) + '<div class="extras">' +
+      (sem ? '<div class="faixa alerta">Não executada: <b>' + esc(sem) + "</b>. As WOs desta visita não contam como realizadas.</div>" : "") +
+      (v.observacao ? '<div class="cp-sub">Obs.: ' + esc(v.observacao) + "</div>" : "") + "</div></div></div>";
   }
 
   function cartaoAjustar(v) {
-    return '<div class="equipe-cartao"><div class="topo"><div><div class="site">' + esc(v.site) + '</div><div class="nome">' +
-      esc(v.equipe) + "</div></div>" + pill("Saída não registrada", "p-laranja") + "</div>" +
-      '<div style="margin-top:6px">' + pill(v.atividade, "p-cinza") + "</div>" +
-      '<div class="tempos"><span>Dia<b>' + (v.hora_entrada ? new Date(v.hora_entrada).toLocaleDateString("pt-BR") : "—") +
-      "</b></span><span>Entrada<b>" + horaCurta(v.hora_entrada) + "</b></span><span>Saída<b>—</b></span></div>" +
-      (v.observacao ? '<div class="detalhe" style="margin:6px 0 0">Obs.: ' + esc(v.observacao) + "</div>" : "") + listaWOsCartao(v) +
-      '<div class="linha-botoes"><button class="principal" data-acao="ajustar" data-id="' + esc(v.id) + '">Informar saída</button></div></div>';
+    return '<div class="cp-item"><div class="cp-l" style="--cols:' + COLS_AJUSTAR + '">' +
+      '<div><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
+      "<div>" + (v.hora_entrada ? new Date(v.hora_entrada).toLocaleDateString("pt-BR") : "—") + "</div><div>" + horaCurta(v.hora_entrada) + "</div>" +
+      "<div>" + pill(v.atividade, "p-cinza") + "</div>" +
+      '<div class="cp-acoes"><button class="principal" data-acao="ajustar" data-id="' + esc(v.id) + '">Informar saída</button></div></div>' +
+      '<div class="cp-det">' + listaWOsCartao(v) + (v.observacao ? '<div class="extras"><div class="cp-sub">Obs.: ' + esc(v.observacao) + "</div></div>" : "") + "</div></div>";
   }
 
   // Pergunta a saída de uma visita de outro dia. Aceita "HH:MM" (no dia da entrada) ou "DD/MM/AAAA HH:MM".
@@ -1898,6 +2354,23 @@
       const quando = entradaOutroDia ? perguntarSaidaAjuste(visita) : perguntarHorario("Hora da saída do site", visita.hora_entrada);
       if (!quando) return;
       campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando };
+    } else if (botao.dataset.acao === "semexec") {
+      const caixa = botao.closest("details");
+      const motivo = caixa.querySelector("[data-campo=motivo]").value;
+      const hm = caixa.querySelector("[data-campo=saidasem]").value;
+      const detalhe = caixa.querySelector("[data-campo=obssem]").value.trim();
+      let quando = new Date();
+      if (hm) {
+        const ref = visita.hora_entrada ? new Date(visita.hora_entrada) : new Date();
+        quando = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), Number(hm.split(":")[0]), Number(hm.split(":")[1]), 0, 0);
+      }
+      if (quando.getTime() > Date.now() + 60000) { mostrarAviso("O horário não pode estar no futuro.", "erro"); return; }
+      if (visita.hora_entrada && quando.getTime() < new Date(visita.hora_entrada).getTime() - 60000) {
+        mostrarAviso("A saída não pode ser antes da entrada (" + horaCurta(visita.hora_entrada) + ").", "erro"); return;
+      }
+      if (!window.confirm("Registrar que " + visita.equipe + " saiu de " + visita.site + " SEM executar (" + motivo + ")?\n\nAs WOs desta visita não vão contar como realizadas.")) return;
+      campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando.toISOString(), motivo_nao_execucao: motivo,
+                 observacao: [visita.observacao, detalhe].filter(Boolean).join(" | ") || null };
     } else if (botao.dataset.acao === "notas") {
       const caixa = botao.closest("details");
       campos = { alarme_porta: caixa.querySelector("[data-campo=alarme]").value,
@@ -1911,11 +2384,11 @@
       await atualizarVisita(visita.id, campos);
       const aberta = botao.closest("details");
       if (aberta) aberta.open = false;
-      mostrarAviso("Registrado.");
+      mostrarAviso(botao.dataset.acao === "semexec" ? "Saída sem execução registrada." : "Registrado.");
       atualizarCampo();
     } catch (err) {
       botao.disabled = false;
-      mostrarAviso("Erro ao gravar: " + err.message, "erro");
+      mostrarAviso("Erro ao gravar: " + err.message + (/motivo_nao_execucao/.test(err.message) ? " (rode o SQL nao_execucao_sql.txt no Supabase)" : ""), "erro");
     }
   });
 
@@ -1950,9 +2423,15 @@
   async function carregarWosLigadas() {
     const todas = {};
     const passo = 1000;
+    // Visitas que saíram sem executar não "ligam" a WO (se a coluna ainda não existe, ignora).
+    const falhas = {};
+    try {
+      const f = await banco.from("visitas").select("id").not("motivo_nao_execucao", "is", null);
+      if (!f.error) f.data.forEach(function (v) { falhas[v.id] = true; });
+    } catch (e) { /* coluna ainda não criada */ }
     for (let de = 0; ; de += passo) {
-      const dados = conferir(await banco.from("wos_visita").select("wo").order("id").range(de, de + passo - 1));
-      dados.forEach(function (x) { todas[x.wo] = true; });
+      const dados = conferir(await banco.from("wos_visita").select("wo,visita_id").order("id").range(de, de + passo - 1));
+      dados.forEach(function (x) { if (!falhas[x.visita_id]) todas[x.wo] = true; });
       if (dados.length < passo) break;
     }
     return todas;
@@ -1970,8 +2449,8 @@
     try {
       if (!$("rdData").value) $("rdData").value = paraAAAAMMDD(new Date());
       const dia = $("rdData").value;
-      const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia)]);
-      estado.rd = { dia: dia, visitas: r[0], base: r[1], ligadas: r[2], equipes: r[3], escala: r[4] };
+      const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia), carregarAtividadesDoDia(dia)]);
+      estado.rd = { dia: dia, visitas: r[0], base: r[1], ligadas: r[2], equipes: r[3], escala: r[4], atividades: r[5] };
       desenharResumoDia();
     } catch (e) {
       mostrarAviso("Não consegui montar o Resumo Dia: " + e.message, "erro");
@@ -1979,10 +2458,14 @@
   }
 
   function ehExecutadaBase(l) { return String(l.status_final || "").trim().toLowerCase() === "executada"; }
-  function nMop(v) { return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; }).length; }
+  // WOs MOP da visita que contam como realizadas. Visita que saiu sem executar (ex.: problema de acesso) não conta nenhuma.
+  function nMop(v) {
+    if (v.motivo_nao_execucao) return 0;
+    return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; }).length;
+  }
 
   function desenharResumoDia() {
-    const R = estado.rd, dia = R.dia, visitas = R.visitas, base = R.base, ligadas = R.ligadas, equipes = R.equipes, escala = R.escala;
+    const R = estado.rd, dia = R.dia, visitas = R.visitas, base = R.base, ligadas = R.ligadas, equipes = R.equipes, escala = R.escala, ativs = R.atividades || [];
     const cfg = REGRAS.resumoDia;
 
     // ---- totais da base (MOP e EPS) ----
@@ -2005,6 +2488,12 @@
       if (!linhas[k]) linhas[k] = { id: k, nome: v.equipe, situacao: cfg.situacaoPreventiva, obs: "", grupo: grupoDaEquipe(v.equipe), visitas: [], semEscala: true };
       linhas[k].visitas.push(v);
     });
+    // atividades sem site (retirada de chave, treinamento...) de cada equipe, em ordem de horário
+    ativs.forEach(function (a) {
+      const k = String(a.equipe_id);
+      if (!linhas[k]) linhas[k] = { id: k, nome: a.equipe, situacao: a.atividade, obs: "", grupo: grupoDaEquipe(a.equipe), visitas: [], semEscala: true };
+      (linhas[k].atividades = linhas[k].atividades || []).push(a);
+    });
     const lista = Object.keys(linhas).map(function (k) { return linhas[k]; });
     let maxSites = cfg.minSites;
     lista.forEach(function (e) { if (e.visitas.length > maxSites) maxSites = e.visitas.length; });
@@ -2024,10 +2513,16 @@
       eqs.forEach(function (e) {
         contagem[e.situacao] = (contagem[e.situacao] || 0) + 1;
         const ePrev = atividadeTemPreventiva(e.situacao) || e.visitas.some(function (v) { return atividadeTemPreventiva(v.atividade); });
+        const chips = (e.atividades || []).map(function (a) {
+          const per = a.inicio ? " " + hm(a.inicio) + (a.fim ? "–" + hm(a.fim) : "…") : (a.fim ? " até " + hm(a.fim) : "");
+          return '<div class="rd-chip" title="' + esc(a.observacao || "") + '"><b>' + esc(a.atividade) + "</b>" + esc(per) + "</div>";
+        }).join("");
+        const colAtiv = '<div class="rd-ativ">' + (chips || "") + "</div>";
         if (!ePrev) {
           const locais = e.visitas.map(function (v) { return v.site; }).join(", ");
-          linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">—</div><div class="rd-sites"><div class="rd-outra"><b>' +
-            esc(e.situacao) + "</b>" + esc([locais, e.obs].filter(Boolean).join(" · ")) + '</div></div><div class="rd-real">—</div></div>';
+          const rotulo = chips ? "Fora da preventiva" : e.situacao;
+          linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">—</div>' + colAtiv + '<div class="rd-sites"><div class="rd-outra"><b>' +
+            esc(rotulo) + "</b>" + esc([locais, e.obs].filter(Boolean).join(" · ")) + '</div></div><div class="rd-real">—</div></div>';
           return;
         }
         nPrev++;
@@ -2038,25 +2533,35 @@
           const v = e.visitas[i];
           if (!v) { sites += '<div class="rd-site"><div class="a">&nbsp;</div><div class="b"></div><div class="c"></div><div class="d"></div></div>'; continue; }
           const saiu = v.situacao === REGRAS.situacaoSaiu && v.hora_saida;
-          sites += '<div class="rd-site ' + (saiu ? "rd-verde" : "rd-amarelo") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
-            hh(v.hora_entrada || v.hora_aviso) + '</div><div class="c">' + hh(v.hora_saida) + '</div><div class="d">' + nMop(v) + "</div></div>";
+          // Só tem "aviso" (a equipe avisou que ia): a chegada ainda não foi confirmada, então não mostra como entrada.
+          const desloc = !v.hora_entrada && v.situacao === REGRAS.situacaoDeslocamento;
+          const entrada = desloc ? '<span title="Avisou no grupo às ' + hh(v.hora_aviso) + '; chegada ainda não confirmada">av. ' + hh(v.hora_aviso) + "</span>" : hh(v.hora_entrada || v.hora_aviso);
+          sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
+            entrada + '</div><div class="c">' + hh(v.hora_saida) + '</div><div class="d">' + nMop(v) + "</div></div>";
         }
         linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">' + cfg.previstoPorEquipe +
-          '</div><div class="rd-sites">' + sites + '</div><div class="rd-real">' + wosEq + "</div></div>";
+          "</div>" + colAtiv + '<div class="rd-sites">' + sites + '</div><div class="rd-real">' + wosEq + "</div></div>";
       });
     });
     if (!linhasHtml) {
       linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Registre as equipes na tela Registrar.</div>';
     }
-    $("rdTabela").style.setProperty("--rd-min", (210 + 54 + 64 + maxSites * 175) + "px");
-    $("telaResumoDia").style.setProperty("--rd-min", (210 + 54 + 64 + maxSites * 175) + "px");
-    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-prev">Prev.</div><div class="rd-sites">';
+    $("rdTabela").style.setProperty("--rd-min", (210 + 54 + 200 + 64 + maxSites * 175) + "px");
+    $("telaResumoDia").style.setProperty("--rd-min", (210 + 54 + 200 + 64 + maxSites * 175) + "px");
+    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-prev">Prev.</div><div class="rd-ativ">Outras atividades</div><div class="rd-sites">';
     for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">Site ' + i + "</div>";
     cab += '</div><div class="rd-real">Realiz.</div></div>';
-    const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-prev">' + totalPrev + '</div><div class="rd-leg">' +
-      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#fff"></i>Sem visita</span>' +
+    const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-prev">' + totalPrev + '</div><div class="rd-ativ" style="border-left:0"></div><div class="rd-leg">' +
+      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#fff"></i>Sem visita</span>' +
       '</div><div class="rd-real" style="border-left-color:#c6c6c6">' + totalReal + "</div></div>";
     $("rdTabela").innerHTML = cab + linhasHtml + total;
+
+    // Ocorrências do dia: visitas em que a equipe chegou e saiu sem executar.
+    const ocorr = visitas.filter(function (v) { return v.motivo_nao_execucao; }).map(function (v) {
+      return "<li><b>" + esc(v.equipe) + "</b> · " + esc(v.site) + ": se deslocou do site sem executar a preventiva (" + esc(v.motivo_nao_execucao) + ")" +
+        (v.hora_saida ? " às " + horaCurta(v.hora_saida) : "") + (v.observacao ? ". " + esc(v.observacao) : "") + "</li>";
+    });
+    $("rdOcorrencias").innerHTML = ocorr.length ? '<div class="rd-ocorr"><b>Ocorrências do dia</b><ul>' + ocorr.join("") + "</ul></div>" : "";
 
     const pct = totalPrev ? Math.round(totalReal * 100 / totalPrev) : 0;
     const campo = function (rot, valor, cls) { return '<div class="rd-campo ' + (cls || "") + '"><div class="r">' + esc(rot) + '</div><div class="v">' + valor + "</div></div>"; };
@@ -2100,27 +2605,89 @@
     await gravarEscala(r.dataExecucao, r.equipe, sit, atual && atual.grupo, atual && atual.observacao);
   }
 
-  // Atividade sem site (treinamento, folga...): só marca a equipe no dia.
+  // Atividade sem site (retirada de chave, treinamento, folga...): fica registrada com horário na linha do tempo do dia.
+  // Sem horário = dia todo: a equipe passa a constar com essa atividade em "Equipes do dia".
+  // Com horário = parte do dia: não tira a equipe da preventiva.
+  estado.ativDia = []; estado.ativErro = "";
+  async function carregarAtividadesDoDia(dia) {
+    const r = await banco.from("atividades_equipe").select("*").eq("data", dia).order("inicio", { ascending: true });
+    if (r.error) { estado.ativErro = r.error.message; return []; }
+    estado.ativErro = "";
+    return r.data;
+  }
+  function hm(t) { return t ? String(t).slice(0, 5) : ""; }
+
   async function salvarAtividadeSemSite() {
     const msg = $("msgRegistrar");
     const equipe = estado.equipes.find(function (e) { return String(e.id) === $("campoEquipe").value; });
     const atividade = $("campoAtividade").value;
     if (!equipe) { msg.innerHTML = '<span class="erro">Escolha a equipe.</span>'; return; }
     if (!atividade) { msg.innerHTML = '<span class="erro">Escolha a atividade.</span>'; return; }
+    const diaTodo = REGRAS.atividadesDiaTodo.includes(atividade);
+    const inicio = diaTodo ? null : ($("campoAtivInicio").value || null);
+    const fim = diaTodo ? null : ($("campoAtivFim").value || null);
+    if (inicio && fim && fim < inicio) { msg.innerHTML = '<span class="erro">O fim não pode ser antes do início.</span>'; return; }
     const dia = $("campoData").value || hoje();
     $("botaoRegistrar").disabled = true;
     try {
+      const reg = { data: dia, equipe_id: equipe.id, equipe: equipe.nome, atividade: atividade, inicio: inicio, fim: fim,
+                    observacao: $("campoObservacao").value.trim() || null, atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() };
+      conferir(await banco.from("atividades_equipe").insert([reg]));
       const atual = await escalaDaEquipe(dia, equipe.id);
-      await gravarEscala(dia, equipe, atividade, atual && atual.grupo, $("campoObservacao").value.trim());
-      msg.innerHTML = '<span class="ok">Salvo: ' + esc(equipe.nome) + " · " + esc(atividade) + " em " + esc(dia.split("-").reverse().join("/")) + ".</span>";
-      mostrarAviso("Equipe do dia salva: " + equipe.nome + " · " + atividade);
+      if (!atual || !(inicio || fim)) await gravarEscala(dia, equipe, atividade, atual && atual.grupo, atual && atual.observacao);
+      msg.innerHTML = '<span class="ok">Salvo: ' + esc(equipe.nome) + " · " + esc(atividade) + (inicio ? " " + inicio + (fim ? "–" + fim : "") : "") +
+        " em " + esc(dia.split("-").reverse().join("/")) + ".</span>";
+      mostrarAviso("Atividade registrada: " + equipe.nome + " · " + atividade);
       $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoObservacao").value = "";
+      $("campoAtivInicio").value = ""; $("campoAtivFim").value = "";
       atualizarBlocos();
+      estado.ativDia = await carregarAtividadesDoDia(dia); desenharAtividadesDia();
     } catch (e) {
-      msg.innerHTML = '<span class="erro">Não salvou: ' + esc(e.message) + "</span>";
+      msg.innerHTML = '<span class="erro">Não salvou: ' + esc(e.message) + (/atividades_equipe/.test(e.message) ? " (rode o SQL atividades_equipe_sql.txt no Supabase)" : "") + "</span>";
     }
     $("botaoRegistrar").disabled = false;
   }
+
+  function desenharAtividadesDia() {
+    const lista = estado.ativDia;
+    $("ativResumo").textContent = lista.length ? lista.length + " registro(s)" : "";
+    if (estado.ativErro) {
+      $("rdAtivTabela").innerHTML = "";
+      $("rdAtivMsg").textContent = "A tabela de atividades ainda não existe no banco (rode o SQL atividades_equipe_sql.txt). Detalhe: " + estado.ativErro;
+      return;
+    }
+    $("rdAtivMsg").textContent = "";
+    let html = '<div class="l cab"><div>Equipe</div><div>Atividade</div><div>Início</div><div>Fim</div><div>Observação</div><div></div></div>';
+    if (lista.length === 0) html += '<div class="vazio">Nenhuma atividade sem site neste dia. Escolha a equipe e uma atividade como “Retirada de chave” acima.</div>';
+    lista.forEach(function (a) {
+      html += '<div class="l" data-id="' + esc(a.id) + '"><div>' + esc(a.equipe) + "</div><div>" + esc(a.atividade) + "</div>" +
+        '<div><input type="time" data-campo="inicio" value="' + esc(hm(a.inicio)) + '"></div>' +
+        '<div><input type="time" data-campo="fim" value="' + esc(hm(a.fim)) + '"></div>' +
+        '<div><input type="text" data-campo="obs" value="' + esc(a.observacao || "") + '"></div>' +
+        '<div><button type="button" class="rm" data-acao="remover">Remover</button></div></div>';
+    });
+    $("rdAtivTabela").innerHTML = html;
+  }
+
+  $("rdAtivTabela").addEventListener("change", async function (e) {
+    const linha = e.target.closest(".l[data-id]"); if (!linha) return;
+    const v = function (c) { return linha.querySelector('[data-campo="' + c + '"]').value; };
+    if (v("inicio") && v("fim") && v("fim") < v("inicio")) { mostrarAviso("O fim não pode ser antes do início.", "erro"); return; }
+    try {
+      conferir(await banco.from("atividades_equipe").update({ inicio: v("inicio") || null, fim: v("fim") || null, observacao: v("obs").trim() || null,
+        atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() }).eq("id", linha.dataset.id));
+      mostrarAviso("Atividade atualizada.");
+    } catch (err) { mostrarAviso("Não salvou: " + err.message, "erro"); }
+  });
+  $("rdAtivTabela").addEventListener("click", async function (e) {
+    const botao = e.target.closest('button[data-acao="remover"]'); if (!botao) return;
+    const linha = botao.closest(".l[data-id]");
+    try {
+      conferir(await banco.from("atividades_equipe").delete().eq("id", linha.dataset.id));
+      estado.ativDia = estado.ativDia.filter(function (x) { return String(x.id) !== linha.dataset.id; });
+      desenharAtividadesDia();
+    } catch (err) { mostrarAviso("Não removeu: " + err.message, "erro"); }
+  });
 
   function desenharEscalaDia() {
     const lista = estado.escalaDia.slice();
@@ -2238,7 +2805,9 @@
       const dia = $("campoData").value;
       estado.escalaDia = await carregarEscalaDoDia(dia);
       estado.escalaDiaData = dia;
+      estado.ativDia = await carregarAtividadesDoDia(dia);
       desenharEscalaDia();
+      desenharAtividadesDia();
       atualizarOpcoesEquipe();
     } catch (e) {
       mostrarAviso("Não consegui carregar as equipes do dia: " + e.message, "erro");
