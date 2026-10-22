@@ -301,6 +301,18 @@
     #telaCampo details.notas select, #telaCampo details.notas input[type=time], #telaCampo details.notas textarea { width:100%; font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 8px; margin-top:4px; }
     #telaCampo details.notas label { font-size:11px; color:#525252; font-weight:400; margin:8px 0 0; }
     #telaCampo .faixa-endereco, #telaCampo .faixa { border-radius:0; font-size:12px; margin:0; }
+    #telaCampo .ib-secao.ac { cursor:pointer; user-select:none; padding:12px 8px; background:#fff; }
+    #telaCampo .ib-secao.ac:hover { background:#f4f4f4; }
+    #telaCampo .seta { display:inline-block; width:14px; font-style:normal; font-size:10px; color:#161616; }
+    #telaCampo .seta::before { content:"\25B6"; }
+    #telaCampo .ib-secao.aberta .seta::before, #telaCampo .cp-item.aberto .seta::before { content:"\25BC"; }
+    #telaCampo .cont { background:#e0e0e0; font-size:12px; font-weight:400; padding:1px 8px; border-radius:10px; margin-left:6px; }
+    #telaCampo .cont.am { background:#fcf4d6; color:#8e6a00; }
+    #telaCampo .cont.vd { background:#defbe6; color:#0e6027; }
+    #telaCampo .cp-tab.fechada { display:none; }
+    #telaCampo .cp-item .cp-l:not(.cp-cab) { cursor:pointer; }
+    #telaCampo .cp-item:not(.aberto) .cp-det { display:none; }
+    #telaCampo .cp-item.aberto { background:#f4f4f4; }
     #telaCampo .vazio { padding:14px 8px; color:#525252; border-bottom:1px solid #e0e0e0; }
     /* ---- DIVERGENCIAS (estilo IBM) ---- */
     main:has(#telaDivergencias:not(.oculto)) { max-width:none; }
@@ -350,6 +362,44 @@
     #telaDivergencias .dv-vazio { padding:16px 8px; color:#525252; }
     #telaDivergencias .pill { border-radius:0; }
     #telaDivergencias .faixa { border-radius:0; font-size:12px; }
+    /* ---- PREVENTIVA EPS (estilo IBM) ---- */
+    main:has(#telaEPS:not(.oculto)) { max-width:1280px; }
+    #telaEPS { font-size:12px; color:#161616; max-width:none; }
+    #telaEPS .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
+    #telaEPS .ib-trilha span { color:#161616; }
+    #telaEPS h1 { font-size:20px; font-weight:400; margin:0 0 2px; }
+    #telaEPS .ib-sub { color:#525252; margin:0 0 10px; font-size:12px; }
+    #telaEPS .faixa { border-radius:0; font-size:12px; padding:8px 12px; margin-bottom:6px; }
+    #telaEPS .ib-campos { display:flex; gap:24px; flex-wrap:wrap; margin:10px 0 14px; }
+    #telaEPS .ib-campo { flex:1 1 170px; }
+    #telaEPS .ib-campo .r { color:#525252; font-size:11px; }
+    #telaEPS .ib-campo .v { border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:6px 8px; font-size:16px; font-weight:600; }
+    #telaEPS .ib-campo.laranja .v { color:#8e6a00; border-bottom-color:#f1c21b; background:#fcf4d6; }
+    #telaEPS .ib-campo.verm .v { color:#da1e28; border-bottom-color:#da1e28; background:#fff1f1; }
+    #telaEPS .ib-campo.verde .v { color:#198038; }
+    #telaEPS .ib-campo.azul .v { color:#0043ce; }
+    #telaEPS .ib-barra { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin:10px 0; }
+    #telaEPS .ib-chips { display:flex; flex-wrap:wrap; }
+    #telaEPS .ib-chips button.chip { background:#e0e0e0; border:0; border-left:1px solid #8d8d8d; border-radius:0; margin:0; padding:8px 16px; font:inherit; font-size:12px; cursor:pointer; color:#161616; }
+    #telaEPS .ib-chips button.chip:first-child { border-left:0; }
+    #telaEPS .ib-chips button.chip:hover { background:#c6c6c6; }
+    #telaEPS .ib-chips button.chip.ativo { background:#161616; color:#fff; }
+    #telaEPS .ib-ferr { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #telaEPS select, #telaEPS input[type=text] { font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 8px; width:auto; max-width:none; margin:0; color:#161616; }
+    #telaEPS input[type=text].busca { width:220px; }
+    #telaEPS button.sec, #telaEPS button.secundario { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; font-size:12px; font-weight:400; cursor:pointer; }
+    #telaEPS button.sec:hover, #telaEPS button.secundario:hover { background:#e5f0ff; }
+    #telaEPS .tabela-rolagem { border:0; border-radius:0; background:transparent; }
+    #telaEPS #tabelaEPS { font-size:12px; }
+    #telaEPS #tabelaEPS th { background:#e0e0e0; color:#161616; font-size:12px; font-weight:600; padding:8px; border-bottom:1px solid #c6c6c6; }
+    #telaEPS #tabelaEPS td { padding:8px; border-bottom:1px solid #e0e0e0; }
+    #telaEPS #tabelaEPS tr:not(:first-child):nth-child(even) td { background:#f9f9f9; }
+    #telaEPS #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #f1c21b; }
+    #telaEPS #tabelaEPS td select, #telaEPS #tabelaEPS td input[type=text] { max-width:240px; }
+    #telaEPS .pill { border-radius:0; }
+    #telaEPS .detalhe { font-size:11px; color:#525252; }
+    #telaEPS .vazio { padding:14px 8px; color:#525252; }
+    @media print { #telaEPS { display:none; } }
     @media print { #telaDivergencias { display:none; } }
     @media print {
       #telaRegistrar { display:none; }
@@ -516,7 +566,7 @@
     <section id="telaDivergencias" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Divergências</span></div>
       <h1>Divergências: base do cliente x visitas</h1>
-      <p class="ib-sub">WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
+      <p class="ib-sub">Só MOP. WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
       <div class="ib-campos" id="dvCampos"></div>
 
       <div class="ib-secao"><span>Por motivo provável</span><span class="aux">clique numa linha para filtrar a lista</span></div>
@@ -533,7 +583,6 @@
           <button data-filtro="todas">Todas</button>
         </div>
         <div class="ib-ferr">
-          <select id="dvGrupo"><option value="MOP">MOP</option><option value="EPS">EPS</option><option value="">MOP + EPS</option></select>
           <input type="text" class="busca" id="dvBusca" placeholder="Buscar WO, site ou equipe">
           <button class="sec" id="dvAtualizar">Atualizar</button>
           <button class="sec" id="dvExportar">Exportar CSV</button>
@@ -569,37 +618,36 @@
       <div class="ib-titulo"><h1>Equipes em campo</h1><span class="ib-sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</span></div>
       <div class="ib-campos" id="azulejos"></div>
 
-      <div class="ib-secao"><span>Em campo agora</span></div>
+      <div class="ib-secao ac" data-sec="campo"><span><i class="seta"></i>Em campo agora <b class="cont" id="contCampo"></b></span><span class="aux">clique numa linha para ver as WOs e o alarme</span></div>
       <div class="cp-tab" id="gradeCampo"></div>
 
-      <div class="ib-secao"><span>Saídas a ajustar</span><span class="aux">visitas sem horário de saída (equipe ainda no site às 18h, ou histórico sem saída)</span></div>
+      <div class="ib-secao ac" data-sec="ajustar"><span><i class="seta"></i>Saídas a ajustar <b class="cont" id="contAjustar"></b></span><span class="aux">visitas sem horário de saída (equipe ainda no site às 18h, ou histórico sem saída)</span></div>
       <div class="cp-tab" id="gradeAjustar"></div>
 
-      <div class="ib-secao"><span>Saíram hoje</span></div>
+      <div class="ib-secao ac" data-sec="saidas"><span><i class="seta"></i>Saíram hoje <b class="cont" id="contSaidas"></b></span><span class="aux">clique numa linha para ver os detalhes</span></div>
       <div class="cp-tab" id="gradeSaidas"></div>
     </section>
 
     <!-- EPS: relatorios das terceiras -->
     <section id="telaEPS" class="tela oculto">
+      <div class="ib-trilha">Painel / <span>Preventiva EPS</span></div>
       <h1>Preventiva EPS: relatórios das terceiras</h1>
-      <p class="sub" id="subEPS">Relatórios que as terceiras colocaram nas pastas do SharePoint, comparados com a base do cliente. O que estiver em “Falta lançar” é trabalho da planejadora no Infratel.</p>
+      <p class="ib-sub" id="subEPS">Relatórios que as terceiras colocaram nas pastas do SharePoint, comparados com a base do cliente. O que estiver em “Falta lançar” é trabalho da planejadora no Infratel.</p>
       <div id="faixaEPS" class="faixa"></div>
-      <div class="azulejos" id="azulejosEPS"></div>
-      <div class="barra-filtros">
-        <div class="chips" id="chipsEPS">
+      <div class="ib-campos" id="azulejosEPS"></div>
+      <div class="ib-barra">
+        <div class="ib-chips" id="chipsEPS">
           <button data-filtro="falta" class="chip ativo">Falta lançar</button>
           <button data-filtro="aguardando" class="chip">Aguardando relatório</button>
           <button data-filtro="lancada" class="chip">Lançadas</button>
           <button data-filtro="revisar" class="chip">Revisar</button>
           <button data-filtro="todos" class="chip">Todos</button>
         </div>
-        <div class="periodo">
-          <label for="mesEPS">Mês</label>
-          <select id="mesEPS"></select>
-          <label for="empresaEPS">Empresa</label>
-          <select id="empresaEPS"><option value="">Todas</option></select>
-          <input type="text" id="buscaEPS" placeholder="Buscar site, WO ou arquivo">
-          <button id="botaoAtualizarEPS" class="secundario">Atualizar</button>
+        <div class="ib-ferr">
+          <select id="mesEPS" title="Mês"></select>
+          <select id="empresaEPS" title="Empresa"><option value="">Todas as empresas</option></select>
+          <input type="text" id="buscaEPS" class="busca" placeholder="Buscar site, WO ou arquivo">
+          <button id="botaoAtualizarEPS" class="sec">Atualizar</button>
         </div>
       </div>
       <div class="tabela-rolagem">
@@ -1396,7 +1444,9 @@
       else r[3].data.forEach(function (t) { estado.dv.trat[t.wo] = t; });
       const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; });
       const irmas = function (k) { return outrasSiglasDoEndereco(k).map(function (x) { return limparSite(x.sigla); }); };
-      const res = calcularDivergencias(estado.base, visitas, r[2], irmas);
+      // Divergência é análise só do MOP: a EPS (e MOP + EPS) fica de fora.
+      const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
+      const res = calcularDivergencias(baseMop, visitas, r[2], irmas);
       estado.dv.linhas = res.linhas; estado.dv.minData = res.minData; estado.dv.maxData = res.maxData; estado.dv.nVisitas = res.nVisitas;
       desenharDivergencias();
     } catch (e) {
@@ -1405,9 +1455,8 @@
   }
 
   function linhasDivergenciaFiltradas(ignorarFiltro) {
-    const D = estado.dv, grupo = $("dvGrupo").value, q = semAcento($("dvBusca").value).toLowerCase().trim();
+    const D = estado.dv, q = semAcento($("dvBusca").value).toLowerCase().trim();
     return D.linhas.filter(function (l) {
-      if (grupo && l.grupo !== grupo) return false;
       if (q) {
         const alvo = semAcento([l.wo, l.siteTxt, l.visita && l.visita.equipe, l.motivo].join(" ")).toLowerCase();
         if (alvo.indexOf(q) < 0) return false;
@@ -1486,7 +1535,6 @@
     document.querySelectorAll("#dvChips button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
     desenharDivergencias();
   });
-  $("dvGrupo").addEventListener("change", desenharDivergencias);
   $("dvBusca").addEventListener("input", desenharDivergencias);
   $("dvAtualizar").addEventListener("click", atualizarDivergencias);
 
@@ -1757,11 +1805,12 @@
     const empresa = $("empresaEPS").value;
     if (empresa) linhas = linhas.filter(function (l) { return l.empresas.indexOf(empresa) >= 0; });
     const contar = function (g) { return linhas.filter(function (l) { return l.grupo === g; }).length; };
+    const campoEps = function (n, rot, cls) { return '<div class="ib-campo ' + cls + '"><div class="r">' + esc(rot) + '</div><div class="v">' + n + "</div></div>"; };
     $("azulejosEPS").innerHTML =
-      azulejo(contar("falta"), "Falta lançar no Infratel", "a-laranja") +
-      azulejo(contar("aguardando"), "Aguardando relatório", "a-azul") +
-      azulejo(contar("lancada"), "Lançadas no Infratel", "a-verde") +
-      azulejo(contar("revisar"), "Relatórios para revisar", contar("revisar") ? "a-vermelho" : "a-azul");
+      campoEps(contar("falta"), "Falta lançar no Infratel", contar("falta") ? "laranja" : "") +
+      campoEps(contar("aguardando"), "Aguardando relatório", "azul") +
+      campoEps(contar("lancada"), "Lançadas no Infratel", "verde") +
+      campoEps(contar("revisar"), "Relatórios para revisar", contar("revisar") ? "verm" : "");
 
     const filtro = estado.filtroEPS;
     const busca = semAcento($("buscaEPS").value).toLowerCase().trim();
@@ -2149,6 +2198,19 @@
   const COLS_SAIDAS = "110px minmax(150px,1.3fr) 140px minmax(130px,1fr) 70px 70px 110px 120px";
   const COLS_AJUSTAR = "110px minmax(150px,1.3fr) 100px 80px minmax(130px,1fr) 160px";
 
+  // Listas que abrem e fecham: o que está aberto fica guardado, para a atualização automática não fechar nada.
+  const abertoCampo = { sec: { campo: true }, lin: {} };
+  function aplicarAbertoCampo() {
+    [["campo", "gradeCampo"], ["ajustar", "gradeAjustar"], ["saidas", "gradeSaidas"]].forEach(function (x) {
+      const aberta = !!abertoCampo.sec[x[0]];
+      $(x[1]).classList.toggle("fechada", !aberta);
+      document.querySelector('#telaCampo [data-sec="' + x[0] + '"]').classList.toggle("aberta", aberta);
+    });
+    document.querySelectorAll("#telaCampo .cp-item[data-lin]").forEach(function (el) {
+      el.classList.toggle("aberto", !!abertoCampo.lin[el.dataset.lin]);
+    });
+  }
+
   function desenharCampo(emCampo, saidas, pendentes) {
     pendentes = soMOP(pendentes || []);
     emCampo = soMOP(emCampo);
@@ -2174,6 +2236,10 @@
     $("gradeSaidas").innerHTML = saidas.length
       ? cab(COLS_SAIDAS, ["Site", "Equipe", "Resultado", "Atividade", "Entrada", "Saída", "Permanência", "Alarme"]) + saidas.map(cartaoSaida).join("")
       : '<div class="vazio">Ninguém saiu de um site hoje ainda.</div>';
+    $("contCampo").textContent = emCampo.length;
+    $("contAjustar").textContent = pendentes.length; $("contAjustar").className = "cont" + (pendentes.length ? " am" : "");
+    $("contSaidas").textContent = saidas.length; $("contSaidas").className = "cont vd";
+    aplicarAbertoCampo();
   }
 
   function azulejo(numero, rotulo, classe) {
@@ -2221,8 +2287,8 @@
       ? '<button class="principal" data-acao="saida" data-id="' + esc(v.id) + '">Registrar saída</button>'
       : '<button class="principal" data-acao="chegada" data-id="' + esc(v.id) + '">Chegou no site</button>';
     const outras = htmlOutrasSiglas(limparSite(v.site));
-    return '<div class="cp-item' + (longo ? " longo" : "") + '"><div class="cp-l" style="--cols:' + COLS_CAMPO + '">' +
-      '<div><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
+    return '<div class="cp-item' + (longo ? " longo" : "") + '" data-lin="campo:' + esc(v.id) + '"><div class="cp-l" style="--cols:' + COLS_CAMPO + '">' +
+      '<div><i class="seta"></i><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
       "<div>" + pill(v.situacao, "p-azul") + (longo ? '<span class="cp-sub" style="color:#8e6a00">Longa permanência</span>' : "") + "</div>" +
       "<div>" + pill(v.atividade, "p-cinza") + (v.atividade_detalhe ? '<span class="cp-sub">' + esc(v.atividade_detalhe) + "</span>" : "") + "</div>" +
       "<div>" + horaCurta(v.hora_aviso) + "</div><div>" + horaCurta(v.hora_entrada) + "</div>" +
@@ -2235,8 +2301,8 @@
   function cartaoSaida(v) {
     const permanencia = v.hora_entrada ? formatarDuracao((new Date(v.hora_saida) - new Date(v.hora_entrada)) / 60000) : "—";
     const sem = v.motivo_nao_execucao;
-    return '<div class="cp-item' + (sem ? " semexec" : "") + '"><div class="cp-l" style="--cols:' + COLS_SAIDAS + '">' +
-      '<div><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
+    return '<div class="cp-item' + (sem ? " semexec" : "") + '" data-lin="saidas:' + esc(v.id) + '"><div class="cp-l" style="--cols:' + COLS_SAIDAS + '">' +
+      '<div><i class="seta"></i><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
       "<div>" + (sem ? pill("Saiu sem executar", "p-vermelho") : pill("Saiu do Site", "p-verde")) + "</div>" +
       "<div>" + pill(v.atividade, "p-cinza") + "</div>" +
       "<div>" + horaCurta(v.hora_entrada) + "</div><div>" + horaCurta(v.hora_saida) + "</div><div><b>" + permanencia + "</b></div>" +
@@ -2247,8 +2313,8 @@
   }
 
   function cartaoAjustar(v) {
-    return '<div class="cp-item"><div class="cp-l" style="--cols:' + COLS_AJUSTAR + '">' +
-      '<div><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
+    return '<div class="cp-item" data-lin="ajustar:' + esc(v.id) + '"><div class="cp-l" style="--cols:' + COLS_AJUSTAR + '">' +
+      '<div><i class="seta"></i><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
       "<div>" + (v.hora_entrada ? new Date(v.hora_entrada).toLocaleDateString("pt-BR") : "—") + "</div><div>" + horaCurta(v.hora_entrada) + "</div>" +
       "<div>" + pill(v.atividade, "p-cinza") + "</div>" +
       '<div class="cp-acoes"><button class="principal" data-acao="ajustar" data-id="' + esc(v.id) + '">Informar saída</button></div></div>' +
@@ -2307,6 +2373,17 @@
     }
     return quando.toISOString();
   }
+
+  // Abrir/fechar as listas e os detalhes de cada linha (clicar em botão, campo ou link não abre nem fecha).
+  $("telaCampo").addEventListener("click", function (e) {
+    const cab = e.target.closest("[data-sec]");
+    if (cab) { abertoCampo.sec[cab.dataset.sec] = !abertoCampo.sec[cab.dataset.sec]; aplicarAbertoCampo(); return; }
+    if (e.target.closest("button, select, input, textarea, a, label, details")) return;
+    const lin = e.target.closest(".cp-item[data-lin] .cp-l");
+    if (!lin) return;
+    const k = lin.parentNode.dataset.lin;
+    abertoCampo.lin[k] = !abertoCampo.lin[k]; aplicarAbertoCampo();
+  });
 
   $("gradeCampo").addEventListener("click", async function (e) {
     const botao = e.target.closest("button[data-acao]");
