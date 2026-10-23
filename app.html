@@ -2361,11 +2361,11 @@
     const lista = wos.map(function (w) {
       return '<label class="ex-wo"><input type="checkbox" data-wo="' + esc(w.wo) + '" data-tipo="' + esc(w.tipo) + '"><b>' + esc(w.wo) + "</b><span>" + esc(w.tipo) + "</span></label>";
     }).join("");
-    return '<details class="notas expurgo"><summary>Expurgo: WO que o site não permite executar</summary>' +
+    return '<details class="notas expurgo"><summary>Expurgo</summary>' +
       '<div class="detalhe" style="margin:6px 0 0">As WOs marcadas saem das realizadas e das divergências e vão para a aba Expurgos.</div>' +
       '<label>Motivo</label><select data-campo="expmotivo">' + motivos + "</select>" +
       "<label>WOs expurgadas</label>" + lista +
-      '<label>Observação (o que a equipe encontrou)</label><textarea data-campo="expobs" rows="2" placeholder="Ex.: Mato alto cobrindo o acesso ao shelter"></textarea>' +
+      '<label>Observação (o que a equipe encontrou)</label><textarea data-campo="expobs" rows="2" placeholder="Mato alto"></textarea>' +
       '<div class="linha-botoes"><button class="secundario" data-acao="expurgo" data-id="' + esc(v.id) + '">Registrar expurgo</button></div></details>';
   }
 
