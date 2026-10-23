@@ -89,6 +89,7 @@
     .p-laranja { background:var(--laranja-fundo); color:var(--laranja); }
     .p-vermelho { background:var(--vermelho-fundo); color:var(--vermelho); }
     .p-azul { background:var(--azul-fundo); color:#173f75; }
+    .p-roxo { background:#f6f2ff; color:#6929c4; }
     .p-cinza { background:var(--cinza-fundo); color:#3a4654; }
 
     /* Avisos com barra lateral */
@@ -190,6 +191,7 @@
     #telaResumoDia .rd-amarelo { background:#fddc69; }
     #telaResumoDia .rd-azul { background:#d0e2ff; }
     #telaResumoDia .rd-vermelho { background:#ffd7d9; }
+    #telaResumoDia .rd-roxo { background:#e8daff; }
     #telaResumoDia .rd-ocorr { margin-top:12px; border-left:3px solid #da1e28; background:#fff1f1; padding:8px 12px; font-size:12px; }
     #telaResumoDia .rd-ocorr ul { margin:4px 0 0; padding-left:18px; }
     #telaResumoDia .rd-azul .b { color:#0043ce; font-style:italic; }
@@ -303,9 +305,10 @@
     #telaCampo .faixa-endereco, #telaCampo .faixa { border-radius:0; font-size:12px; margin:0; }
     #telaCampo .ib-secao.ac { cursor:pointer; user-select:none; padding:12px 8px; background:#fff; }
     #telaCampo .ib-secao.ac:hover { background:#f4f4f4; }
-    #telaCampo .seta { display:inline-block; width:14px; font-style:normal; font-size:10px; color:#161616; }
-    #telaCampo .seta::before { content:"\25B6"; }
-    #telaCampo .ib-secao.aberta .seta::before, #telaCampo .cp-item.aberto .seta::before { content:"\25BC"; }
+    #telaCampo .seta { display:inline-block; width:16px; height:16px; vertical-align:-3px; margin-right:6px; font-style:normal;
+      background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23161616' d='M8 11L3 6l.7-.7L8 9.6l4.3-4.3.7.7z'/%3E%3C/svg%3E") center/16px 16px no-repeat;
+      transform:rotate(-90deg); transition:transform .1s; }
+    #telaCampo .ib-secao.aberta .seta, #telaCampo .cp-item.aberto .seta { transform:rotate(0); }
     #telaCampo .cont { background:#e0e0e0; font-size:12px; font-weight:400; padding:1px 8px; border-radius:10px; margin-left:6px; }
     #telaCampo .cont.am { background:#fcf4d6; color:#8e6a00; }
     #telaCampo .cont.vd { background:#defbe6; color:#0e6027; }
@@ -313,6 +316,10 @@
     #telaCampo .cp-item .cp-l:not(.cp-cab) { cursor:pointer; }
     #telaCampo .cp-item:not(.aberto) .cp-det { display:none; }
     #telaCampo .cp-item.aberto { background:#f4f4f4; }
+    #telaCampo details.notas.expurgo summary { color:#6929c4; }
+    #telaCampo details.notas.expurgo .ex-wo { display:flex; align-items:center; gap:8px; border-bottom:1px solid #e0e0e0; padding:5px 0; }
+    #telaCampo details.notas.expurgo .ex-wo input { width:auto; margin:0; }
+    #telaCampo details.notas.expurgo .ex-wo span { color:#525252; margin-left:auto; }
     #telaCampo .vazio { padding:14px 8px; color:#525252; border-bottom:1px solid #e0e0e0; }
     /* ---- DIVERGENCIAS (estilo IBM) ---- */
     main:has(#telaDivergencias:not(.oculto)) { max-width:none; }
@@ -362,6 +369,40 @@
     #telaDivergencias .dv-vazio { padding:16px 8px; color:#525252; }
     #telaDivergencias .pill { border-radius:0; }
     #telaDivergencias .faixa { border-radius:0; font-size:12px; }
+    /* ---- EXPURGOS (estilo IBM) ---- */
+    main:has(#telaExpurgos:not(.oculto)) { max-width:1280px; }
+    #telaExpurgos { font-size:12px; color:#161616; max-width:none; }
+    #telaExpurgos .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
+    #telaExpurgos .ib-trilha span { color:#161616; }
+    #telaExpurgos h1 { font-size:20px; font-weight:400; margin:0 0 2px; }
+    #telaExpurgos .ib-sub { color:#525252; margin:0 0 10px; font-size:12px; }
+    #telaExpurgos .ib-campos { display:flex; gap:24px; flex-wrap:wrap; margin:10px 0 14px; }
+    #telaExpurgos .ib-campo { flex:1 1 150px; }
+    #telaExpurgos .ib-campo .r { color:#525252; font-size:11px; }
+    #telaExpurgos .ib-campo .v { border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:6px 8px; font-size:16px; font-weight:600; }
+    #telaExpurgos .ib-barra { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin:10px 0; }
+    #telaExpurgos .ib-chips { display:flex; flex-wrap:wrap; }
+    #telaExpurgos .ib-chips button { background:#e0e0e0; border:0; border-left:1px solid #8d8d8d; border-radius:0; margin:0; padding:8px 16px; font:inherit; font-size:12px; cursor:pointer; color:#161616; }
+    #telaExpurgos .ib-chips button:first-child { border-left:0; }
+    #telaExpurgos .ib-chips button:hover { background:#c6c6c6; }
+    #telaExpurgos .ib-chips button.ativo { background:#161616; color:#fff; }
+    #telaExpurgos .ib-ferr { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #telaExpurgos select, #telaExpurgos input[type=text] { font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 8px; width:auto; margin:0; color:#161616; }
+    #telaExpurgos input[type=text].busca { width:220px; }
+    #telaExpurgos button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; cursor:pointer; }
+    #telaExpurgos button.sec:hover { background:#e5f0ff; }
+    #telaExpurgos button.prim { background:#0f62fe; color:#fff; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; cursor:pointer; }
+    #telaExpurgos button.prim:hover { background:#0353e9; }
+    #telaExpurgos .ex-rolagem { overflow-x:auto; }
+    #telaExpurgos .ex-l { display:grid; grid-template-columns:90px 140px minmax(150px,1fr) 160px 96px minmax(140px,1fr) minmax(180px,1.6fr) 110px 76px; min-width:1040px; border-bottom:1px solid #e0e0e0; align-items:center; }
+    #telaExpurgos .ex-l > div { padding:8px 8px; min-width:0; word-break:break-word; }
+    #telaExpurgos .ex-cab { background:#e0e0e0; font-weight:600; }
+    #telaExpurgos .ex-l:not(.ex-cab):nth-child(even) { background:#f9f9f9; }
+    #telaExpurgos .ex-l button.des { background:none; border:0; color:#0f62fe; font:inherit; cursor:pointer; padding:4px 0; }
+    #telaExpurgos .ex-l button.des:hover { text-decoration:underline; }
+    #telaExpurgos .ex-vazio { padding:16px 8px; color:#525252; }
+    #telaExpurgos .pill { border-radius:0; }
+    @media print { #telaExpurgos { display:none; } }
     /* ---- PREVENTIVA EPS (estilo IBM) ---- */
     main:has(#telaEPS:not(.oculto)) { max-width:1280px; }
     #telaEPS { font-size:12px; color:#161616; max-width:none; }
@@ -423,6 +464,7 @@
         <button data-tela="EPS" data-grupo="">EPS</button>
       </div>
       <button data-tela="Divergencias" data-grupo="">Divergências</button>
+      <button data-tela="Expurgos" data-grupo="">Expurgos</button>
       <button data-tela="ResumoDia" data-grupo="">Resumo Dia</button>
     </nav>
     <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
@@ -569,7 +611,7 @@
       <p class="ib-sub">Só MOP. WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
       <div class="ib-campos" id="dvCampos"></div>
 
-      <div class="ib-secao"><span>Por motivo provável</span><span class="aux">clique numa linha para filtrar a lista</span></div>
+      <div class="ib-secao"><span>Por motivo provável</span><span class="aux">Clique numa linha para filtrar a lista</span></div>
       <div class="resumo-motivos" id="dvMotivos"></div>
 
       <div class="ib-secao"><span>WOs</span><span class="aux" id="dvContagem"></span></div>
@@ -612,19 +654,38 @@
       <p class="pequeno" style="margin-top:14px">As equipes do dia (quem trabalha na preventiva e o que está fazendo) são registradas na tela <a href="#" id="rdIrRegistrar">Registrar</a>, de manhã.</p>
     </section>
 
+    <!-- EXPURGOS -->
+    <section id="telaExpurgos" class="tela oculto">
+      <div class="ib-trilha">Painel / <span>Expurgos</span></div>
+      <h1>Expurgos</h1>
+      <p class="ib-sub">WOs que a equipe não pôde executar por causa do site (acesso, desativado, mato alto, sem equipamento ou vandalizado). Elas saem das realizadas e das divergências.</p>
+      <div class="ib-campos" id="exCampos"></div>
+      <div class="ib-barra">
+        <div class="ib-chips" id="exChips"></div>
+        <div class="ib-ferr">
+          <select id="exMes" title="Mês"></select>
+          <input type="text" class="busca" id="exBusca" placeholder="Buscar site, WO ou equipe">
+          <button class="sec" id="exAtualizar">Atualizar</button>
+          <button class="prim" id="exExcel">Baixar Excel</button>
+        </div>
+      </div>
+      <div class="ex-rolagem"><div id="exTabela"></div></div>
+      <p class="ib-sub" id="exNota" style="margin-top:10px"></p>
+    </section>
+
     <!-- EQUIPES EM CAMPO -->
     <section id="telaCampo" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Equipes em campo</span></div>
       <div class="ib-titulo"><h1>Equipes em campo</h1><span class="ib-sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</span></div>
       <div class="ib-campos" id="azulejos"></div>
 
-      <div class="ib-secao ac" data-sec="campo"><span><i class="seta"></i>Em campo agora <b class="cont" id="contCampo"></b></span><span class="aux">clique numa linha para ver as WOs e o alarme</span></div>
+      <div class="ib-secao ac" data-sec="campo"><span><i class="seta"></i>Em campo agora <b class="cont" id="contCampo"></b></span><span class="aux">Clique numa linha para ver as WOs e o alarme</span></div>
       <div class="cp-tab" id="gradeCampo"></div>
 
-      <div class="ib-secao ac" data-sec="ajustar"><span><i class="seta"></i>Saídas a ajustar <b class="cont" id="contAjustar"></b></span><span class="aux">visitas sem horário de saída (equipe ainda no site às 18h, ou histórico sem saída)</span></div>
+      <div class="ib-secao ac" data-sec="ajustar"><span><i class="seta"></i>Saídas a ajustar <b class="cont" id="contAjustar"></b></span><span class="aux">Visitas sem horário de saída (equipe ainda no site às 18h, ou histórico sem saída)</span></div>
       <div class="cp-tab" id="gradeAjustar"></div>
 
-      <div class="ib-secao ac" data-sec="saidas"><span><i class="seta"></i>Saíram hoje <b class="cont" id="contSaidas"></b></span><span class="aux">clique numa linha para ver os detalhes</span></div>
+      <div class="ib-secao ac" data-sec="saidas"><span><i class="seta"></i>Saíram hoje <b class="cont" id="contSaidas"></b></span><span class="aux">Clique numa linha para ver os detalhes</span></div>
       <div class="cp-tab" id="gradeSaidas"></div>
     </section>
 
@@ -691,6 +752,7 @@
   <div id="toast" class="toast oculto"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
   // ===========================================================================
   // 1) CONFIGURACAO
@@ -747,6 +809,12 @@
     },
 
     // --- Divergências (base do cliente x visitas) ---
+    expurgo: {
+      // Motivos de expurgo (WO que a equipe não pode executar por causa do site). Edite à vontade.
+      motivos: ["Problema de acesso", "Site desativado", "Zeladoria (mato alto)", "Sem equipamento", "Vandalizado"],
+      // Cor da etiqueta de cada motivo (p-roxo, p-cinza, p-laranja, p-vermelho, p-azul)
+      cores: { "Problema de acesso": "p-azul", "Site desativado": "p-cinza", "Zeladoria (mato alto)": "p-roxo", "Sem equipamento": "p-laranja", "Vandalizado": "p-vermelho" }
+    },
     divergencias: {
       // Motivos que a validadora pode confirmar para cada WO (edite à vontade).
       motivos: ["Visita não registrada", "WO marcada em outra sigla/visita", "Executada antes do sistema",
@@ -1104,7 +1172,7 @@
     if (outras.length === 0) return "";
     return '<div class="faixa-endereco"><b>Mesmo endereço: mais ' + outras.length + (outras.length === 1 ? " sigla" : " siglas") + "</b>" +
       outras.map(function (s) {
-        const situacao = s.total === 0 ? "sem WO MOP na base"
+        const situacao = s.total === 0 ? "Sem WO MOP na base"
           : s.total + (s.total === 1 ? " WO MOP" : " WOs MOP") + " na base, " +
             (s.pendentes.length === 0 ? "todas executadas" : s.pendentes.length + " pendente(s)");
         return '<div class="sigla-linha"><b>' + esc(s.sigla) + "</b> (" + esc(s.origem) + ") · " + situacao + "</div>";
@@ -1164,6 +1232,7 @@
     }
     if (nome === "Registrar") atualizarEscalaRegistrar();
     if (nome === "Divergencias") atualizarDivergencias();
+    if (nome === "Expurgos") atualizarExpurgos();
     if (nome === "ResumoDia") {
       atualizarResumoDia();
       estado.pollId = setInterval(atualizarResumoDia, 120000);
@@ -1188,6 +1257,7 @@
     try {
       const dias = Number($("periodoConf").value);
       const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
+      await carregarExpurgos();
       const resultados = await Promise.all([carregarBase(), carregarParaConferencia(inicio.toISOString())]);
       estado.base = resultados[0];
       prepararBase();
@@ -1208,6 +1278,7 @@
     const linhas = [];
     visitas.filter(function (v) { return !v.motivo_nao_execucao; }).forEach(function (v) {
       (v.wos_visita || []).forEach(function (w) {
+        if (estado.expurgadas[w.wo]) return;
         linhas.push({ visita: v, wo: w, base: estado.porWO[w.wo],
                       resultado: avaliarWO(w, v, estado.porWO[w.wo], baseAtualizadaEm, agora) });
       });
@@ -1435,6 +1506,7 @@
 
   async function atualizarDivergencias() {
     try {
+      await carregarExpurgos();
       const r = await Promise.all([carregarBase(), carregarTodasAsLinhas("visitas", "*"),
                                    carregarTodasAsLinhas("wos_visita", "id,wo,visita_id"),
                                    banco.from("divergencias_tratativa").select("*")]);
@@ -1445,7 +1517,7 @@
       const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; });
       const irmas = function (k) { return outrasSiglasDoEndereco(k).map(function (x) { return limparSite(x.sigla); }); };
       // Divergência é análise só do MOP: a EPS (e MOP + EPS) fica de fora.
-      const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
+      const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !estado.expurgadas[l.wo]; });
       const res = calcularDivergencias(baseMop, visitas, r[2], irmas);
       estado.dv.linhas = res.linhas; estado.dv.minData = res.minData; estado.dv.maxData = res.maxData; estado.dv.nVisitas = res.nVisitas;
       desenharDivergencias();
@@ -1837,7 +1909,7 @@
     return relatorios.map(function (r) {
       const dias = diasDesde(r.data_arquivo);
       return '<div class="arquivo" title="' + esc(r.pasta_raiz + "/" + r.subpasta + "/" + r.nome_arquivo) + '">' + esc(r.nome_arquivo) +
-        '<span class="detalhe">entregue ' + formatarDataHora(r.data_arquivo) + (dias > 0 ? " · há " + dias + (dias === 1 ? " dia" : " dias") : " · hoje") + "</span></div>";
+        '<span class="detalhe">Entregue ' + formatarDataHora(r.data_arquivo) + (dias > 0 ? " · há " + dias + (dias === 1 ? " dia" : " dias") : " · hoje") + "</span></div>";
     }).join("");
   }
 
@@ -1861,7 +1933,7 @@
     if (l.grupo === "falta") {
       const dias = diasDesde(l.maisAntigo);
       situacao = pill("Falta lançar", "p-laranja") +
-        (dias >= REGRAS.eps.diasAlerta ? ' <span class="pill p-vermelho">há ' + dias + " dias</span>" : "") +
+        (dias >= REGRAS.eps.diasAlerta ? ' <span class="pill p-vermelho">Há ' + dias + " dias</span>" : "") +
         '<span class="detalhe">Status na base: ' + esc(b.status_final || "sem status") + "</span>";
     } else if (l.grupo === "lancada") {
       situacao = pill("Lançada", "p-verde") + (b.data_fim ? '<span class="detalhe">Relatório no Infratel em ' + formatarDataCurta(b.data_fim) + "</span>" : "");
@@ -2173,12 +2245,13 @@
   // ---- tela EQUIPES EM CAMPO ------------------------------------------------
   async function atualizarCampo() {
     try {
+      await carregarExpurgos();
       const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje(), carregarSaidasPendentes()]);
       estado.emCampo = resultados[0];
       estado.saidasPendentes = resultados[2];
       const digitando = $("gradeCampo").contains(document.activeElement) || $("gradeCampo").querySelector("details[open]");
       if (!digitando) desenharCampo(resultados[0], resultados[1], resultados[2]);
-      $("subCampo").textContent = "MOP · atualiza sozinha a cada 30 segundos · última leitura às " + horaCurta(new Date().toISOString());
+      $("subCampo").textContent = "MOP · Atualiza sozinha a cada 30 segundos · Última leitura às " + horaCurta(new Date().toISOString());
     } catch (e) {
       mostrarAviso("Não consegui atualizar: " + e.message, "erro");
     }
@@ -2250,7 +2323,8 @@
     const wos = v.wos_visita || [];
     if (wos.length === 0) return "";
     return '<div class="lista-wo">' + wos.map(function (w) {
-      const st = descreverStatusBase(estado.porWO[w.wo]);
+      const ex = estado.expurgadas[w.wo];
+      const st = ex ? { texto: "Expurgo: " + ex.motivo, classe: "p-roxo" } : descreverStatusBase(estado.porWO[w.wo]);
       return '<div class="item"><span class="wo">' + esc(w.wo) + '</span><span class="tipo">' + esc(w.tipo) + "</span>" +
         pill(st.texto, st.classe) + "</div>";
     }).join("") + "</div>";
@@ -2279,6 +2353,22 @@
       '<div class="linha-botoes"><button class="secundario" data-acao="semexec" data-id="' + esc(v.id) + '">Registrar saída sem execução</button></div></details>';
   }
 
+  // Expurgo: o técnico chegou e o site não permite a preventiva (acesso, desativado, mato alto, sem equipamento, vandalizado).
+  function expurgoDoCartao(v) {
+    const wos = (v.wos_visita || []).filter(function (w) { return !estado.expurgadas[w.wo]; });
+    if (wos.length === 0) return "";
+    const motivos = REGRAS.expurgo.motivos.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
+    const lista = wos.map(function (w) {
+      return '<label class="ex-wo"><input type="checkbox" data-wo="' + esc(w.wo) + '" data-tipo="' + esc(w.tipo) + '"><b>' + esc(w.wo) + "</b><span>" + esc(w.tipo) + "</span></label>";
+    }).join("");
+    return '<details class="notas expurgo"><summary>Expurgo: WO que o site não permite executar</summary>' +
+      '<div class="detalhe" style="margin:6px 0 0">As WOs marcadas saem das realizadas e das divergências e vão para a aba Expurgos.</div>' +
+      '<label>Motivo</label><select data-campo="expmotivo">' + motivos + "</select>" +
+      "<label>WOs expurgadas</label>" + lista +
+      '<label>Observação (o que a equipe encontrou)</label><textarea data-campo="expobs" rows="2" placeholder="Ex.: Mato alto cobrindo o acesso ao shelter"></textarea>' +
+      '<div class="linha-botoes"><button class="secundario" data-acao="expurgo" data-id="' + esc(v.id) + '">Registrar expurgo</button></div></details>';
+  }
+
   function cartaoEmCampo(v) {
     const noSite = v.situacao === REGRAS.situacaoNoSite;
     const minutos = noSite ? minutosDesde(v.hora_entrada) : minutosDesde(v.hora_aviso);
@@ -2295,7 +2385,7 @@
       "<div><b>" + formatarDuracao(minutos) + '</b><span class="cp-sub">' + (noSite ? "no site" : "em deslocamento") + "</span></div>" +
       "<div>" + pillAlarme(v.alarme_porta) + "</div>" +
       '<div class="cp-acoes">' + botoes + '<button class="secundario" data-acao="cancelar" data-id="' + esc(v.id) + '">Cancelar</button></div></div>' +
-      '<div class="cp-det">' + listaWOsCartao(v) + '<div class="extras">' + outras + notasDoCartao(v) + (noSite ? semExecucaoDoCartao(v) : "") + "</div></div></div>";
+      '<div class="cp-det">' + listaWOsCartao(v) + '<div class="extras">' + outras + notasDoCartao(v) + (noSite ? semExecucaoDoCartao(v) + expurgoDoCartao(v) : "") + "</div></div></div>";
   }
 
   function cartaoSaida(v) {
@@ -2374,6 +2464,32 @@
     return quando.toISOString();
   }
 
+  async function registrarExpurgo(visita, botao) {
+    const caixa = botao.closest("details");
+    const motivo = caixa.querySelector("[data-campo=expmotivo]").value;
+    const obs = caixa.querySelector("[data-campo=expobs]").value.trim();
+    const marcadas = Array.prototype.slice.call(caixa.querySelectorAll("input[type=checkbox][data-wo]:checked"));
+    if (marcadas.length === 0) { mostrarAviso("Marque ao menos uma WO para expurgar.", "erro"); return; }
+    if (!window.confirm("Expurgar " + marcadas.length + " WO(s) de " + visita.site + " (" + motivo + ")?\n\nElas saem das realizadas e das divergências.")) return;
+    const dia = paraAAAAMMDD(visita.hora_entrada ? new Date(visita.hora_entrada) : new Date());
+    const agora = new Date().toISOString();
+    const linhas = marcadas.map(function (c) {
+      return { wo: c.dataset.wo, site: visita.site, tipo: c.dataset.tipo || "", motivo: motivo, data_visita: dia, equipe: visita.equipe,
+               visita_id: String(visita.id), observacao: obs || null, registrado_por: estado.usuarioEmail, registrado_em: agora };
+    });
+    botao.disabled = true;
+    try {
+      conferir(await banco.from("expurgos").upsert(linhas, { onConflict: "wo" }));
+      caixa.open = false;
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // senão a tela não se redesenha
+      mostrarAviso("Expurgo registrado.");
+      atualizarCampo();
+    } catch (err) {
+      botao.disabled = false;
+      mostrarAviso("Erro ao gravar: " + err.message + (/expurgos/.test(err.message) ? " (rode o SQL expurgos_sql.txt no Supabase)" : ""), "erro");
+    }
+  }
+
   // Abrir/fechar as listas e os detalhes de cada linha (clicar em botão, campo ou link não abre nem fecha).
   $("telaCampo").addEventListener("click", function (e) {
     const cab = e.target.closest("[data-sec]");
@@ -2390,6 +2506,7 @@
     if (!botao) return;
     const visita = estado.emCampo.find(function (v) { return String(v.id) === botao.dataset.id; });
     if (!visita) return;
+    if (botao.dataset.acao === "expurgo") { await registrarExpurgo(visita, botao); return; }
     let campos = null;
     if (botao.dataset.acao === "chegada") {
       const quando = perguntarHorario("Hora da chegada no site", visita.hora_aviso);
@@ -2462,6 +2579,83 @@
   });
 
 
+  // ---- tela EXPURGOS --------------------------------------------------------
+  estado.ex = { motivo: "", mes: null, visiveis: [] };
+  function dataBRdoExpurgo(x) {
+    const d = String(x.data_visita || "").split("-");
+    return d.length === 3 ? d[2] + "/" + d[1] + "/" + d[0] : "";
+  }
+  async function atualizarExpurgos() {
+    await carregarExpurgos();
+    if (estado.expurgoErro) mostrarAviso("Não consegui carregar os expurgos: " + estado.expurgoErro, "erro");
+    desenharExpurgos();
+  }
+  function desenharExpurgos() {
+    const mesAtual = paraAAAAMMDD(new Date()).slice(0, 7);
+    if (estado.ex.mes === null) estado.ex.mes = mesAtual;
+    const todos = estado.expurgos.slice().sort(function (a, b) {
+      return String(b.data_visita || "").localeCompare(String(a.data_visita || "")) || String(a.site).localeCompare(String(b.site));
+    });
+    const meses = {}; meses[mesAtual] = true;
+    todos.forEach(function (x) { if (x.data_visita) meses[String(x.data_visita).slice(0, 7)] = true; });
+    $("exMes").innerHTML = '<option value="">Todos os meses</option>' + Object.keys(meses).sort().reverse().map(function (m) {
+      return '<option value="' + m + '"' + (m === estado.ex.mes ? " selected" : "") + ">" + m.slice(5) + "/" + m.slice(0, 4) + "</option>";
+    }).join("");
+    $("exMes").value = estado.ex.mes;
+    const doMes = todos.filter(function (x) { return !estado.ex.mes || String(x.data_visita || "").slice(0, 7) === estado.ex.mes; });
+    const motivos = REGRAS.expurgo.motivos;
+    const conta = function (m) { return doMes.filter(function (x) { return x.motivo === m; }).length; };
+    $("exCampos").innerHTML = '<div class="ib-campo"><div class="r">Expurgadas no período</div><div class="v">' + doMes.length + "</div></div>" +
+      motivos.map(function (m) { return '<div class="ib-campo"><div class="r">' + esc(m) + '</div><div class="v">' + conta(m) + "</div></div>"; }).join("");
+    $("exChips").innerHTML = ['<button data-m=""' + (estado.ex.motivo === "" ? ' class="ativo"' : "") + ">Todos</button>"].concat(motivos.map(function (m) {
+      return '<button data-m="' + esc(m) + '"' + (estado.ex.motivo === m ? ' class="ativo"' : "") + ">" + esc(m) + "</button>";
+    })).join("");
+    const q = semAcento($("exBusca").value).toLowerCase().trim();
+    const vis = doMes.filter(function (x) {
+      if (estado.ex.motivo && x.motivo !== estado.ex.motivo) return false;
+      return !q || semAcento([x.site, x.wo, x.equipe, x.tipo, x.observacao].join(" ")).toLowerCase().indexOf(q) >= 0;
+    });
+    estado.ex.visiveis = vis;
+    const cab = '<div class="ex-l ex-cab"><div>Site</div><div>WO</div><div>Tipo de preventiva</div><div>Motivo</div><div>Data</div><div>Equipe</div><div>Observação</div><div>Registrado por</div><div></div></div>';
+    $("exTabela").innerHTML = vis.length ? cab + vis.map(function (x) {
+      return '<div class="ex-l"><div><b>' + esc(x.site) + "</b></div><div>" + esc(x.wo) + "</div><div>" + esc(x.tipo) + "</div><div>" +
+        pill(x.motivo, REGRAS.expurgo.cores[x.motivo] || "p-cinza") + "</div><div>" + dataBRdoExpurgo(x) + "</div><div>" + esc(x.equipe) + "</div><div>" +
+        esc(x.observacao || "") + "</div><div>" + esc(String(x.registrado_por || "").split("@")[0]) + '</div><div><button class="des" data-id="' + esc(x.id) + '">Desfazer</button></div></div>';
+    }).join("") : '<div class="ex-vazio">Nenhum expurgo neste filtro.</div>';
+    $("exNota").textContent = vis.length + " WO(s) na lista. O botão Baixar Excel gera a planilha com o que está filtrado aqui.";
+  }
+  $("exChips").addEventListener("click", function (e) {
+    const b = e.target.closest("button[data-m]"); if (!b) return;
+    estado.ex.motivo = b.dataset.m; desenharExpurgos();
+  });
+  $("exMes").addEventListener("change", function () { estado.ex.mes = $("exMes").value; desenharExpurgos(); });
+  $("exBusca").addEventListener("input", desenharExpurgos);
+  $("exAtualizar").addEventListener("click", atualizarExpurgos);
+  $("exTabela").addEventListener("click", async function (e) {
+    const b = e.target.closest("button.des"); if (!b) return;
+    const x = estado.expurgos.find(function (r) { return String(r.id) === b.dataset.id; });
+    if (!x || !window.confirm("Desfazer o expurgo de " + x.wo + " (" + x.site + ")?\n\nA WO volta a contar normalmente.")) return;
+    try {
+      conferir(await banco.from("expurgos").delete().eq("id", x.id));
+      mostrarAviso("Expurgo desfeito.");
+      atualizarExpurgos();
+    } catch (err) { mostrarAviso("Erro ao desfazer: " + err.message, "erro"); }
+  });
+  $("exExcel").addEventListener("click", function () {
+    if (typeof XLSX === "undefined") { mostrarAviso("A biblioteca de Excel não carregou. Aperte Ctrl+F5 e tente de novo.", "erro"); return; }
+    const linhas = estado.ex.visiveis;
+    if (linhas.length === 0) { mostrarAviso("Não há expurgos neste filtro para baixar.", "erro"); return; }
+    const dados = linhas.map(function (x) {
+      return { "Site": x.site, "WO": x.wo, "Tipo de preventiva": x.tipo, "Motivo": x.motivo, "Data da visita": dataBRdoExpurgo(x),
+               "Equipe": x.equipe, "Observação": x.observacao || "", "Registrado por": x.registrado_por || "" };
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 32 }, { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 50 }, { wch: 28 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Expurgos");
+    XLSX.writeFile(wb, "expurgos_" + (estado.ex.mes || "todos") + ".xlsx");
+  });
+
   // ---- tela RESUMO DIA ------------------------------------------------------
   function paraAAAAMMDD(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -2487,6 +2681,17 @@
     r.forEach(function (x) { conferir(x).forEach(function (v) { mapa[v.id] = v; }); });
     return Object.keys(mapa).map(function (k) { return mapa[k]; })
       .sort(function (x, y) { return String(x.hora_entrada || x.hora_aviso).localeCompare(String(y.hora_entrada || y.hora_aviso)); });
+  }
+
+  // Expurgos: WOs que a equipe não pôde executar por causa do site. Sem a tabela criada, fica vazio.
+  estado.expurgos = []; estado.expurgadas = {}; estado.expurgoErro = "";
+  async function carregarExpurgos() {
+    try {
+      estado.expurgos = await carregarTodasAsLinhas("expurgos", "*");
+      estado.expurgoErro = "";
+    } catch (e) { estado.expurgos = []; estado.expurgoErro = e.message; }
+    estado.expurgadas = {};
+    estado.expurgos.forEach(function (x) { estado.expurgadas[x.wo] = x; });
   }
 
   async function carregarWosLigadas() {
@@ -2518,7 +2723,9 @@
     try {
       if (!$("rdData").value) $("rdData").value = paraAAAAMMDD(new Date());
       const dia = $("rdData").value;
+      await carregarExpurgos();
       const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia), carregarAtividadesDoDia(dia)]);
+      Object.keys(estado.expurgadas).forEach(function (wo) { r[2][wo] = true; });   // WO expurgada não é divergência
       estado.rd = { dia: dia, visitas: r[0], base: r[1], ligadas: r[2], equipes: r[3], escala: r[4], atividades: r[5] };
       desenharResumoDia();
     } catch (e) {
@@ -2530,7 +2737,7 @@
   // WOs MOP da visita que contam como realizadas. Visita que saiu sem executar (ex.: problema de acesso) não conta nenhuma.
   function nMop(v) {
     if (v.motivo_nao_execucao) return 0;
-    return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; }).length;
+    return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP" && !estado.expurgadas[w.wo]; }).length;
   }
 
   // Mesma equipe, mesmo site e horários que se sobrepõem = o registro foi corrigido depois.
@@ -2638,7 +2845,9 @@
           // Só tem "aviso" (a equipe avisou que ia): a chegada ainda não foi confirmada, então não mostra como entrada.
           const desloc = !v.hora_entrada && v.situacao === REGRAS.situacaoDeslocamento;
           const entrada = desloc ? '<span title="Avisou no grupo às ' + hh(v.hora_aviso) + '; chegada ainda não confirmada">av. ' + hh(v.hora_aviso) + "</span>" : hh(v.hora_entrada || v.hora_aviso);
-          sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
+          const exps = (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP" && estado.expurgadas[w.wo]; });
+          const todaExpurgada = !v.motivo_nao_execucao && exps.length > 0 && nMop(v) === 0;
+          sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : todaExpurgada ? "rd-roxo" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : exps.length ? "Expurgo: " + estado.expurgadas[exps[0].wo].motivo : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
             entrada + '</div><div class="c">' + hh(v.hora_saida) + '</div><div class="d">' + (ePrev ? nMop(v) : "") + "</div></div>";
         }
         linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">' + (ePrev ? cfg.previstoPorEquipe : "—") +
@@ -2654,7 +2863,7 @@
     for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">Site ' + i + "</div>";
     cab += '</div><div class="rd-real">Realiz.</div></div>';
     const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-prev">' + totalPrev + '</div><div class="rd-ativ" style="border-left:0"></div><div class="rd-leg">' +
-      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#fff"></i>Sem visita</span>' +
+      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#e8daff"></i>Expurgo</span><span><i style="background:#fff"></i>Sem visita</span>' +
       '</div><div class="rd-real" style="border-left-color:#c6c6c6">' + totalReal + "</div></div>";
     $("rdTabela").innerHTML = cab + linhasHtml + total;
 
