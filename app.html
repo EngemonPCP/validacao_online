@@ -729,6 +729,7 @@
           <button data-filtro="falta" class="chip ativo">Falta lançar</button>
           <button data-filtro="aguardando" class="chip">Aguardando relatório</button>
           <button data-filtro="lancada" class="chip">Lançadas</button>
+          <button data-filtro="armazenar" class="chip">Armazenar relatório</button>
           <button data-filtro="revisar" class="chip">Revisar</button>
           <button data-filtro="todos" class="chip">Todos</button>
         </div>
@@ -736,6 +737,8 @@
           <select id="mesEPS" title="Mês"></select>
           <select id="empresaEPS" title="Empresa"><option value="">Todas as empresas</option></select>
           <input type="text" id="buscaEPS" class="busca" placeholder="Buscar site, WO ou arquivo">
+          <button id="copiarCobrancaEPS" class="sec oculto">Copiar cobrança</button>
+          <button id="excelEPS" class="sec oculto">Baixar Excel</button>
           <button id="botaoAtualizarEPS" class="sec">Atualizar</button>
         </div>
       </div>
@@ -854,6 +857,7 @@
     eps: {
       // Subpastas que NÃO são preventiva (sem acento, minúsculas): os arquivos delas são ignorados.
       ignorarSubpastas: ["corretiv", "servic"],
+      diasArmazenar: 3,         // WO lançada sem relatório há mais que isso fica em destaque
       diasAlerta: 2,            // relatório entregue e ainda não lançado há mais que isso fica em destaque
       diasHistorico: 150,       // quantos dias de arquivos o painel carrega
       horasColetaDesatualizada: 3,   // avisa quando o robô de coleta não roda há mais que isso
@@ -1884,20 +1888,21 @@
     Object.keys(porWo).forEach(function (wo) {
       const e = porWo[wo];
       const status = String(e.base.status_final || "").trim().toLowerCase();
-      let grupo = status === "executada" ? "lancada" : (e.relatorios.length > 0 ? "falta" : "aguardando");
+      let grupo = status === "executada" ? (e.relatorios.length > 0 ? "lancada" : "armazenar") : (e.relatorios.length > 0 ? "falta" : "aguardando");
       // Executadas só entram no mês em que foram lançadas (ou se tiverem relatório do mês).
-      if (grupo === "lancada" && e.relatorios.length === 0 && !String(e.base.data_fim || "").startsWith(mes)) return;
+      if (grupo === "armazenar" && !String(e.base.data_fim || "").startsWith(mes)) return;
       const empresas = [];
       e.relatorios.forEach(function (r) { if (empresas.indexOf(r.pasta_raiz) < 0) empresas.push(r.pasta_raiz); });
       let prevista = false;
       if (empresas.length === 0) { const p = empresaDoTipo(e.base.tipo); if (p) { empresas.push(p); prevista = true; } }
-      const maisAntigo = e.relatorios.reduce(function (m, r) { return !m || r.data_arquivo < m ? r.data_arquivo : m; }, null);
+      const maisAntigo = grupo === "armazenar" ? (e.base.data_fim || null)
+        : e.relatorios.reduce(function (m, r) { return !m || r.data_arquivo < m ? r.data_arquivo : m; }, null);
       linhas.push({ tipo: "wo", grupo: grupo, base: e.base, relatorios: e.relatorios, empresas: empresas, prevista: prevista, maisAntigo: maisAntigo });
     });
     revisar.forEach(function (x) {
       linhas.push({ tipo: "revisar", grupo: "revisar", rev: x, empresas: [x.r.pasta_raiz], maisAntigo: x.r.data_arquivo });
     });
-    const ordem = { falta: 0, revisar: 1, aguardando: 2, lancada: 3 };
+    const ordem = { falta: 0, armazenar: 1, revisar: 2, aguardando: 3, lancada: 4 };
     linhas.sort(function (a, b) {
       const d = ordem[a.grupo] - ordem[b.grupo];
       if (d !== 0) return d;
@@ -1910,6 +1915,11 @@
   function nomeSiteEPS(l) {
     if (l.tipo === "wo") return l.base.programado_infratel || l.base.clr_sdr_site_helix || "";
     return l.rev.sigla || "";
+  }
+  function diasDaData(aaaaMmDd) {
+    if (!aaaaMmDd) return null;
+    const d = new Date(String(aaaaMmDd).slice(0, 10) + "T00:00:00"), h = new Date(); h.setHours(0, 0, 0, 0);
+    return Math.round((h - d) / 86400000);
   }
   function diasDesde(iso) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
 
@@ -1931,11 +1941,15 @@
     const empresa = $("empresaEPS").value;
     if (empresa) linhas = linhas.filter(function (l) { return l.empresas.indexOf(empresa) >= 0; });
     const contar = function (g) { return linhas.filter(function (l) { return l.grupo === g; }).length; };
+    const atrasadasArmazenar = linhas.filter(function (l) {
+      return l.grupo === "armazenar" && (diasDaData(l.base.data_fim) || 0) > REGRAS.eps.diasArmazenar;
+    }).length;
     const campoEps = function (n, rot, cls) { return '<div class="ib-campo ' + cls + '"><div class="r">' + esc(rot) + '</div><div class="v">' + n + "</div></div>"; };
     $("azulejosEPS").innerHTML =
       campoEps(contar("falta"), "Falta lançar no Infratel", contar("falta") ? "laranja" : "") +
       campoEps(contar("aguardando"), "Aguardando relatório", "azul") +
       campoEps(contar("lancada"), "Lançadas no Infratel", "verde") +
+      campoEps(contar("armazenar") + (atrasadasArmazenar > 0 ? " · " + atrasadasArmazenar + " com mais de " + REGRAS.eps.diasArmazenar + " dias" : ""), "Armazenar relatório", contar("armazenar") ? "verm" : "") +
       campoEps(contar("revisar"), "Relatórios para revisar", contar("revisar") ? "verm" : "");
 
     const filtro = estado.filtroEPS;
@@ -1947,6 +1961,9 @@
       return semAcento(texto).toLowerCase().indexOf(busca) >= 0;
     });
 
+    $("copiarCobrancaEPS").classList.toggle("oculto", filtro !== "armazenar");
+    $("excelEPS").classList.toggle("oculto", filtro !== "armazenar");
+    estado.armazenarVisiveis = filtro === "armazenar" ? visiveis : [];
     $("notaEPS").textContent = "Mês " + estado.mesEPS.slice(5) + "/" + estado.mesEPS.slice(0, 4) + ": só valem relatórios da pasta desse mês. " +
       (estado.epsIgnorados ? estado.epsIgnorados + " arquivos de corretiva e serviços avulsos foram ignorados." : "");
     if (visiveis.length === 0) {
@@ -1963,7 +1980,8 @@
     return relatorios.map(function (r) {
       const dias = diasDesde(r.data_arquivo);
       return '<div class="arquivo" title="' + esc(r.pasta_raiz + "/" + r.subpasta + "/" + r.nome_arquivo) + '">' + esc(r.nome_arquivo) +
-        '<span class="detalhe">Entregue ' + formatarDataHora(r.data_arquivo) + (dias > 0 ? " · há " + dias + (dias === 1 ? " dia" : " dias") : " · hoje") + "</span></div>";
+        '<span class="detalhe">Entregue ' + formatarDataHora(r.data_arquivo) + (dias > 0 ? " · há " + dias + (dias === 1 ? " dia" : " dias") : " · hoje") + "</span>" +
+        (r.vinculado_por ? '<span class="detalhe">Vinculado à mão por ' + esc(r.vinculado_por) + ' · <a href="#" data-acao="desfazer" data-caminho="' + esc(r.caminho) + '">Desfazer vínculo</a></span>' : "") + "</div>";
     }).join("");
   }
 
@@ -1989,6 +2007,11 @@
       situacao = pill("Falta lançar", "p-laranja") +
         (dias >= REGRAS.eps.diasAlerta ? ' <span class="pill p-vermelho">Há ' + dias + " dias</span>" : "") +
         '<span class="detalhe">Status na base: ' + esc(b.status_final || "sem status") + "</span>";
+    } else if (l.grupo === "armazenar") {
+      const dias = diasDaData(b.data_fim);
+      situacao = pill("Armazenar relatório", dias !== null && dias > REGRAS.eps.diasArmazenar ? "p-vermelho" : "p-cinza") +
+        '<span class="detalhe">' + (b.data_fim ? "Lançada no Infratel em " + formatarDataCurta(b.data_fim) +
+        (dias !== null ? " · há " + dias + (dias === 1 ? " dia" : " dias") : "") : "Lançada no Infratel") + "</span>";
     } else if (l.grupo === "lancada") {
       situacao = pill("Lançada", "p-verde") + (b.data_fim ? '<span class="detalhe">Relatório no Infratel em ' + formatarDataCurta(b.data_fim) + "</span>" : "");
     } else {
@@ -2014,6 +2037,17 @@
   $("botaoAtualizarEPS").addEventListener("click", atualizarEPS);
 
   $("tabelaEPS").addEventListener("click", async function (e) {
+    const desfazer = e.target.closest("a[data-acao=desfazer]");
+    if (desfazer) {
+      e.preventDefault();
+      if (!confirm("Desfazer o vínculo? O relatório volta para “Revisar”.")) return;
+      try {
+        conferir(await banco.from("relatorios_drive").update({ wo: null, vinculado_por: null, vinculado_em: null }).eq("caminho", desfazer.dataset.caminho));
+        mostrarAviso("Vínculo desfeito.");
+        atualizarEPS();
+      } catch (err) { mostrarAviso("Erro ao desfazer: " + err.message, "erro"); }
+      return;
+    }
     const botao = e.target.closest("button[data-acao]");
     if (!botao) return;
     const linha = botao.closest("tr");
@@ -2037,6 +2071,46 @@
       botao.disabled = false;
       mostrarAviso("Erro ao gravar: " + err.message, "erro");
     }
+  });
+
+  function armazenarPorEmpresa() {
+    const grupos = {};
+    (estado.armazenarVisiveis || []).forEach(function (l) {
+      const emp = l.empresas[0] || "Sem empresa";
+      (grupos[emp] = grupos[emp] || []).push(l);
+    });
+    return grupos;
+  }
+  $("copiarCobrancaEPS").addEventListener("click", async function () {
+    const grupos = armazenarPorEmpresa();
+    const nomes = Object.keys(grupos).sort();
+    if (nomes.length === 0) { mostrarAviso("Não há WO para armazenar relatório neste filtro.", "erro"); return; }
+    const texto = nomes.map(function (emp) {
+      return emp + ": as WOs abaixo foram lançadas no Infratel e estão sem relatório em PDF na pasta do mês:\n" +
+        grupos[emp].map(function (l) {
+          return "• " + nomeSiteEPS(l) + " – " + l.base.wo + (l.base.data_fim ? " (lançada em " + formatarDataCurta(l.base.data_fim) + ")" : "");
+        }).join("\n");
+    }).join("\n\n");
+    try { await navigator.clipboard.writeText(texto); }
+    catch (err) {
+      const t = document.createElement("textarea"); t.value = texto; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove();
+    }
+    mostrarAviso("Cobrança copiada. Cole no grupo ou no e-mail.");
+  });
+  $("excelEPS").addEventListener("click", function () {
+    if (typeof XLSX === "undefined") { mostrarAviso("A biblioteca de Excel não carregou. Aperte Ctrl+F5 e tente de novo.", "erro"); return; }
+    const linhas = estado.armazenarVisiveis || [];
+    if (linhas.length === 0) { mostrarAviso("Não há WO para armazenar relatório neste filtro.", "erro"); return; }
+    const dados = linhas.map(function (l) {
+      const d = diasDaData(l.base.data_fim);
+      return { "Site": nomeSiteEPS(l), "WO": l.base.wo, "Tipo de preventiva": l.base.tipo || "", "Empresa": l.empresas[0] || "",
+               "Lançada no Infratel em": l.base.data_fim ? dataBR(l.base.data_fim) : "", "Dias sem relatório": d === null ? "" : d };
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 32 }, { wch: 32 }, { wch: 20 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Armazenar relatório");
+    XLSX.writeFile(wb, "armazenar_relatorio_" + estado.mesEPS + ".xlsx");
   });
 
   // ---- tela REGISTRAR -------------------------------------------------------
