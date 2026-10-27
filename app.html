@@ -160,7 +160,7 @@
     #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #c58a1b; }
   
     /* ---- RESUMO DIA (estilo corporativo, cantos retos) ---- */
-    main:has(#telaResumoDia:not(.oculto)) { max-width:none; }
+    main:has(#telaResumoDia:not(.oculto)) { max-width:1240px; }
     #telaResumoDia { font-size:12px; color:#161616; }
     #telaResumoDia .rd-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaResumoDia .rd-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
@@ -195,7 +195,7 @@
     #telaResumoDia .rd-amarelo { background:#fddc69; }
     #telaResumoDia .rd-azul { background:#d0e2ff; }
     #telaResumoDia .rd-vermelho { background:#ffd7d9; }
-    #telaResumoDia .rd-roxo { background:#e8daff; }
+    #telaResumoDia .rd-roxo { background:#d4bbff; }
     #telaResumoDia .rd-seqt { flex:1; text-align:center; padding:8px 0; border-left:1px solid #c6c6c6; }
     #telaResumoDia .rd-cab2 { background:#e8e8e8; font-weight:400; font-size:11px; color:#525252; }
     #telaResumoDia .rd-cab2 > div { padding-top:3px; padding-bottom:3px; }
@@ -479,12 +479,8 @@
         <button data-tela="Campo" data-grupo="" data-setor="MÓVEL">Móvel</button>
         <button data-tela="Campo" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
-      <button class="grupo" data-sub="Preventiva" aria-expanded="false">Preventiva <span class="seta">▾</span></button>
-      <div id="submenuPreventiva" class="submenu oculto">
-        <div class="sub-titulo">MOP</div>
-        <button data-tela="Conferencia" data-grupo="MOP" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Conferencia" data-grupo="MOP" data-setor="VOLANTE">Volante</button>
-        <div class="sub-titulo">EPS</div>
+      <button class="grupo" data-sub="EPS" aria-expanded="false">EPS <span class="seta">▾</span></button>
+      <div id="submenuEPS" class="submenu oculto">
         <button data-tela="EPS" data-grupo="" data-setor="MÓVEL">Móvel</button>
         <button data-tela="EPS" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
@@ -1257,7 +1253,7 @@
     document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
       b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
     });
-    const subDe = { Registrar: "Registrar", Campo: "Campo", Conferencia: "Preventiva", EPS: "Preventiva", Divergencias: "Divergencias" }[nome];
+    const subDe = { Registrar: "Registrar", Campo: "Campo", Conferencia: "EPS", EPS: "EPS", Divergencias: "Divergencias" }[nome];
     if (subDe) definirSubmenu(subDe, true);
     const rotulo = { Registrar: "Registrar", Campo: "Equipes em campo", Divergencias: "Divergências: Base Atualização Preventiva x visitas", EPS: "Preventiva EPS: relatórios das terceiras" }[nome];
     const h1 = document.querySelector("#tela" + nome + " h1");
@@ -1560,7 +1556,15 @@
       estado.dv.trat = {}; estado.dv.tratErro = "";
       if (r[3].error) estado.dv.tratErro = r[3].error.message;
       else r[3].data.forEach(function (t) { estado.dv.trat[t.wo] = t; });
-      const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; });
+      const ligadasPorVisita = {};
+      r[2].forEach(function (w) { (ligadasPorVisita[w.visita_id] = ligadasPorVisita[w.visita_id] || []).push(w.wo); });
+      const sitesDoSetor = {};
+      estado.base.forEach(function (l) { sitesDoSetor[l.chaveSite] = true; });
+      const doSetor = function (v) {
+        const wos = ligadasPorVisita[v.id] || [];
+        return wos.length ? wos.some(function (w) { return (estado.setorDaWO || {})[w] === estado.setor; }) : !!sitesDoSetor[limparSite(v.site)];
+      };
+      const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado && doSetor(v); });
       const irmas = function (k) { return outrasSiglasDoEndereco(k).map(function (x) { return limparSite(x.sigla); }); };
       // Divergência é análise só do MOP: a EPS (e MOP + EPS) fica de fora.
       const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !estado.expurgadas[l.wo]; });
@@ -2933,14 +2937,14 @@
     if (!linhasHtml) {
       linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Registre as equipes na tela Registrar.</div>';
     }
-    $("rdTabela").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 145) + "px");
-    $("telaResumoDia").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 145) + "px");
+    $("rdTabela").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 118) + "px");
+    $("telaResumoDia").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 118) + "px");
     let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe responsável</div><div class="rd-prev">Prev.</div><div class="rd-sites"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
       '<div class="rd-l rd-cab rd-cab2"><div class="rd-eq"></div><div class="rd-resp"></div><div class="rd-prev"></div><div class="rd-sites">';
     for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">' + i + "º</div>";
     cab += '</div><div class="rd-real"></div></div>';
     const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-resp" style="border-left:0"></div><div class="rd-prev">' + totalPrev + '</div><div class="rd-leg">' +
-      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#e8daff"></i>Expurgo</span><span><i style="background:#e0e0e0"></i>Outra atividade</span><span><i style="background:#fff"></i>Sem visita</span>' +
+      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#d4bbff"></i>Expurgo</span><span><i style="background:#e0e0e0"></i>Outra atividade</span><span><i style="background:#fff"></i>Sem visita</span>' +
       '</div><div class="rd-real" style="border-left-color:#c6c6c6">' + totalReal + "</div></div>";
     $("rdTabela").innerHTML = cab + linhasHtml + total;
 
