@@ -160,19 +160,20 @@
     #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #c58a1b; }
   
     /* ---- RESUMO DIA (estilo corporativo, cantos retos) ---- */
-    main:has(#telaResumoDia:not(.oculto)) { max-width:1240px; }
-    #telaResumoDia { font-size:12px; color:#161616; }
+    main:has(#telaResumoDia:not(.oculto)) { max-width:1060px; }
+    #telaResumoDia { font-size:11px; color:#161616; }
     #telaResumoDia .rd-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaResumoDia .rd-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
     #telaResumoDia .rd-titulo h1 { font-size:20px; font-weight:400; margin:0; }
     .rd-barra { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    #telaResumoDia .rd-barra select { border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:6px 8px; font:inherit; }
     #telaResumoDia .rd-barra input[type=date] { border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:6px 8px; font:inherit; }
     .rd-barra button { border-radius:0; background:#0f62fe; color:#fff; border:0; padding:7px 16px; font:inherit; cursor:pointer; }
     .rd-barra button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; }
     #telaResumoDia .rd-campos { display:flex; gap:24px; flex-wrap:wrap; margin:12px 0 14px; }
     #telaResumoDia .rd-campo { flex:1 1 180px; }
     #telaResumoDia .rd-campo .r { color:#525252; font-size:11px; }
-    #telaResumoDia .rd-campo .v { border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:6px 8px; font-size:16px; font-weight:600; }
+    #telaResumoDia .rd-campo .v { border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:4px 8px; font-size:14px; font-weight:600; }
     #telaResumoDia .rd-campo .v small { font-size:12px; font-weight:400; color:#525252; }
     #telaResumoDia .rd-campo.verm .v { border-bottom-color:#da1e28; background:#fff1f1; color:#da1e28; }
     #telaResumoDia .rd-campo.verde .v { color:#198038; }
@@ -180,14 +181,14 @@
     #telaResumoDia .rd-l { display:flex; border-bottom:1px solid #e0e0e0; align-items:stretch; min-width:var(--rd-min); }
     #telaResumoDia .rd-cab { background:#e0e0e0; font-weight:600; }
     #telaResumoDia .rd-grupo { background:#f4f4f4; font-weight:600; font-size:11px; color:#525252; padding:5px 10px; border-bottom:1px solid #e0e0e0; min-width:var(--rd-min); box-sizing:border-box; }
-    #telaResumoDia .rd-eq { width:180px; padding:7px 10px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; }
-    #telaResumoDia .rd-resp { width:92px; padding:7px 8px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; border-left:1px solid #e0e0e0; }
+    #telaResumoDia .rd-eq { width:150px; padding:4px 8px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; }
+    #telaResumoDia .rd-resp { width:64px; padding:4px 6px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-resp { justify-content:center; text-align:center; }
-    #telaResumoDia .rd-prev { width:46px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    #telaResumoDia .rd-prev { width:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     #telaResumoDia .rd-sites { flex-grow:1; display:flex; }
     #telaResumoDia .rd-site { flex:1 1 0; min-width:0; box-sizing:border-box; display:flex; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-site { justify-content:center; padding:8px 4px; border-left-color:#c6c6c6; }
-    #telaResumoDia .rd-site > div { padding:7px 3px; text-align:center; }
+    #telaResumoDia .rd-site > div { padding:4px 2px; text-align:center; }
     #telaResumoDia .rd-site .a { flex:1.4; font-weight:600; }
     #telaResumoDia .rd-site .b, #telaResumoDia .rd-site .c { flex:.8; }
     #telaResumoDia .rd-site .d { flex:.5; }
@@ -200,10 +201,10 @@
     #telaResumoDia .rd-cab2 { background:#e8e8e8; font-weight:400; font-size:11px; color:#525252; }
     #telaResumoDia .rd-cab2 > div { padding-top:3px; padding-bottom:3px; }
     #telaResumoDia .rd-cab2 .rd-site { padding:3px 4px; }
-    #telaResumoDia .rd-ativc { background:#e0e0e0; flex-direction:column; justify-content:center; padding:4px 8px; }
+    #telaResumoDia .rd-ativc { background:#e0e0e0; flex-direction:column; justify-content:center; padding:3px 6px; }
     #telaResumoDia .rd-ativc > div.x { padding:0; text-align:left; line-height:1.35; }
     #telaResumoDia .rd-ativc b { display:block; font-weight:600; }
-    #telaResumoDia .rd-ativc span { font-size:11px; color:#393939; }
+    #telaResumoDia .rd-ativc span { font-size:10px; color:#393939; }
     #telaResumoDia .rd-larga { flex:2 1 0; }
     #telaResumoDia .rd-ocorr { margin-top:12px; border-left:3px solid #da1e28; background:#fff1f1; padding:8px 12px; font-size:12px; }
     #telaResumoDia .rd-ocorr ul { margin:4px 0 0; padding-left:18px; }
@@ -212,10 +213,11 @@
     #telaResumoDia .rd-cab .rd-ativ { justify-content:center; padding:8px 6px; text-align:center; }
     #telaResumoDia .rd-chip { background:#e0e0e0; color:#262626; padding:3px 6px; font-size:11px; line-height:1.3; }
     #telaResumoDia .rd-chip b { font-weight:600; }
-    #telaResumoDia .rd-real { width:58px; display:flex; align-items:center; justify-content:center; border-left:1px solid #e0e0e0; font-weight:600; flex-shrink:0; }
+    #telaResumoDia .rd-real { width:44px; display:flex; align-items:center; justify-content:center; border-left:1px solid #e0e0e0; font-weight:600; flex-shrink:0; }
     #telaResumoDia .rd-cab > div { padding-top:8px; padding-bottom:8px; }
     #telaResumoDia .rd-total { background:#e0e0e0; font-weight:600; align-items:center; min-height:34px; }
-    #telaResumoDia .rd-leg { display:flex; gap:18px; font-weight:400; padding-left:12px; align-items:center; flex-grow:1; }
+    #telaResumoDia .rd-leg { display:flex; flex-wrap:wrap; gap:4px 12px; font-weight:400; font-size:10px; padding:4px 8px; align-items:center; flex-grow:1; }
+    #telaResumoDia .rd-leg span { white-space:nowrap; }
     #telaResumoDia .rd-leg i { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:middle; border:1px solid #8d8d8d; }
     #telaResumoDia { --rd-min:820px; }
     #telaResumoDia .rd-outra { flex:1; display:flex; align-items:center; padding:7px 12px; background:#e0e0e0; color:#393939; border-left:1px solid #c6c6c6; }
@@ -665,6 +667,7 @@
         <h1>Acompanhamento de MP · Preventiva</h1>
         <div class="rd-barra">
           <button id="rdDiaAntes" class="sec" title="Dia anterior">&lt;</button>
+          <label>Setor <select id="rdSetor"><option value="">Todos</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select></label>
           <label>Dia <input type="date" id="rdData"></label>
           <button id="rdDiaDepois" class="sec" title="Próximo dia">&gt;</button>
           <button id="rdAtualizar">Atualizar</button>
@@ -1808,7 +1811,7 @@
 
   async function atualizarEPS() {
     try {
-      const resultados = await Promise.all([carregarBase(), carregarRelatorios()]);
+      const resultados = await Promise.all([carregarBase(true), carregarRelatorios()]);   // base de todos os setores: o relatório é ligado à WO em qualquer setor
       estado.base = resultados[0];
       prepararBase();
       prepararRelatoriosEPS(resultados[1]);
@@ -1862,13 +1865,14 @@
     const mes = estado.mesEPS;
     const porWo = {};
     estado.base.forEach(function (l) {
-      if (grupoDaPreventiva(l.tipo) === "EPS") porWo[l.wo] = { base: l, relatorios: [] };
+      if (grupoDaPreventiva(l.tipo) === "EPS" && (!estado.setor || setorDe(l) === estado.setor)) porWo[l.wo] = { base: l, relatorios: [] };
     });
     const revisar = [];
     estado.relatoriosEPS.forEach(function (r) {
       if (r.competencia !== mes) return;
       const lig = ligarRelatorio(r);
       if (lig.wo) {
+        if (estado.setor && estado.porWO[lig.wo] && setorDe(estado.porWO[lig.wo]) !== estado.setor) return;   // é de outro setor
         if (!porWo[lig.wo] && estado.porWO[lig.wo]) porWo[lig.wo] = { base: estado.porWO[lig.wo], relatorios: [] };
         porWo[lig.wo].relatorios.push(r);
         if (lig.tipoConfere === false) r.tipoNaoConfere = true;
@@ -2838,8 +2842,10 @@
   }
 
   function desenharResumoDia() {
-    const R = estado.rd, dia = R.dia, visitas = R.visitas, base = R.base, ligadas = R.ligadas, equipes = R.equipes, escala = R.escala, ativs = R.atividades || [];
+    const R = estado.rd, dia = R.dia, visitas = R.visitas, baseTodas = R.base, ligadas = R.ligadas, equipes = R.equipes, escala = R.escala, ativs = R.atividades || [];
     const cfg = REGRAS.resumoDia;
+    const setorSel = $("rdSetor").value;
+    const base = setorSel ? baseTodas.filter(function (l) { return setorDe(l) === setorSel; }) : baseTodas;
 
     // ---- totais da base (MOP e EPS) ----
     const mop = base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
@@ -2869,8 +2875,10 @@
     });
     Object.keys(linhas).forEach(function (k) { linhas[k].visitas = sobreporVisitas(linhas[k].visitas); });
     const porWOdia = {};
-    base.forEach(function (l) { porWOdia[l.wo] = l; });
-    const lista = Object.keys(linhas).map(function (k) { return linhas[k]; });
+    baseTodas.forEach(function (l) { porWOdia[l.wo] = l; });
+    const lista = Object.keys(linhas).map(function (k) { return linhas[k]; }).filter(function (e) {
+      return !setorSel || setorDaEquipe(e.visitas, porWOdia).toUpperCase() === setorSel;
+    });
     const minutosDe = function (t) { const q = String(t || "").split(":"); return q.length >= 2 ? Number(q[0]) * 60 + Number(q[1]) : null; };
     const itensDaEquipe = function (e) {
       const itens = e.visitas.map(function (v) {
@@ -2937,8 +2945,8 @@
     if (!linhasHtml) {
       linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Registre as equipes na tela Registrar.</div>';
     }
-    $("rdTabela").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 118) + "px");
-    $("telaResumoDia").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 118) + "px");
+    $("rdTabela").style.setProperty("--rd-min", (150 + 64 + 36 + 44 + maxSites * 100) + "px");
+    $("telaResumoDia").style.setProperty("--rd-min", (150 + 64 + 36 + 44 + maxSites * 100) + "px");
     let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe responsável</div><div class="rd-prev">Prev.</div><div class="rd-sites"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
       '<div class="rd-l rd-cab rd-cab2"><div class="rd-eq"></div><div class="rd-resp"></div><div class="rd-prev"></div><div class="rd-sites">';
     for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">' + i + "º</div>";
@@ -3223,6 +3231,7 @@
 
   $("rdIrRegistrar").addEventListener("click", function (e) { e.preventDefault(); irParaTela("Registrar"); });
 
+  $("rdSetor").addEventListener("change", desenharResumoDia);
   $("rdAtualizar").addEventListener("click", atualizarResumoDia);
   $("rdData").addEventListener("change", atualizarResumoDia);
   $("rdDiaAntes").addEventListener("click", function () { $("rdData").value = somarDias($("rdData").value || paraAAAAMMDD(new Date()), -1); atualizarResumoDia(); });
