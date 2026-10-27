@@ -32,6 +32,7 @@
     nav button.grupo .seta { font-size:11px; transition:transform .15s; }
     nav button.grupo[aria-expanded=true] .seta { transform:rotate(180deg); }
     .submenu button { padding-left:38px; }
+    .sub-titulo { padding:8px 14px 2px 38px; font-size:11px; letter-spacing:.06em; color:#8d8d8d; }
     .usuario { padding:14px 20px 0; border-top:1px solid #33465c; font-size:13px; color:#aab9cb; word-break:break-all; }
     .usuario button { display:block; background:transparent; border:1px solid #4a5d74; color:#dbe5f1; border-radius:4px; padding:4px 12px; margin-top:8px; font:inherit; font-size:13px; cursor:pointer; }
     .usuario button:hover { background:#22334a; }
@@ -159,6 +160,7 @@
     #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #c58a1b; }
   
     /* ---- RESUMO DIA (estilo corporativo, cantos retos) ---- */
+    main:has(#telaResumoDia:not(.oculto)) { max-width:none; }
     #telaResumoDia { font-size:12px; color:#161616; }
     #telaResumoDia .rd-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaResumoDia .rd-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
@@ -178,10 +180,12 @@
     #telaResumoDia .rd-l { display:flex; border-bottom:1px solid #e0e0e0; align-items:stretch; min-width:var(--rd-min); }
     #telaResumoDia .rd-cab { background:#e0e0e0; font-weight:600; }
     #telaResumoDia .rd-grupo { background:#f4f4f4; font-weight:600; font-size:11px; color:#525252; padding:5px 10px; border-bottom:1px solid #e0e0e0; min-width:var(--rd-min); box-sizing:border-box; }
-    #telaResumoDia .rd-eq { width:210px; padding:7px 10px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; }
-    #telaResumoDia .rd-prev { width:54px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    #telaResumoDia .rd-eq { width:180px; padding:7px 10px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; }
+    #telaResumoDia .rd-resp { width:92px; padding:7px 8px; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; border-left:1px solid #e0e0e0; }
+    #telaResumoDia .rd-cab .rd-resp { justify-content:center; text-align:center; }
+    #telaResumoDia .rd-prev { width:46px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     #telaResumoDia .rd-sites { flex-grow:1; display:flex; }
-    #telaResumoDia .rd-site { flex:1; display:flex; border-left:1px solid #e0e0e0; }
+    #telaResumoDia .rd-site { flex:1 1 0; min-width:0; box-sizing:border-box; display:flex; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-site { justify-content:center; padding:8px 4px; border-left-color:#c6c6c6; }
     #telaResumoDia .rd-site > div { padding:7px 3px; text-align:center; }
     #telaResumoDia .rd-site .a { flex:1.4; font-weight:600; }
@@ -192,19 +196,28 @@
     #telaResumoDia .rd-azul { background:#d0e2ff; }
     #telaResumoDia .rd-vermelho { background:#ffd7d9; }
     #telaResumoDia .rd-roxo { background:#e8daff; }
+    #telaResumoDia .rd-seqt { flex:1; text-align:center; padding:8px 0; border-left:1px solid #c6c6c6; }
+    #telaResumoDia .rd-cab2 { background:#e8e8e8; font-weight:400; font-size:11px; color:#525252; }
+    #telaResumoDia .rd-cab2 > div { padding-top:3px; padding-bottom:3px; }
+    #telaResumoDia .rd-cab2 .rd-site { padding:3px 4px; }
+    #telaResumoDia .rd-ativc { background:#e0e0e0; flex-direction:column; justify-content:center; padding:4px 8px; }
+    #telaResumoDia .rd-ativc > div.x { padding:0; text-align:left; line-height:1.35; }
+    #telaResumoDia .rd-ativc b { display:block; font-weight:600; }
+    #telaResumoDia .rd-ativc span { font-size:11px; color:#393939; }
+    #telaResumoDia .rd-larga { flex:2 1 0; }
     #telaResumoDia .rd-ocorr { margin-top:12px; border-left:3px solid #da1e28; background:#fff1f1; padding:8px 12px; font-size:12px; }
     #telaResumoDia .rd-ocorr ul { margin:4px 0 0; padding-left:18px; }
     #telaResumoDia .rd-azul .b { color:#0043ce; font-style:italic; }
-    #telaResumoDia .rd-ativ { width:200px; flex-shrink:0; padding:4px 6px; box-sizing:border-box; border-left:1px solid #e0e0e0; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+    #telaResumoDia .rd-ativ { width:160px; flex-shrink:0; padding:4px 6px; box-sizing:border-box; border-left:1px solid #e0e0e0; display:flex; flex-direction:column; justify-content:center; gap:3px; }
     #telaResumoDia .rd-cab .rd-ativ { justify-content:center; padding:8px 6px; text-align:center; }
     #telaResumoDia .rd-chip { background:#e0e0e0; color:#262626; padding:3px 6px; font-size:11px; line-height:1.3; }
     #telaResumoDia .rd-chip b { font-weight:600; }
-    #telaResumoDia .rd-real { width:64px; display:flex; align-items:center; justify-content:center; border-left:1px solid #e0e0e0; font-weight:600; flex-shrink:0; }
+    #telaResumoDia .rd-real { width:58px; display:flex; align-items:center; justify-content:center; border-left:1px solid #e0e0e0; font-weight:600; flex-shrink:0; }
     #telaResumoDia .rd-cab > div { padding-top:8px; padding-bottom:8px; }
     #telaResumoDia .rd-total { background:#e0e0e0; font-weight:600; align-items:center; min-height:34px; }
     #telaResumoDia .rd-leg { display:flex; gap:18px; font-weight:400; padding-left:12px; align-items:center; flex-grow:1; }
     #telaResumoDia .rd-leg i { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:middle; border:1px solid #8d8d8d; }
-    #telaResumoDia { --rd-min:880px; }
+    #telaResumoDia { --rd-min:820px; }
     #telaResumoDia .rd-outra { flex:1; display:flex; align-items:center; padding:7px 12px; background:#e0e0e0; color:#393939; border-left:1px solid #c6c6c6; }
     #telaResumoDia .rd-outra b { margin-right:8px; }
     /* ---- REGISTRAR (estilo IBM: cantos retos, campos com linha inferior) ---- */
@@ -262,7 +275,7 @@
     }
     /* ---- EQUIPES EM CAMPO (estilo IBM) ---- */
     #telaCampo { font-size:12px; color:#161616; max-width:none; }
-    main:has(#telaCampo:not(.oculto)) { max-width:1280px; }
+    main:has(#telaCampo:not(.oculto)) { max-width:none; }
     #telaCampo .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaCampo .ib-trilha span { color:#161616; }
     #telaCampo .ib-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 6px; }
@@ -370,7 +383,7 @@
     #telaDivergencias .pill { border-radius:0; }
     #telaDivergencias .faixa { border-radius:0; font-size:12px; }
     /* ---- EXPURGOS (estilo IBM) ---- */
-    main:has(#telaExpurgos:not(.oculto)) { max-width:1280px; }
+    main:has(#telaExpurgos:not(.oculto)) { max-width:none; }
     #telaExpurgos { font-size:12px; color:#161616; max-width:none; }
     #telaExpurgos .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaExpurgos .ib-trilha span { color:#161616; }
@@ -404,7 +417,7 @@
     #telaExpurgos .pill { border-radius:0; }
     @media print { #telaExpurgos { display:none; } }
     /* ---- PREVENTIVA EPS (estilo IBM) ---- */
-    main:has(#telaEPS:not(.oculto)) { max-width:1280px; }
+    main:has(#telaEPS:not(.oculto)) { max-width:none; }
     #telaEPS { font-size:12px; color:#161616; max-width:none; }
     #telaEPS .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaEPS .ib-trilha span { color:#161616; }
@@ -456,16 +469,32 @@
   <aside id="topo" class="oculto">
     <div class="marca"><svg width="32" height="32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0f2a4a"/><g transform="translate(0,1.5)"><polygon points="6,10 15.5,10 20,23.5 24.5,10 34,10 20,52" fill="#7fb2ee"/><path fill-rule="evenodd" fill="#ffffff" d="M39 22 H50 A8.5 8.5 0 0 1 50 39 H47 V52 H39 Z M47 28.5 H50 A2.5 2.5 0 0 1 50 33.5 H47 Z"/></g></svg><span>Controle de Preventivas</span></div>
     <nav>
-      <button data-tela="Registrar" data-grupo="" class="ativo">Registrar</button>
-      <button data-tela="Campo" data-grupo="">Equipes em campo</button>
-      <button id="botaoGrupoPreventiva" class="grupo" aria-expanded="false">Preventiva <span class="seta">▾</span></button>
-      <div id="submenuPreventiva" class="submenu oculto">
-        <button data-tela="Conferencia" data-grupo="MOP">MOP</button>
-        <button data-tela="EPS" data-grupo="">EPS</button>
+      <button class="grupo" data-sub="Registrar" aria-expanded="false">Registrar <span class="seta">▾</span></button>
+      <div id="submenuRegistrar" class="submenu oculto">
+        <button data-tela="Registrar" data-grupo="" data-setor="MÓVEL">Móvel</button>
+        <button data-tela="Registrar" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
-      <button data-tela="Divergencias" data-grupo="">Divergências</button>
-      <button data-tela="Expurgos" data-grupo="">Expurgos</button>
-      <button data-tela="ResumoDia" data-grupo="">Resumo Dia</button>
+      <button class="grupo" data-sub="Campo" aria-expanded="false">Equipes em campo <span class="seta">▾</span></button>
+      <div id="submenuCampo" class="submenu oculto">
+        <button data-tela="Campo" data-grupo="" data-setor="MÓVEL">Móvel</button>
+        <button data-tela="Campo" data-grupo="" data-setor="VOLANTE">Volante</button>
+      </div>
+      <button class="grupo" data-sub="Preventiva" aria-expanded="false">Preventiva <span class="seta">▾</span></button>
+      <div id="submenuPreventiva" class="submenu oculto">
+        <div class="sub-titulo">MOP</div>
+        <button data-tela="Conferencia" data-grupo="MOP" data-setor="MÓVEL">Móvel</button>
+        <button data-tela="Conferencia" data-grupo="MOP" data-setor="VOLANTE">Volante</button>
+        <div class="sub-titulo">EPS</div>
+        <button data-tela="EPS" data-grupo="" data-setor="MÓVEL">Móvel</button>
+        <button data-tela="EPS" data-grupo="" data-setor="VOLANTE">Volante</button>
+      </div>
+      <button class="grupo" data-sub="Divergencias" aria-expanded="false">Divergências <span class="seta">▾</span></button>
+      <div id="submenuDivergencias" class="submenu oculto">
+        <button data-tela="Divergencias" data-grupo="" data-setor="MÓVEL">Móvel</button>
+        <button data-tela="Divergencias" data-grupo="" data-setor="VOLANTE">Volante</button>
+      </div>
+      <button data-tela="Expurgos" data-grupo="" data-setor="">Expurgos</button>
+      <button data-tela="ResumoDia" data-grupo="" data-setor="">Resumo Dia</button>
     </nav>
     <div class="usuario"><span id="nomeUsuario"></span><button id="botaoSair">Sair</button></div>
   </aside>
@@ -607,7 +636,7 @@
     <!-- DIVERGENCIAS -->
     <section id="telaDivergencias" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Divergências</span></div>
-      <h1>Divergências: base do cliente x visitas</h1>
+      <h1>Divergências: Base Atualização Preventiva x visitas</h1>
       <p class="ib-sub">Só MOP. WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
       <div class="ib-campos" id="dvCampos"></div>
 
@@ -637,7 +666,7 @@
     <section id="telaResumoDia" class="tela oculto">
       <div class="rd-trilha">Painel / <span style="color:#161616">Resumo Dia</span></div>
       <div class="rd-titulo">
-        <h1>Acompanhamento de MP · Preventiva Móvel</h1>
+        <h1>Acompanhamento de MP · Preventiva</h1>
         <div class="rd-barra">
           <button id="rdDiaAntes" class="sec" title="Dia anterior">&lt;</button>
           <label>Dia <input type="date" id="rdData"></label>
@@ -693,7 +722,7 @@
     <section id="telaEPS" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Preventiva EPS</span></div>
       <h1>Preventiva EPS: relatórios das terceiras</h1>
-      <p class="ib-sub" id="subEPS">Relatórios que as terceiras colocaram nas pastas do SharePoint, comparados com a base do cliente. O que estiver em “Falta lançar” é trabalho da planejadora no Infratel.</p>
+      <p class="ib-sub" id="subEPS">Relatórios que as terceiras colocaram nas pastas do SharePoint, comparados com a Base Atualização Preventiva. O que estiver em “Falta lançar” é trabalho da planejadora no Infratel.</p>
       <div id="faixaEPS" class="faixa"></div>
       <div class="ib-campos" id="azulejosEPS"></div>
       <div class="ib-barra">
@@ -720,7 +749,7 @@
     <!-- CONFERENCIA -->
     <section id="telaConferencia" class="tela oculto">
       <h1 id="tituloConf">Conferência de relatórios</h1>
-      <p class="sub" id="subConf">Cada WO das equipes que saíram do site é conferida na base do cliente.</p>
+      <p class="sub" id="subConf">Cada WO das equipes que saíram do site é conferida na Base Atualização Preventiva.</p>
       <div id="faixaBase" class="faixa"></div>
       <div class="azulejos" id="azulejosConf"></div>
       <div class="barra-filtros">
@@ -808,7 +837,7 @@
       motivos: ["Problema de acesso", "Chave não disponível", "Cliente não autorizou", "Condição do site (obra, chuva, risco)", "Outro"]
     },
 
-    // --- Divergências (base do cliente x visitas) ---
+    // --- Divergências (Base Atualização Preventiva x visitas) ---
     expurgo: {
       // Motivos de expurgo (WO que a equipe não pode executar por causa do site). Edite à vontade.
       motivos: ["Problema de acesso", "Site desativado", "Zeladoria (mato alto)", "Sem equipamento", "Vandalizado"],
@@ -818,7 +847,7 @@
     divergencias: {
       // Motivos que a validadora pode confirmar para cada WO (edite à vontade).
       motivos: ["Visita não registrada", "WO marcada em outra sigla/visita", "Executada antes do sistema",
-                "Feita por outra equipe/célula", "Erro na base do cliente", "Sem ação necessária", "Outro"],
+                "Feita por outra equipe/célula", "Erro na Base Atualização Preventiva", "Sem ação necessária", "Outro"],
       maxLinhas: 400                   // quantas linhas desenhar de uma vez (use os filtros para ver o resto)
     },
 
@@ -900,7 +929,7 @@
     return h > 0 ? h + " h " + String(m % 60).padStart(2, "0") + " min" : m + " min";
   }
 
-  // Cor e texto do status da WO na base do cliente
+  // Cor e texto do status da WO na Base Atualização Preventiva
   function descreverStatusBase(linhaBase) {
     if (!linhaBase) return { texto: "WO não encontrada", classe: "p-vermelho" };
     const s = String(linhaBase.status_final || "").trim().toLowerCase();
@@ -914,7 +943,7 @@
   // REGRA PRINCIPAL DA CONFERÊNCIA: decide o resultado de cada WO depois da saída.
   //   woVisita         -> a WO conferida na visita
   //   visita           -> a visita (tem data_execucao e hora_saida)
-  //   linhaBase        -> a linha dessa WO na base do cliente (ou undefined)
+  //   linhaBase        -> a linha dessa WO na Base Atualização Preventiva (ou undefined)
   //   baseAtualizadaEm -> quando a base foi gravada pela última vez
   //   agora            -> hora atual em milissegundos
   // Devolve: { codigo, texto, classe, grupo }
@@ -963,17 +992,21 @@
     return resposta.data;
   }
 
-  async function carregarBase() {           // o banco devolve no máximo 1000 por vez
+  async function carregarBase(todos) {      // o banco devolve no máximo 1000 por vez
     const todas = [];
     const passo = 1000;
     for (let de = 0; ; de += passo) {
       const dados = conferir(await banco.from("base_preventiva")
-        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em")
+        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em,equipe_engemon")
         .order("wo").range(de, de + passo - 1));
       for (const linha of dados) todas.push(linha);
       if (dados.length < passo) break;
     }
-    return todas;
+    estado.baseTodas = todas;
+    estado.setorDaWO = {};
+    todas.forEach(function (l) { estado.setorDaWO[l.wo] = setorDe(l); });
+    if (todos || !estado.setor) return todas;
+    return todas.filter(function (l) { return setorDe(l) === estado.setor; });
   }
 
   // Cadastro de sites (uma sigla por linha; siglas com o mesmo id_endereco estão no mesmo endereço).
@@ -1200,25 +1233,35 @@
 
   // ---- navegação ------------------------------------------------------------
   document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-    b.addEventListener("click", function () { irParaTela(b.dataset.tela, b.dataset.grupo || ""); });
+    b.addEventListener("click", function () { irParaTela(b.dataset.tela, b.dataset.grupo || "", b.dataset.setor || ""); });
   });
 
-  function definirSubmenu(aberto) {
-    $("botaoGrupoPreventiva").setAttribute("aria-expanded", aberto ? "true" : "false");
-    $("submenuPreventiva").classList.toggle("oculto", !aberto);
+  function definirSubmenu(id, aberto) {
+    const bt = document.querySelector('nav button.grupo[data-sub="' + id + '"]');
+    if (bt) bt.setAttribute("aria-expanded", aberto ? "true" : "false");
+    $("submenu" + id).classList.toggle("oculto", !aberto);
   }
-  $("botaoGrupoPreventiva").addEventListener("click", function () {
-    definirSubmenu($("botaoGrupoPreventiva").getAttribute("aria-expanded") !== "true");
+  document.querySelectorAll("nav button.grupo").forEach(function (bt) {
+    bt.addEventListener("click", function () { definirSubmenu(bt.dataset.sub, bt.getAttribute("aria-expanded") !== "true"); });
   });
+
+  const NOME_SETOR = { "MÓVEL": "Móvel", "VOLANTE": "Volante" };
+  function setorDe(l) { return String(l && l.equipe_engemon || "").trim().toUpperCase(); }
 
   // grupo: "MOP", "EPS" ou "" (todos). Só a Conferência usa o grupo.
-  function irParaTela(nome, grupo) {
+  function irParaTela(nome, grupo, setor) {
     grupo = grupo || "";
+    if (setor === undefined) setor = ["Registrar", "Campo", "Conferencia", "EPS", "Divergencias"].indexOf(nome) >= 0 ? (estado.setor || "MÓVEL") : "";
     estado.grupoAtual = grupo;
+    estado.setor = setor;
     document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-      b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo);
+      b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
     });
-    if ((nome === "Conferencia" && grupo) || nome === "EPS") definirSubmenu(true);
+    const subDe = { Registrar: "Registrar", Campo: "Campo", Conferencia: "Preventiva", EPS: "Preventiva", Divergencias: "Divergencias" }[nome];
+    if (subDe) definirSubmenu(subDe, true);
+    const rotulo = { Registrar: "Registrar", Campo: "Equipes em campo", Divergencias: "Divergências: Base Atualização Preventiva x visitas", EPS: "Preventiva EPS: relatórios das terceiras" }[nome];
+    const h1 = document.querySelector("#tela" + nome + " h1");
+    if (rotulo && h1) h1.textContent = rotulo + " · " + (NOME_SETOR[setor] || "");
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("tela" + nome).classList.remove("oculto");
     clearInterval(estado.pollId);
@@ -1230,7 +1273,10 @@
       atualizarConferencia();
       estado.pollId = setInterval(atualizarConferencia, 120000);
     }
-    if (nome === "Registrar") atualizarEscalaRegistrar();
+    if (nome === "Registrar") {
+      if (estado.baseTodas) { estado.base = estado.baseTodas.filter(function (l) { return setorDe(l) === setor; }); prepararBase(); }
+      atualizarEscalaRegistrar();
+    }
     if (nome === "Divergencias") atualizarDivergencias();
     if (nome === "Expurgos") atualizarExpurgos();
     if (nome === "ResumoDia") {
@@ -1299,10 +1345,10 @@
 
   function desenharConferencia() {
     const grupo = estado.grupoAtual;
-    $("tituloConf").textContent = grupo ? "Preventiva " + grupo + ": conferência de relatórios" : "Conferência de relatórios";
-    $("subConf").textContent = grupo === "MOP" ? "Preventivas de energia e climatização, conferidas na base do cliente."
-      : grupo === "EPS" ? "Demais tipos de preventiva (gerador e outros), conferidos na base do cliente."
-      : "Cada WO das equipes que saíram do site é conferida na base do cliente (MOP e EPS juntos).";
+    $("tituloConf").textContent = (grupo ? "Preventiva " + grupo + ": conferência de relatórios" : "Conferência de relatórios") + " · " + (NOME_SETOR[estado.setor] || "");
+    $("subConf").textContent = grupo === "MOP" ? "Preventivas de energia e climatização, conferidas na Base Atualização Preventiva."
+      : grupo === "EPS" ? "Demais tipos de preventiva (gerador e outros), conferidos na Base Atualização Preventiva."
+      : "Cada WO das equipes que saíram do site é conferida na Base Atualização Preventiva (MOP e EPS juntos).";
     const linhas = estado.linhasConf.filter(function (l) {
       return !grupo || grupoDaPreventiva(l.wo.tipo || (l.base && l.base.tipo)) === grupo;
     });
@@ -1386,7 +1432,7 @@
 
 
   // ---- tela DIVERGENCIAS ----------------------------------------------------
-  // Cruza a base do cliente com as visitas registradas e explica, para cada WO, o motivo provável.
+  // Cruza a Base Atualização Preventiva com as visitas registradas e explica, para cada WO, o motivo provável.
   function dataBR(aaaammdd) { return aaaammdd ? String(aaaammdd).slice(0, 10).split("-").reverse().join("/") : "—"; }
   function diasEntre(a, b) { return Math.round((new Date(a + "T12:00:00") - new Date(b + "T12:00:00")) / 86400000); }
 
@@ -1860,14 +1906,14 @@
   function diasDesde(iso) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
 
   function desenharEPS() {
-    // Faixa: base do cliente + última coleta do robô
+    // Faixa: Base Atualização Preventiva + última coleta do robô
     const faixa = $("faixaEPS");
     const horasBase = estado.baseAtualizadaEm ? minutosDesde(estado.baseAtualizadaEm) / 60 : null;
     const horasColeta = estado.ultimaColeta ? minutosDesde(estado.ultimaColeta) / 60 : null;
     const baseVelha = horasBase === null || horasBase > REGRAS.horasBaseDesatualizada;
     const coletaVelha = horasColeta === null || horasColeta > REGRAS.eps.horasColetaDesatualizada;
     faixa.className = "faixa" + (baseVelha || coletaVelha ? " alerta" : "");
-    faixa.innerHTML = (estado.baseAtualizadaEm ? "Base do cliente atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>" : "<b>A base do cliente está vazia.</b>") +
+    faixa.innerHTML = (estado.baseAtualizadaEm ? "Base Atualização Preventiva atualizada em <b>" + formatarDataHora(estado.baseAtualizadaEm) + "</b>" : "<b>A Base Atualização Preventiva está vazia.</b>") +
       (baseVelha && estado.baseAtualizadaEm ? " (desatualizada há " + formatarDuracao(horasBase * 60) + ")" : "") + ". " +
       (estado.ultimaColeta ? "Última coleta de relatórios em <b>" + formatarDataHora(estado.ultimaColeta) + "</b>" +
         (coletaVelha ? " (<b>o robô não coleta há " + formatarDuracao(horasColeta * 60) + "</b>)" : "") + "."
@@ -1972,7 +2018,7 @@
       const campo = linha.querySelector("[data-escolha]");
       wo = campo ? campo.value.trim() : "";
       if (!wo) { mostrarAviso("Escolha ou digite a WO antes de vincular.", "erro"); return; }
-      if (!estado.porWO[wo]) { mostrarAviso("A WO " + wo + " não está na base do cliente.", "erro"); return; }
+      if (!estado.porWO[wo]) { mostrarAviso("A WO " + wo + " não está na Base Atualização Preventiva.", "erro"); return; }
     }
     botao.disabled = true;
     try {
@@ -2251,7 +2297,7 @@
       estado.saidasPendentes = resultados[2];
       const digitando = $("gradeCampo").contains(document.activeElement) || $("gradeCampo").querySelector("details[open]");
       if (!digitando) desenharCampo(resultados[0], resultados[1], resultados[2]);
-      $("subCampo").textContent = "MOP · Atualiza sozinha a cada 30 segundos · Última leitura às " + horaCurta(new Date().toISOString());
+      $("subCampo").textContent = "MOP · " + (NOME_SETOR[estado.setor] || "") + " · Atualiza sozinha a cada 30 segundos · Última leitura às " + horaCurta(new Date().toISOString());
     } catch (e) {
       mostrarAviso("Não consegui atualizar: " + e.message, "erro");
     }
@@ -2259,11 +2305,12 @@
 
   // Equipes em campo mostra só o MOP: visitas com WO MOP (ou sem WO, como as corretivas) e só as WOs MOP de cada uma.
   function soMOP(visitas) {
+    const doSetor = function (x) { return grupoDaPreventiva(x.tipo) === "MOP" && (!estado.setor || (estado.setorDaWO || {})[x.wo] === estado.setor); };
     return visitas.filter(function (v) {
       const w = v.wos_visita || [];
-      return w.length === 0 || w.some(function (x) { return grupoDaPreventiva(x.tipo) === "MOP"; });
+      return w.length === 0 || w.some(doSetor);
     }).map(function (v) {
-      return Object.assign({}, v, { wos_visita: (v.wos_visita || []).filter(function (x) { return grupoDaPreventiva(x.tipo) === "MOP"; }) });
+      return Object.assign({}, v, { wos_visita: (v.wos_visita || []).filter(doSetor) });
     });
   }
 
@@ -2724,7 +2771,7 @@
       if (!$("rdData").value) $("rdData").value = paraAAAAMMDD(new Date());
       const dia = $("rdData").value;
       await carregarExpurgos();
-      const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia), carregarAtividadesDoDia(dia)]);
+      const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(true), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia), carregarAtividadesDoDia(dia)]);
       Object.keys(estado.expurgadas).forEach(function (wo) { r[2][wo] = true; });   // WO expurgada não é divergência
       estado.rd = { dia: dia, visitas: r[0], base: r[1], ligadas: r[2], equipes: r[3], escala: r[4], atividades: r[5] };
       desenharResumoDia();
@@ -2734,10 +2781,23 @@
   }
 
   function ehExecutadaBase(l) { return String(l.status_final || "").trim().toLowerCase() === "executada"; }
-  // WOs MOP da visita que contam como realizadas. Visita que saiu sem executar (ex.: problema de acesso) não conta nenhuma.
+  // WOs MOP da visita que contam como realizadas (expurgo também conta). Visita que saiu sem executar (ex.: problema de acesso) não conta nenhuma.
   function nMop(v) {
     if (v.motivo_nao_execucao) return 0;
-    return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP" && !estado.expurgadas[w.wo]; }).length;
+    return (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP"; }).length;
+  }
+
+  // Setor da equipe no dia: o mais comum entre as WOs que ela visitou (coluna "Equipe Responsável - Engemon" da Base Atualização Preventiva).
+  function setorDaEquipe(visitas, porWOdia) {
+    const cont = {};
+    visitas.forEach(function (v) {
+      (v.wos_visita || []).forEach(function (w) {
+        const b = porWOdia[w.wo], t = b && String(b.equipe_engemon || "").trim();
+        if (t) cont[t.toUpperCase()] = (cont[t.toUpperCase()] || 0) + 1;
+      });
+    });
+    const melhor = Object.keys(cont).sort(function (a, b) { return cont[b] - cont[a]; })[0];
+    return melhor ? melhor.charAt(0) + melhor.slice(1).toLowerCase() : "";
   }
 
   // Mesma equipe, mesmo site e horários que se sobrepõem = o registro foi corrigido depois.
@@ -2804,9 +2864,32 @@
       (linhas[k].atividades = linhas[k].atividades || []).push(a);
     });
     Object.keys(linhas).forEach(function (k) { linhas[k].visitas = sobreporVisitas(linhas[k].visitas); });
+    const porWOdia = {};
+    base.forEach(function (l) { porWOdia[l.wo] = l; });
     const lista = Object.keys(linhas).map(function (k) { return linhas[k]; });
+    const minutosDe = function (t) { const q = String(t || "").split(":"); return q.length >= 2 ? Number(q[0]) * 60 + Number(q[1]) : null; };
+    const itensDaEquipe = function (e) {
+      const itens = e.visitas.map(function (v) {
+        const d = new Date(v.hora_entrada || v.hora_aviso);
+        return { tipo: "v", ordem: d.getHours() * 60 + d.getMinutes(), v: v };
+      });
+      const ativsEq = e.atividades || [];
+      ativsEq.forEach(function (a) {
+        const ini = minutosDe(a.inicio), fim = minutosDe(a.fim);
+        itens.push({ tipo: "a", ordem: ini != null ? ini : (fim != null ? fim : -1), a: a });
+      });
+      // Registro antigo (sem horário) de atividade sem site: entra como "dia todo"
+      if (ativsEq.length === 0 && !atividadeExigeSite(e.situacao)) itens.push({ tipo: "a", ordem: -1, a: { atividade: e.situacao, observacao: e.obs } });
+      return itens.sort(function (x, y) { return x.ordem - y.ordem; });
+    };
+    const celulaAtividadeHtml = function (a) {
+      const diaTodo = !a.inicio && !a.fim;
+      const per = a.inicio ? hm(a.inicio) + (a.fim ? "–" + hm(a.fim) : "…") : (a.fim ? "Até " + hm(a.fim) : "Dia todo");
+      return '<div class="rd-site rd-ativc' + (diaTodo ? " rd-larga" : "") + '" title="' + esc(a.observacao || "") + '"><div class="x"><b>' + esc(a.atividade) + "</b><span>" +
+        esc(per) + (diaTodo && a.observacao ? " · " + esc(a.observacao) : "") + "</span></div></div>";
+    };
     let maxSites = cfg.minSites;
-    lista.forEach(function (e) { if (e.visitas.length > maxSites) maxSites = e.visitas.length; });
+    lista.forEach(function (e) { const n = itensDaEquipe(e).length; if (n > maxSites) maxSites = n; });
 
     const ordem = cfg.grupos.map(function (g) { return g.nome; }).concat([cfg.nomeOutros]);
     lista.forEach(function (e) { if (ordem.indexOf(e.grupo) < 0) ordem.splice(ordem.length - 1, 0, e.grupo); });
@@ -2823,47 +2906,41 @@
       eqs.forEach(function (e) {
         contagem[e.situacao] = (contagem[e.situacao] || 0) + 1;
         const ePrev = atividadeTemPreventiva(e.situacao) || e.visitas.some(function (v) { return atividadeTemPreventiva(v.atividade); });
-        const chips = (e.atividades || []).map(function (a) {
-          const per = a.inicio ? " " + hm(a.inicio) + (a.fim ? "–" + hm(a.fim) : "…") : (a.fim ? " até " + hm(a.fim) : "");
-          return '<div class="rd-chip" title="' + esc(a.observacao || "") + '"><b>' + esc(a.atividade) + "</b>" + esc(per) + "</div>";
-        }).join("");
-        // Atividade sem site (treinamento, folga...) vai na coluna "Outras atividades", nunca na área dos sites.
-        // Registros antigos (sem horário) entram como uma etiqueta com a atividade do dia.
-        let chipsTxt = chips;
-        if (!chipsTxt && !atividadeExigeSite(e.situacao)) {
-          chipsTxt = '<div class="rd-chip" title="' + esc(e.obs || "") + '"><b>' + esc(e.situacao) + "</b>" + (e.obs ? " " + esc(e.obs) : "") + "</div>";
-        }
-        const colAtiv = '<div class="rd-ativ">' + (chipsTxt || "") + "</div>";
+        // Sequência do dia: visitas (sites) e atividades sem site, juntas e em ordem de horário.
+        const itens = itensDaEquipe(e);
         // Os sites são só as visitas (o que exige site). Equipe sem visita fica com a área de sites vazia.
         const wosEq = e.visitas.reduce(function (s, v) { return s + nMop(v); }, 0);
         if (ePrev) { nPrev++; totalPrev += cfg.previstoPorEquipe; totalReal += wosEq; }
         let sites = "";
-        for (let i = 0; i < maxSites; i++) {
-          const v = e.visitas[i];
-          if (!v) { sites += '<div class="rd-site"><div class="a">&nbsp;</div><div class="b"></div><div class="c"></div><div class="d"></div></div>'; continue; }
+        itens.forEach(function (it) {
+          if (it.tipo === "a") { sites += celulaAtividadeHtml(it.a); return; }
+          const v = it.v;
           const saiu = v.situacao === REGRAS.situacaoSaiu && v.hora_saida;
           // Só tem "aviso" (a equipe avisou que ia): a chegada ainda não foi confirmada, então não mostra como entrada.
           const desloc = !v.hora_entrada && v.situacao === REGRAS.situacaoDeslocamento;
           const entrada = desloc ? '<span title="Avisou no grupo às ' + hh(v.hora_aviso) + '; chegada ainda não confirmada">av. ' + hh(v.hora_aviso) + "</span>" : hh(v.hora_entrada || v.hora_aviso);
           const exps = (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP" && estado.expurgadas[w.wo]; });
-          const todaExpurgada = !v.motivo_nao_execucao && exps.length > 0 && nMop(v) === 0;
+          const todaExpurgada = !v.motivo_nao_execucao && exps.length > 0 && exps.length === nMop(v);
           sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : todaExpurgada ? "rd-roxo" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : exps.length ? "Expurgo: " + estado.expurgadas[exps[0].wo].motivo : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
             entrada + '</div><div class="c">' + hh(v.hora_saida) + '</div><div class="d">' + (ePrev ? nMop(v) : "") + "</div></div>";
-        }
-        linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-prev">' + (ePrev ? cfg.previstoPorEquipe : "—") +
-          "</div>" + colAtiv + '<div class="rd-sites">' + sites + '</div><div class="rd-real">' + (ePrev ? wosEq : "—") + "</div></div>";
+        });
+        const unidades = itens.reduce(function (n, it) { return n + (it.tipo === "a" && !it.a.inicio && !it.a.fim ? 2 : 1); }, 0);
+        for (let i = unidades; i < maxSites; i++) sites += '<div class="rd-site"><div class="a">&nbsp;</div><div class="b"></div><div class="c"></div><div class="d"></div></div>';
+        linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-resp">' + esc(setorDaEquipe(e.visitas, porWOdia) || "—") + '</div><div class="rd-prev">' + (ePrev ? cfg.previstoPorEquipe : "—") +
+          "</div>" + '<div class="rd-sites">' + sites + '</div><div class="rd-real">' + (ePrev ? wosEq : "—") + "</div></div>";
       });
     });
     if (!linhasHtml) {
       linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Registre as equipes na tela Registrar.</div>';
     }
-    $("rdTabela").style.setProperty("--rd-min", (210 + 54 + 200 + 64 + maxSites * 175) + "px");
-    $("telaResumoDia").style.setProperty("--rd-min", (210 + 54 + 200 + 64 + maxSites * 175) + "px");
-    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-prev">Prev.</div><div class="rd-ativ">Outras atividades</div><div class="rd-sites">';
-    for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">Site ' + i + "</div>";
-    cab += '</div><div class="rd-real">Realiz.</div></div>';
-    const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-prev">' + totalPrev + '</div><div class="rd-ativ" style="border-left:0"></div><div class="rd-leg">' +
-      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#e8daff"></i>Expurgo</span><span><i style="background:#fff"></i>Sem visita</span>' +
+    $("rdTabela").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 145) + "px");
+    $("telaResumoDia").style.setProperty("--rd-min", (180 + 92 + 46 + 58 + maxSites * 145) + "px");
+    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe responsável</div><div class="rd-prev">Prev.</div><div class="rd-sites"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
+      '<div class="rd-l rd-cab rd-cab2"><div class="rd-eq"></div><div class="rd-resp"></div><div class="rd-prev"></div><div class="rd-sites">';
+    for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">' + i + "º</div>";
+    cab += '</div><div class="rd-real"></div></div>';
+    const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-resp" style="border-left:0"></div><div class="rd-prev">' + totalPrev + '</div><div class="rd-leg">' +
+      '<span><i style="background:#a7f0ba"></i>Saiu do site</span><span><i style="background:#fddc69"></i>No site / em andamento</span><span><i style="background:#d0e2ff"></i>Avisou (chegada não confirmada)</span><span><i style="background:#ffd7d9"></i>Saiu sem executar</span><span><i style="background:#e8daff"></i>Expurgo</span><span><i style="background:#e0e0e0"></i>Outra atividade</span><span><i style="background:#fff"></i>Sem visita</span>' +
       '</div><div class="rd-real" style="border-left-color:#c6c6c6">' + totalReal + "</div></div>";
     $("rdTabela").innerHTML = cab + linhasHtml + total;
 
