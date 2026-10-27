@@ -79,9 +79,8 @@
     const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
     const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
 
-    // Setor que entra no sistema (coluna "Equipe Responsável - Engemon").
-    // Maiúscula e acento não importam.
-    const EQUIPE_ENGEMON_ATIVA = "MÓVEL";
+    // Setores do sistema (coluna "Equipe Responsável - Engemon"). Maiúscula e acento não importam.
+    const SETORES = ["MÓVEL", "VOLANTE", "RESIDENCIAL"];
 
     // Nome de cada coluna na planilha (já sem acento, em minúsculas).
     const COLUNAS = {
@@ -179,10 +178,8 @@
         if (!wo || !/^WO\d+/i.test(wo)) { resultado.semWO++; continue; }
         resultado.total++;
 
-        if (limpar(celula(linha, "equipeEngemon")) !== limpar(EQUIPE_ENGEMON_ATIVA)) {
-          resultado.foraDoSetor++;
-          continue;
-        }
+        // Todas as preventivas entram; só contamos as que vieram sem setor reconhecido.
+        if (!SETORES.some(function (x) { return limpar(x) === limpar(celula(linha, "equipeEngemon")); })) resultado.foraDoSetor++;
 
         // Cada coluna do banco guarda EXATAMENTE a coluna de mesmo nome da planilha (sem misturar).
         const siteHelix = texto(celula(linha, "site"));
@@ -205,7 +202,7 @@
       return resultado;
     }
     // ---- LISTA DE SITES: mesma regra do Power Query (uma sigla por linha) ----------
-    // Só entram os endereços do setor EQUIPE_ENGEMON_ATIVA (coluna "Equipe Responsável - Engemon"), o mesmo da base.
+    // Entram os endereços de todos os setores (coluna "Equipe Responsável - Engemon").
 
     // Colunas que guardam siglas (cada uma vira uma linha por endereço).
     const COLUNAS_SIGLAS = ["id_ebt", "id_claro_fixo", "id_net", "id_claro_omr", "id_site_main"];
@@ -274,8 +271,8 @@
         const id = texto(celula(linha, "id"));
         if (!id) continue;
         resultado.lidas++;
-        const naUnidade = limpar(celula(linha, "unidade")) === limpar(EQUIPE_ENGEMON_ATIVA);
-        const noEngemon = posEngemon >= 0 && limpar(linha[posEngemon]) === limpar(EQUIPE_ENGEMON_ATIVA);
+        const naUnidade = SETORES.some(function (x) { return limpar(x) === limpar(celula(linha, "unidade")); });
+        const noEngemon = posEngemon >= 0 && SETORES.some(function (x) { return limpar(x) === limpar(linha[posEngemon]); });
         if (naUnidade) resultado.porUnidade++;
         if (noEngemon) resultado.porEngemon++;
         if (naUnidade && noEngemon) resultado.nosDois++;
@@ -409,11 +406,11 @@
 
         $("resumo").innerHTML =
           "<p>WOs lidas na planilha: <b>" + r.total + "</b><br>" +
-          "Do setor " + EQUIPE_ENGEMON_ATIVA + " (vão para o banco): <b>" + r.linhas.length + "</b><br>" +
-          "De outros setores (ignoradas): " + r.foraDoSetor + "<br>" +
+          "Todas as WOs (vão para o banco): <b>" + r.linhas.length + "</b><br>" +
+          "Sem setor reconhecido (Móvel, Volante ou Residencial): " + r.foraDoSetor + "<br>" +
           "Por status: " + (textoStatus || "-") + "</p>" +
           (r.duplicadas ? '<p class="aviso">Havia ' + r.duplicadas + " WO repetida(s); ficou a última.</p>" : "") +
-          (r.linhas.length === 0 ? '<p class="erro">Nenhuma linha do setor ' + EQUIPE_ENGEMON_ATIVA + " encontrada.</p>" : "");
+          (r.linhas.length === 0 ? '<p class="erro">Nenhuma WO encontrada.</p>' : "");
 
         const amostra = r.linhas.slice(0, 5);
         $("tabelaPrevia").innerHTML =
@@ -494,11 +491,11 @@
 
         sitesParaGravar = r.linhas;
         $("resumoSites").innerHTML =
-          "<p>Endereços lidos: <b>" + r.lidas + "</b> (de outros setores, ignorados: " + r.foraDaUnidade + ")<br>" +
-          "Setor " + EQUIPE_ENGEMON_ATIVA + ": <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
+          "<p>Endereços lidos: <b>" + r.lidas + "</b> (sem setor reconhecido, ignorados: " + r.foraDaUnidade + ")<br>" +
+          "Todos os setores: <b>" + r.enderecos + "</b> endereços e <b>" + r.linhas.length + "</b> siglas<br>" +
           "Endereços com mais de uma sigla: <b>" + r.enderecosComVarias + "</b></p>" +
           '<p class="pequeno"><b>Conferência de contagem</b><br>' +
-          "Equipe Responsável - Engemon = " + EQUIPE_ENGEMON_ATIVA + " (filtro usado): <b>" + r.porEngemon + "</b> · para comparação, UNIDADE_RESPONSAVEL = " + EQUIPE_ENGEMON_ATIVA + ": " + r.porUnidade + "<br>" +
+          "Equipe Responsável - Engemon com setor reconhecido: <b>" + r.porEngemon + "</b> · para comparação, UNIDADE_RESPONSAVEL: " + r.porUnidade + "<br>" +
           "Endereços do setor com ENDERECO_CEP vazio: " + r.semEndereco + "<br>" +
           "Endereços do setor sem nenhuma sigla (não gravados): " + r.semSigla +
           (r.idsSemSigla.length ? " (IDs: " + r.idsSemSigla.join(", ") + ")" : "") + "</p>" +
