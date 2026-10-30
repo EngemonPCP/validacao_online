@@ -216,8 +216,8 @@
     #telaResumoDia .rd-resp { width:84px; padding:4px 6px; color:#393939; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-resp { justify-content:center; text-align:center; }
     #telaResumoDia .rd-prev { width:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    #telaResumoDia .rd-sites { flex:1 1 0; min-width:0; display:flex; }
-    #telaResumoDia .rd-site { flex:1 1 0; min-width:0; box-sizing:border-box; display:flex; border-left:1px solid #e0e0e0; }
+    #telaResumoDia .rd-sites { flex:1 1 0; min-width:0; display:grid; grid-template-columns:repeat(var(--n,7), minmax(0,1fr)); }
+    #telaResumoDia .rd-site { min-width:0; box-sizing:border-box; display:flex; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-site { justify-content:center; align-items:center; padding:8px 4px; border-left-color:#c6c6c6; }
     #telaResumoDia .rd-site { flex-direction:column; justify-content:center; padding:5px 8px; line-height:1.3; }
     #telaResumoDia .rd-site > div { padding:0; text-align:left; }
@@ -228,15 +228,15 @@
     #telaResumoDia .rd-azul { background:#d0e2ff; }
     #telaResumoDia .rd-vermelho { background:#ffd7d9; }
     #telaResumoDia .rd-roxo { background:#d4bbff; }
-    #telaResumoDia .rd-seqt { flex:1; text-align:center; padding:8px 0; border-left:1px solid #c6c6c6; }
+    #telaResumoDia .rd-seqt { grid-column:1 / -1; text-align:center; padding:8px 0; border-left:1px solid #c6c6c6; }
     #telaResumoDia .rd-cab2 { background:#e8e8e8; font-weight:400; font-size:11px; color:#525252; }
     #telaResumoDia .rd-cab2 > div { padding-top:3px; padding-bottom:3px; }
     #telaResumoDia .rd-cab2 .rd-site { padding:3px 4px; align-items:center; }
-    #telaResumoDia .rd-ativc { background:#e0e0e0; flex-direction:column; justify-content:center; padding:3px 6px; }
+    #telaResumoDia .rd-ativc { background:#e0e0e0; flex-direction:column; justify-content:center; padding:5px 8px; }
     #telaResumoDia .rd-ativc > div.x { padding:0; text-align:left; line-height:1.35; }
     #telaResumoDia .rd-ativc b { display:block; font-weight:600; }
     #telaResumoDia .rd-ativc b { font-weight:500; font-size:13px; } #telaResumoDia .rd-ativc span { font-size:11.5px; color:#525252; }
-    #telaResumoDia .rd-larga { flex:2 1 0; }
+    #telaResumoDia .rd-larga { grid-column:span 2; }
     #telaResumoDia .rd-ocorr { margin-top:12px; border-left:3px solid #da1e28; background:#fff1f1; padding:8px 12px; font-size:12px; }
     #telaResumoDia .rd-ocorr ul { margin:4px 0 0; padding-left:18px; }
     #telaResumoDia .rd-azul .b { color:#0043ce; font-style:italic; }
@@ -3315,7 +3315,7 @@
         const unidades = itens.reduce(function (n, it) { return n + (it.tipo === "a" && !it.a.inicio && !it.a.fim ? 2 : 1); }, 0);
         for (let i = unidades; i < maxSites; i++) sites += '<div class="rd-site"></div>';
         linhasHtml += '<div class="rd-l"><div class="rd-eq">' + esc(e.nome) + '</div><div class="rd-resp">' + esc(setorDaEquipe(e.visitas, porWOdia) || "—") + '</div><div class="rd-prev">' + (ePrev ? cfg.previstoPorEquipe : "—") +
-          "</div>" + '<div class="rd-sites">' + sites + '</div><div class="rd-real">' + (ePrev ? wosEq : "—") + "</div></div>";
+          "</div>" + '<div class="rd-sites" style="--n:' + maxSites + '">' + sites + '</div><div class="rd-real">' + (ePrev ? wosEq : "—") + "</div></div>";
       });
     });
     if (!linhasHtml) {
@@ -3323,8 +3323,8 @@
     }
     $("rdTabela").style.setProperty("--rd-min", (200 + 84 + 44 + 56 + maxSites * 130) + "px");
     $("telaResumoDia").style.setProperty("--rd-min", (200 + 84 + 44 + 56 + maxSites * 130) + "px");
-    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe responsável</div><div class="rd-prev">Prev.</div><div class="rd-sites"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
-      '<div class="rd-l rd-cab rd-cab2"><div class="rd-eq"></div><div class="rd-resp"></div><div class="rd-prev"></div><div class="rd-sites">';
+    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe responsável</div><div class="rd-prev">Prev.</div><div class="rd-sites" style="--n:' + maxSites + '"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
+      '<div class="rd-l rd-cab rd-cab2"><div class="rd-eq"></div><div class="rd-resp"></div><div class="rd-prev"></div><div class="rd-sites" style="--n:' + maxSites + '">';
     for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">' + i + "º</div>";
     cab += '</div><div class="rd-real"></div></div>';
     const total = '<div class="rd-l rd-total"><div class="rd-eq">TOTAL</div><div class="rd-resp" style="border-left:0"></div><div class="rd-prev">' + totalPrev + '</div><div class="rd-leg">' +
