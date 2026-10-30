@@ -48,15 +48,6 @@
     details.notas select, details.notas textarea { margin-top:8px; }
     .grupo-titulo { font-size:13px; font-weight:600; color:var(--suave); margin:14px 0 2px; }
     @media (max-width:820px) {
-      .app { flex-direction:column; align-items:stretch; }
-      aside { width:auto; height:auto; position:static; padding:10px 0 0; }
-      nav { flex-direction:row; flex-wrap:wrap; }
-      nav button { width:auto; border-left:0; border-bottom:2px solid transparent; padding:10px 14px; }
-      nav button.ativo { border-bottom-color:#6aa3e8; }
-      .submenu { display:flex; width:100%; }
-      .submenu button { padding-left:14px; }
-      .usuario { display:flex; align-items:center; gap:10px; padding:8px 14px; }
-      .usuario button { margin-top:0; }
       main { margin:0; width:100%; padding:18px 14px 60px; }
     }
 
@@ -503,34 +494,119 @@
       .rd-barra { display:none; }
       body { background:#fff; }
     }
+    /* ===== Topo com menu escondido ===== */
+    .app { display:block; min-height:100vh; }
+    #barraTopo { position:sticky; top:0; z-index:30; height:48px; background:#161d2b; color:#fff; display:flex; align-items:center; gap:16px; padding:0 16px; }
+    #botaoMenu { background:transparent; border:0; cursor:pointer; display:flex; flex-direction:column; gap:4px; padding:8px 4px; }
+    #botaoMenu i { display:block; width:20px; height:2px; background:#fff; }
+    #barraTopo b { font-weight:600; font-size:14px; }
+    #barraTopo .esp { flex:1; }
+    #barraTopo span { font-size:12px; color:#c6c6c6; }
+    aside { position:fixed; left:0; top:0; height:100vh; width:300px; transform:translateX(-102%); transition:transform .18s; z-index:50; padding-top:0; box-shadow:4px 0 16px rgba(0,0,0,.35); }
+    aside.aberta { transform:none; }
+    #cortina { position:fixed; inset:0; background:rgba(22,22,22,.5); z-index:40; }
+    aside .marca { height:48px; padding:0 16px; margin:0 0 6px; }
+    aside .marca .fechar { background:transparent; border:0; color:#fff; font-size:20px; cursor:pointer; padding:0 8px 0 0; }
+    .nav-titulo { padding:14px 20px 4px; font-size:11px; letter-spacing:.06em; color:#8d9bb5; text-transform:uppercase; }
+    main { max-width:none; padding:18px 40px 60px; }
+    main:has(#telaResumoDia:not(.oculto)) { max-width:1360px; }
+
+    /* ===== Validação ===== */
+    .vl { font-size:13px; color:#161616; }
+    .vl .tr { color:#0f62fe; font-size:11px; margin-bottom:2px; }
+    .vl .tr span { color:#161616; }
+    .vl h1 { font-size:20px; font-weight:400; margin:0 0 4px; }
+    .vl .sub { color:#525252; margin:0 0 10px; font-size:12px; }
+    .vl-topo { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+    .vl-ferr { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .vl select, .vl input[type=text], .vl input[type=date], .vl textarea { border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:7px 10px; font:inherit; font-size:13px; color:#161616; }
+    .vl textarea { width:100%; min-height:60px; }
+    .vl button.bt { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; font-size:13px; cursor:pointer; }
+    .vl button.bt:hover { background:#e5f0ff; }
+    .vl button.bt.p { background:#0f62fe; color:#fff; }
+    .vl button.bt.p:hover { background:#0353e9; }
+    .vl button.bt.r { color:#da1e28; border-color:#da1e28; }
+    .vl button.bt.r:hover { background:#fff1f1; }
+    .vl button.bt.g { background:#198038; border-color:#198038; color:#fff; }
+    .vl button.bt.peq { padding:3px 10px; font-size:12px; }
+    .vl button.bt:disabled { opacity:.4; cursor:not-allowed; }
+    .vl-ferr select, .vl-ferr input { width:auto; min-width:160px; }
+    .vl-ck select { width:340px; max-width:100%; }
+    .vl td select { width:100%; }
+    .vl-cards { display:flex; gap:18px; flex-wrap:wrap; margin:10px 0 14px; }
+    .vl-c { flex:1 1 150px; }
+    .vl-c .r { font-size:11px; color:#525252; }
+    .vl-c .v { background:#ececec; border-bottom:1px solid #8d8d8d; padding:5px 8px; font-size:16px; font-weight:600; }
+    .vl-c.verm .v { background:#fff1f1; color:#da1e28; border-bottom-color:#da1e28; }
+    .vl-c.verde .v { color:#198038; }
+    .vl-c.amar .v { background:#fcf4d6; color:#8e6a00; border-bottom-color:#f1c21b; }
+    .vl-chips { display:flex; flex-wrap:wrap; margin:0 0 10px; }
+    .vl-chips button { background:#e0e0e0; border:0; border-left:1px solid #8d8d8d; padding:9px 16px; font:inherit; font-size:13px; cursor:pointer; color:#161616; }
+    .vl-chips button:first-child { border-left:0; }
+    .vl-chips button:hover { background:#c6c6c6; }
+    .vl-chips button.ativo { background:#161616; color:#fff; }
+    .vl table { width:100%; border-collapse:collapse; background:#fff; }
+    .vl th { background:#e0e0e0; text-align:left; padding:9px 8px; font-size:12px; font-weight:600; }
+    .vl td { padding:8px; border-bottom:1px solid #e0e0e0; vertical-align:middle; }
+    .vl td.grp { background:#e8e8e8; font-weight:600; font-size:12px; color:#393939; }
+    .vl-tag { display:inline-block; padding:2px 8px; font-size:12px; margin:1px 2px 1px 0; }
+    .vl-tag.v1 { background:#defbe6; color:#0e6027; } .vl-tag.v2 { background:#ffd7d9; color:#a2191f; font-weight:600; }
+    .vl-tag.v3 { background:#fcf4d6; color:#684e00; } .vl-tag.v4 { background:#d0e2ff; color:#0043ce; } .vl-tag.v5 { background:#e0e0e0; color:#393939; }
+    .vl .vl-ok { color:#198038; font-weight:600; } .vl .vl-no { color:#da1e28; font-weight:600; } .vl .vl-mu { color:#6f6f6f; }
+    .vl-vazio { background:#fff; padding:18px; color:#525252; }
+    .vl-funil { display:flex; margin:10px 0 16px; align-items:stretch; }
+    .vl-funil .b { flex:1; background:#fff; padding:10px 14px; border-top:3px solid #0f62fe; }
+    .vl-funil .b .r { font-size:11px; color:#525252; } .vl-funil .b .v { font-size:26px; font-weight:600; margin-top:2px; } .vl-funil .b small { display:block; font-size:11px; color:#525252; }
+    .vl-funil .b.am { border-top-color:#f1c21b; } .vl-funil .b.rd { border-top-color:#da1e28; } .vl-funil .b.gr { border-top-color:#198038; }
+    .vl-funil .ar { width:22px; display:flex; align-items:center; justify-content:center; color:#8d8d8d; font-size:18px; }
+    .vl-2c { display:flex; gap:24px; flex-wrap:wrap; } .vl-2c > div { flex:1 1 420px; }
+    .vl h3 { font-size:13px; margin:8px 0 6px; font-weight:600; }
+    .vl-bar { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:12px; } .vl-bar .n { width:170px; } .vl-bar i { display:block; height:12px; background:#0f62fe; } .vl-bar b { width:30px; }
+    .vl-head { display:flex; gap:30px; background:#fff; padding:10px 14px; flex-wrap:wrap; }
+    .vl-head div span { display:block; font-size:11px; color:#525252; }
+    .vl-pg { display:flex; margin:10px 0 12px; border-bottom:1px solid #c6c6c6; }
+    .vl-pg button { padding:10px 22px; background:#e0e0e0; border:0; border-right:1px solid #c6c6c6; font:inherit; font-size:13px; text-align:left; cursor:pointer; color:#161616; }
+    .vl-pg button small { display:block; font-size:11px; color:#525252; }
+    .vl-pg button.ativo { background:#fff; border-top:2px solid #0f62fe; font-weight:600; }
+    .vl-caixa { background:#fff; padding:12px 14px; margin-top:12px; }
+    .vl-caixa.crit { border-top:3px solid #8e6a00; }
+    .vl-slots { display:flex; gap:18px; flex-wrap:wrap; margin:12px 0; }
+    .vl-slot { flex:1 1 340px; background:#fff; padding:12px 14px; border-top:3px solid #8d8d8d; }
+    .vl-slot.ok { border-top-color:#198038; } .vl-slot .n { font-size:11px; color:#525252; } .vl-slot h3 { margin:2px 0 4px; font-size:14px; } .vl-slot .d { color:#525252; font-size:12px; margin-bottom:10px; min-height:18px; } .vl-slot .st { font-size:12px; margin-top:8px; }
+    .vl-alerta { padding:7px 12px; margin:6px 0; background:#fff1f1; border-left:3px solid #da1e28; }
+    .vl-alerta.am { background:#fcf4d6; border-left-color:#f1c21b; }
+    .vl-r { display:flex; justify-content:space-between; gap:16px; padding:7px 0; border-bottom:1px solid #e0e0e0; }
+    .vl-ck { display:flex; align-items:center; gap:8px; margin:6px 0; } .vl-ck input { width:16px; height:16px; }
+    .vl-colar { background:#fff; padding:12px 14px; margin-top:8px; border-left:3px solid #0f62fe; }
+    .vl-colar textarea { min-height:120px; font-family:Consolas,monospace; font-size:12px; }
+    @media print { #telaResumoVal, #telaFilaVal, #telaSiteVal { display:none; } }
 </style>
 </head>
 <body>
 
   <div class="app">
+  <header id="barraTopo" class="oculto">
+    <button id="botaoMenu" aria-label="Abrir menu"><i></i><i></i><i></i></button>
+    <b>Controle de Preventivas</b>
+    <div class="esp"></div>
+    <span id="nomeUsuarioTopo"></span>
+  </header>
+  <div id="cortina" class="oculto"></div>
   <aside id="topo" class="oculto">
-    <div class="marca"><svg width="32" height="32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0f2a4a"/><g transform="translate(0,1.5)"><polygon points="6,10 15.5,10 20,23.5 24.5,10 34,10 20,52" fill="#7fb2ee"/><path fill-rule="evenodd" fill="#ffffff" d="M39 22 H50 A8.5 8.5 0 0 1 50 39 H47 V52 H39 Z M47 28.5 H50 A2.5 2.5 0 0 1 50 33.5 H47 Z"/></g></svg><span>Controle de Preventivas</span></div>
+    <div class="marca"><svg width="32" height="32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0f2a4a"/><g transform="translate(0,1.5)"><polygon points="6,10 15.5,10 20,23.5 24.5,10 34,10 20,52" fill="#7fb2ee"/><path fill-rule="evenodd" fill="#ffffff" d="M39 22 H50 A8.5 8.5 0 0 1 50 39 H47 V52 H39 Z M47 28.5 H50 A2.5 2.5 0 0 1 50 33.5 H47 Z"/></g></svg><span>Controle de Preventivas</span><button class="fechar" id="botaoFecharMenu" aria-label="Fechar menu" style="margin-left:auto">✕</button></div>
     <nav>
-      <button class="grupo" data-sub="Registrar" aria-expanded="false">Registrar <span class="seta">▾</span></button>
-      <div id="submenuRegistrar" class="submenu oculto">
-        <button data-tela="Registrar" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Registrar" data-grupo="" data-setor="VOLANTE">Volante</button>
-      </div>
-      <button class="grupo" data-sub="Campo" aria-expanded="false">Equipes em campo <span class="seta">▾</span></button>
-      <div id="submenuCampo" class="submenu oculto">
-        <button data-tela="Campo" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Campo" data-grupo="" data-setor="VOLANTE">Volante</button>
-      </div>
-      <button class="grupo" data-sub="EPS" aria-expanded="false">EPS <span class="seta">▾</span></button>
-      <div id="submenuEPS" class="submenu oculto">
-        <button data-tela="EPS" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="EPS" data-grupo="" data-setor="VOLANTE">Volante</button>
-      </div>
-      <button class="grupo" data-sub="Divergencias" aria-expanded="false">Divergências <span class="seta">▾</span></button>
-      <div id="submenuDivergencias" class="submenu oculto">
-        <button data-tela="Divergencias" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Divergencias" data-grupo="" data-setor="VOLANTE">Volante</button>
-      </div>
+      <div class="nav-titulo">Validação</div>
+      <button data-tela="ResumoVal" data-grupo="" data-setor="">Resumo do dia</button>
+      <button data-tela="FilaVal" data-grupo="" data-setor="">Fila de validação</button>
+      <button data-tela="Divergencias" data-grupo="" data-setor="MÓVEL">Divergências · Móvel</button>
+      <button data-tela="Divergencias" data-grupo="" data-setor="VOLANTE">Divergências · Volante</button>
+      <div class="nav-titulo">Operação</div>
+      <button data-tela="Registrar" data-grupo="" data-setor="MÓVEL">Registrar · Móvel</button>
+      <button data-tela="Registrar" data-grupo="" data-setor="VOLANTE">Registrar · Volante</button>
+      <button data-tela="Campo" data-grupo="" data-setor="MÓVEL">Equipes em campo · Móvel</button>
+      <button data-tela="Campo" data-grupo="" data-setor="VOLANTE">Equipes em campo · Volante</button>
+      <button data-tela="EPS" data-grupo="" data-setor="MÓVEL">EPS · Móvel</button>
+      <button data-tela="EPS" data-grupo="" data-setor="VOLANTE">EPS · Volante</button>
       <button data-tela="Expurgos" data-grupo="" data-setor="">Expurgos</button>
       <button data-tela="ResumoDia" data-grupo="" data-setor="">Resumo Dia</button>
     </nav>
@@ -578,6 +654,39 @@
     </section>
 
     <!-- REGISTRAR -->
+    <!-- VALIDAÇÃO · RESUMO -->
+    <section id="telaResumoVal" class="tela vl oculto">
+      <div class="tr">Painel / <span>Validação</span></div>
+      <div class="vl-topo">
+        <div><h1 id="rvTitulo">Resumo da validação</h1><div class="sub" id="rvSub"></div></div>
+        <div class="vl-ferr">
+          <select id="rvSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select>
+          <input type="date" id="rvData">
+          <button class="bt" id="rvAtualizar">Atualizar</button>
+          <button class="bt p" id="rvCopiar">Copiar resumo</button>
+        </div>
+      </div>
+      <div id="rvCorpo"></div>
+    </section>
+
+    <!-- VALIDAÇÃO · FILA -->
+    <section id="telaFilaVal" class="tela vl oculto">
+      <div class="tr">Painel / <span>Validação</span></div>
+      <div class="vl-topo">
+        <div><h1>Validação preventiva</h1><div class="sub">Sites registrados, em ordem de chegada.</div></div>
+        <div class="vl-ferr">
+          <select id="flSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select>
+          <button class="bt" id="flAtualizar">Atualizar</button>
+        </div>
+      </div>
+      <div id="flCorpo"></div>
+    </section>
+
+    <!-- VALIDAÇÃO · SITE -->
+    <section id="telaSiteVal" class="tela vl oculto">
+      <div id="svCorpo"></div>
+    </section>
+
     <section id="telaRegistrar" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Registrar</span></div>
       <div class="ib-titulo">
@@ -703,6 +812,7 @@
           <button data-filtro="exec_sem_visita">Executadas sem visita</button>
           <button data-filtro="andamento_sem_visita">Em andamento sem visita</button>
           <button data-filtro="data_diferente">Data diferente</button>
+          <button data-filtro="visita_sem_exec_base">Visita sem execução na base</button>
           <button data-filtro="tratadas">Tratadas</button>
           <button data-filtro="todas">Todas</button>
         </div>
@@ -904,7 +1014,7 @@
     divergencias: {
       // Motivos que a validadora pode confirmar para cada WO (edite à vontade).
       motivos: ["Visita não registrada", "WO marcada em outra sigla/visita", "Executada antes do sistema",
-                "Feita por outra equipe/célula", "Erro na Base Atualização Preventiva", "Sem ação necessária", "Outro"],
+                "Feita por outra equipe/célula", "Erro na Base Atualização Preventiva", "Base ainda não atualizada", "Sem ação necessária", "Outro"],
       maxLinhas: 400                   // quantas linhas desenhar de uma vez (use os filtros para ver o resto)
     },
 
@@ -1202,6 +1312,8 @@
     await banco.auth.signOut();
     clearInterval(estado.pollId);
     $("topo").classList.add("oculto");
+    $("barraTopo").classList.add("oculto");
+    fecharMenu();
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("blocoSessao").classList.add("oculto");
     $("blocoLoginForm").classList.remove("oculto");
@@ -1211,8 +1323,10 @@
   async function iniciarSistema(usuario) {
     estado.usuarioEmail = usuario.email;
     $("nomeUsuario").textContent = usuario.email;
+    $("nomeUsuarioTopo").textContent = usuario.email;
     $("telaLogin").classList.add("oculto");
     $("topo").classList.remove("oculto");
+    $("barraTopo").classList.remove("oculto");
     try {
       const resultados = await Promise.all([carregarBase(), carregarEquipes()]);
       estado.base = resultados[0];
@@ -1232,7 +1346,7 @@
     prepararCadastro();
     prepararFormulario();
     atualizarEscalaRegistrar();
-    irParaTela("Registrar");
+    irParaTela("ResumoVal");
   }
 
   // Monta: sigla -> endereço, e endereço -> siglas.
@@ -1302,13 +1416,22 @@
   });
 
   function definirSubmenu(id, aberto) {
+    const alvo = $("submenu" + id);
+    if (!alvo) return;
     const bt = document.querySelector('nav button.grupo[data-sub="' + id + '"]');
     if (bt) bt.setAttribute("aria-expanded", aberto ? "true" : "false");
-    $("submenu" + id).classList.toggle("oculto", !aberto);
+    alvo.classList.toggle("oculto", !aberto);
   }
   document.querySelectorAll("nav button.grupo").forEach(function (bt) {
     bt.addEventListener("click", function () { definirSubmenu(bt.dataset.sub, bt.getAttribute("aria-expanded") !== "true"); });
   });
+
+  function abrirMenu() { $("topo").classList.add("aberta"); $("cortina").classList.remove("oculto"); }
+  function fecharMenu() { $("topo").classList.remove("aberta"); $("cortina").classList.add("oculto"); }
+  $("botaoMenu").addEventListener("click", abrirMenu);
+  $("botaoFecharMenu").addEventListener("click", fecharMenu);
+  $("cortina").addEventListener("click", fecharMenu);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") fecharMenu(); });
 
   const NOME_SETOR = { "MÓVEL": "Móvel", "VOLANTE": "Volante", "OUTROS": "Outros setores" };
   // "OUTROS" reúne o que não é Móvel nem Volante (Residencial ou setor em branco), para nenhuma WO ficar de fora da soma.
@@ -1325,7 +1448,7 @@
     estado.grupoAtual = grupo;
     estado.setor = setor;
     document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-      b.classList.toggle("ativo", b.dataset.tela === nome && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
+      b.classList.toggle("ativo", b.dataset.tela === (nome === "SiteVal" ? "FilaVal" : nome) && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
     });
     const subDe = { Registrar: "Registrar", Campo: "Campo", Conferencia: "EPS", EPS: "EPS", Divergencias: "Divergencias" }[nome];
     if (subDe) definirSubmenu(subDe, true);
@@ -1335,6 +1458,17 @@
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("tela" + nome).classList.remove("oculto");
     clearInterval(estado.pollId);
+    fecharMenu();
+    window.scrollTo(0, 0);
+    if (nome === "ResumoVal") {
+      atualizarResumoVal();
+      estado.pollId = setInterval(atualizarResumoVal, 120000);
+    }
+    if (nome === "FilaVal") {
+      $("flSetor").value = estado.val.setor;
+      atualizarFila();
+      estado.pollId = setInterval(atualizarFila, 60000);
+    }
     if (nome === "Campo") {
       atualizarCampo();
       estado.pollId = setInterval(atualizarCampo, 30000);
@@ -1542,14 +1676,23 @@
     base.forEach(function (l) {
       const st = String(l.status_final || "").trim().toLowerCase();
       const executada = st === "executada", aberta = st === "aberta";
-      if (!executada && !aberta) return;
       const ligada = visitaDaWO[l.wo];
+      const visitaEncerrada = !!(ligada && ligada.situacao === REGRAS.situacaoSaiu);
+      if (!executada && !aberta && !visitaEncerrada) return;
       const linha = { wo: l.wo, site: l.chaveSite || limparSite(l.programado_infratel || l.clr_sdr_site_helix),
                       siteTxt: String(l.programado_infratel || l.clr_sdr_site_helix || "").trim(), tipo: l.tipo || "",
-                      grupo: grupoDaPreventiva(l.tipo), status: executada ? "Executada" : "Aberta", dataFim: l.data_fim || null,
+                      grupo: grupoDaPreventiva(l.tipo), status: executada ? "Executada" : (aberta ? "Aberta" : (String(l.status_final || "").trim() || "Sem status")), dataFim: l.data_fim || null,
                       visita: ligada || null, categoria: "", motivoCodigo: "", motivo: "" };
       if (ligada) {
-        if (!executada || !l.data_fim || l.data_fim === ligada.data_execucao) return;      // bate: sem divergência
+        if (!executada) {         // visita registrada e encerrada, mas a base ainda não mostra a WO como executada
+          if (!visitaEncerrada) return;
+          const fimVisita = ligada.hora_saida || ligada.hora_entrada || ligada.hora_aviso;
+          if (fimVisita && (Date.now() - new Date(fimVisita).getTime()) / 60000 < carenciaDoGrupo(grupoDaPreventiva(l.tipo))) return;   // a base ainda pode atualizar
+          linha.categoria = "visita_sem_exec_base"; linha.motivoCodigo = "visita_sem_exec_base";
+          linha.motivo = "Visita registrada em " + dataBR(ligada.data_execucao) + " (" + ligada.equipe + "), mas a WO está como " + linha.status.toLowerCase() + " na base";
+          saida.push(linha); return;
+        }
+        if (!l.data_fim || l.data_fim === ligada.data_execucao) return;      // bate: sem divergência
         const d = diasEntre(l.data_fim, ligada.data_execucao);
         linha.categoria = "data_diferente"; linha.motivoCodigo = "data_diferente";
         linha.motivo = "Relatório na base em " + dataBR(l.data_fim) + " e visita em " + dataBR(ligada.data_execucao) + " (" +
@@ -1594,6 +1737,7 @@
 
   const NOMES_MOTIVO = {
     data_diferente: "Relatório em data diferente da visita",
+    visita_sem_exec_base: "Visita registrada, mas a WO não está executada na base",
     site_visitado: "Site foi visitado, mas a WO não foi marcada na visita",
     visita_sem_execucao: "Equipe foi ao site e saiu sem executar",
     irma_visitada: "Outra sigla do mesmo endereço foi visitada",
@@ -1606,7 +1750,8 @@
   const NOMES_CATEGORIA = {
     exec_sem_visita: ["Executada sem visita", "p-vermelho"],
     andamento_sem_visita: ["Em andamento sem visita", "p-laranja"],
-    data_diferente: ["Data diferente", "p-azul"]
+    data_diferente: ["Data diferente", "p-azul"],
+    visita_sem_exec_base: ["Visita sem execução na base", "p-vermelho"]
   };
 
   async function carregarTodasAsLinhas(tabela, colunas) {
@@ -1680,6 +1825,7 @@
       campo("Divergências (executada + andamento, sem visita)", nExec + nAnd, (nExec + nAnd) ? "verm" : "") +
       campo("Executadas sem visita", nExec) + campo("Em andamento sem visita", nAnd) +
       campo("Relatório em data diferente", cont("data_diferente")) +
+      campo("Visita sem execução na base", cont("visita_sem_exec_base"), cont("visita_sem_exec_base") ? "verm" : "") +
       campo("Com motivo confirmado", tratadas + " <small style=\"font-size:12px;font-weight:400\">de " + base.length + "</small>", "verde");
 
     // resumo por motivo provável (conta o que está aberto, no grupo/busca escolhidos)
@@ -1708,7 +1854,7 @@
       const t = D.trat[l.wo] || {};
       const tratada = !!(t.motivo || t.observacao);
       const cat = NOMES_CATEGORIA[l.categoria];
-      const cor = tratada ? "trat" : (l.categoria === "exec_sem_visita" ? "pend" : "med");
+      const cor = tratada ? "trat" : (l.categoria === "exec_sem_visita" || l.categoria === "visita_sem_exec_base" ? "pend" : "med");
       html += '<div class="dv-l ' + cor + '" data-wo="' + esc(l.wo) + '">' +
         '<div class="dv-wo">' + esc(l.wo) + '<span class="dv-sub">' + esc(l.grupo) + "</span></div>" +
         "<div><b>" + esc(l.siteTxt) + "</b></div><div>" + esc(l.tipo) + "</div>" +
@@ -2429,7 +2575,9 @@
       };
       if (r.jaNoSite) visita.hora_entrada = r.chegada.toISOString();
       if (r.retro) visita.hora_saida = r.saida.toISOString();
-      await criarVisita(visita, r.wos);
+      const visitaCriada = await criarVisita(visita, r.wos);
+      try { await criarValidacaoDaVisita(visitaCriada, r); }
+      catch (e3) { mostrarAviso("Visita gravada, mas não consegui enviá-la para a Validação: " + e3.message, "erro"); }
       try { await marcarEscalaPelaVisita(r); }
       catch (e2) { mostrarAviso("Visita gravada, mas não consegui marcar a equipe no dia: " + e2.message, "erro"); }
       ocultarResumo();
@@ -2774,6 +2922,7 @@
     botao.disabled = true;
     try {
       await atualizarVisita(visita.id, campos);
+      if (botao.dataset.acao === "cancelar" || botao.dataset.acao === "semexec") await cancelarValidacaoDaVisita(visita.id);
       const aberta = botao.closest("details");
       if (aberta) aberta.open = false;
       mostrarAviso(botao.dataset.acao === "semexec" ? "Saída sem execução registrada." : "Registrado.");
@@ -3391,6 +3540,710 @@
   $("rdImprimir").addEventListener("click", function () { window.print(); });
 
   // ---- ao abrir a página: se já houver sessão salva, pede para confirmar a entrada ----------
+  // ---- Alarmes: leitura do que a validadora copia do sistema do cliente -------------------------
+  function alNorm(t) {
+    return String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+  }
+  function alDataHora(t) {
+    const m = String(t || "").match(/(\d{2})\/(\d{2})\/(\d{4})[ T]+(\d{2}):(\d{2})(?::(\d{2}))?/) ||
+              String(t || "").match(/(\d{4})-(\d{2})-(\d{2})[ T]+(\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) return null;
+    const iso = m[1].length === 4;
+    const ano = Number(iso ? m[1] : m[3]), mes = Number(m[2]), dia = Number(iso ? m[3] : m[1]);
+    return new Date(ano, mes - 1, dia, Number(m[4]), Number(m[5]), Number(m[6] || 0)).getTime();
+  }
+  function alCelulas(linha) {
+    const c = linha.indexOf("\t") >= 0 ? linha.split("\t") : linha.split(/\s{2,}/);
+    return c.map(function (x) { return x.trim(); });
+  }
+
+  // Configuração: blocos "S01SMIBI57" seguidos de uma tabela (Nº Porta, Alarmado, Status Administrativo, ..., Texto do Alarme, Label, Severidade).
+  function lerConfiguracaoAlarmes(texto) {
+    const blocos = [];
+    let atual = null, cols = null, consulta = null;
+    String(texto || "").split(/\r?\n/).forEach(function (linha) {
+      if (!linha.trim()) return;
+      const mc = linha.trim().match(/^Consulta realizada em\s+(.*)$/i);
+      if (mc) { consulta = mc[1]; return; }
+      const c = alCelulas(linha);
+      if (c.length === 1 && /^S\d{2}/i.test(c[0])) { atual = { bloco: c[0].slice(0, 3).toUpperCase(), nome: c[0], alarmes: [] }; blocos.push(atual); cols = null; return; }
+      const nomes = c.map(alNorm);
+      if (nomes.some(function (n) { return n === "TEXTO DO ALARME"; })) {
+        cols = { adm: nomes.findIndex(function (n) { return n.indexOf("STATUS ADMINISTRATIVO") === 0; }),
+                 texto: nomes.indexOf("TEXTO DO ALARME"),
+                 sev: nomes.findIndex(function (n) { return n.indexOf("SEVERIDADE") === 0; }) };
+        return;
+      }
+      const ehLinha = /^\d+$/.test(c[0]) && c.length >= 6;
+      if (!ehLinha) return;
+      if (!atual) { atual = { bloco: "S01", nome: "S01", alarmes: [] }; blocos.push(atual); }
+      const k = cols || { adm: 2, texto: 5, sev: 7 };
+      atual.alarmes.push({ porta: c[0], administrativo: c[k.adm] || "", texto: c[k.texto] || "", severidade: c[k.sev] || "",
+                           bloqueado: alNorm(c[k.adm]) === "BLOQUEADO" });
+    });
+    const total = blocos.reduce(function (s, b) { return s + b.alarmes.length; }, 0);
+    return { blocos: blocos, consulta: consulta, total: total };
+  }
+
+  // Histórico: ID, Sigla, Tecnologia, Severidade, Alarme, Data Inicial, Data Final, Data Equipamento, ID Alarme, Reaberturas (com ou sem cabeçalho).
+  function lerHistoricoAlarmes(texto) {
+    let pos = { sigla: 1, sev: 3, alarme: 4, ini: 5, fim: 6, eqp: 7 };
+    const eventos = [];
+    String(texto || "").split(/\r?\n/).forEach(function (linha) {
+      if (!linha.trim()) return;
+      const c = alCelulas(linha);
+      const nomes = c.map(alNorm);
+      if (nomes.indexOf("ALARME") >= 0 && (nomes.indexOf("DATA INICIAL") >= 0 || nomes.indexOf("SEVERIDADE") >= 0)) {
+        pos = { sigla: nomes.indexOf("SIGLA"), sev: nomes.indexOf("SEVERIDADE"), alarme: nomes.indexOf("ALARME"),
+                ini: nomes.indexOf("DATA INICIAL"), fim: nomes.indexOf("DATA FINAL"), eqp: nomes.indexOf("DATA EQUIPAMENTO") };
+        return;
+      }
+      if (!c.some(function (x) { return alDataHora(x) !== null; })) return;
+      const g = function (i) { return i >= 0 && i < c.length ? c[i] : ""; };
+      const ini = alDataHora(g(pos.ini)), eqp = alDataHora(g(pos.eqp));
+      const texto2 = g(pos.alarme);
+      if (!texto2) return;
+      const m = g(pos.sigla).match(/S\d{2}/i);
+      eventos.push({ bloco: m ? m[0].toUpperCase() : "", sigla: g(pos.sigla), severidade: g(pos.sev), texto: texto2,
+                     ini: ini, fim: alDataHora(g(pos.fim)), eqp: eqp != null ? eqp : ini });
+    });
+    return { eventos: eventos };
+  }
+
+  function detectarTextoAlarme(texto) {
+    const t = String(texto || "");
+    if (/texto do alarme|status administrativo/i.test(t)) return "config";
+    if (/data inicial|data equipamento|reaberturas/i.test(t)) return "hist";
+    if (lerHistoricoAlarmes(t).eventos.length > 0) return "hist";
+    if (lerConfiguracaoAlarmes(t).total > 0) return "config";
+    return null;
+  }
+
+  // Cruza o que está configurado (menos os bloqueados pelo cliente) com o que externou.
+  function batimentoAlarmes(config, hist, apont, regras) {
+    apont = apont || {};
+    const pool = {};
+    hist.eventos.slice().sort(function (a, b) { return (a.eqp || 0) - (b.eqp || 0); }).forEach(function (e) {
+      const k = alNorm(e.texto);
+      (pool[k] = pool[k] || []).push(e);
+    });
+    const itens = [], isentos = [];
+    let vazios = 0;
+    config.blocos.forEach(function (b) {
+      b.alarmes.forEach(function (a) {
+        if (!a.texto) { vazios++; return; }
+        if (a.bloqueado) { isentos.push({ bloco: b.bloco, texto: a.texto, severidade: a.severidade }); return; }
+        const k = alNorm(a.texto);
+        const lista = pool[k] || [];
+        let achou = -1;
+        for (let i = 0; i < lista.length; i++) { if (!lista[i].bloco || lista[i].bloco === b.bloco) { achou = i; break; } }
+        const ev = achou >= 0 ? lista.splice(achou, 1)[0] : null;
+        const chave = b.bloco + "|" + k;
+        const apt = apont[chave] || "";
+        itens.push({ bloco: b.bloco, texto: a.texto, severidade: a.severidade, chave: chave, externou: !!ev, quando: ev ? ev.eqp : null,
+                     apontamento: apt, dispensado: !ev && apt === "Bloqueado pelo cliente" });
+      });
+    });
+    const externaram = itens.filter(function (i) { return i.externou; }).length;
+    const faltaram = itens.filter(function (i) { return !i.externou && !i.dispensado; }).length;
+
+    // Ordem entre alarmes (ex.: a bateria não pode externar antes da falha de energia), pela Data Equipamento.
+    const ordem = [];
+    (regras.ordemAlarmes || []).forEach(function (r) {
+      const grupos = {};
+      hist.eventos.forEach(function (e) {
+        const k = alNorm(e.texto), g = e.bloco || "";
+        if (k !== alNorm(r.antes) && k !== alNorm(r.depois)) return;
+        const o = grupos[g] = grupos[g] || {};
+        const campo = k === alNorm(r.antes) ? "antes" : "depois";
+        if (e.eqp != null && (o[campo] == null || e.eqp < o[campo])) o[campo] = e.eqp;
+      });
+      Object.keys(grupos).forEach(function (g) {
+        const o = grupos[g], rot = g ? g + " · " : "";
+        if (o.antes == null || o.depois == null) {
+          ordem.push({ bloco: g, status: "nao_conferida", texto: rot + "“" + r.depois + "” × “" + r.antes + "”: um dos dois não externou, a ordem não pôde ser conferida." });
+        } else if (o.depois < o.antes) {
+          ordem.push({ bloco: g, status: "violada", texto: rot + "“" + r.depois + "” externou antes de “" + r.antes + "”." });
+        } else if (o.depois === o.antes) {
+          ordem.push({ bloco: g, status: "revisar", texto: rot + "“" + r.depois + "” e “" + r.antes + "” externaram no mesmo segundo. Confira a ordem no sistema." });
+        } else {
+          ordem.push({ bloco: g, status: "ok", texto: rot + "Ordem correta." });
+        }
+      });
+    });
+
+    // Muitos alarmes no mesmo instante: sinal de fios nos bornes sem teste real.
+    const rajadas = [];
+    const tempos = hist.eventos.map(function (e) { return e.eqp; }).filter(function (t) { return t != null; }).sort(function (a, b) { return a - b; });
+    const janela = ((regras.rajada && regras.rajada.segundos) || 3) * 1000, minimo = (regras.rajada && regras.rajada.minimo) || 6;
+    let i = 0;
+    while (i < tempos.length) {
+      let j = i;
+      while (j + 1 < tempos.length && tempos[j + 1] - tempos[i] <= janela) j++;
+      if (j - i + 1 >= minimo) { rajadas.push({ de: tempos[i], ate: tempos[j], qtd: j - i + 1 }); i = j + 1; } else { i++; }
+    }
+    return { itens: itens, isentos: isentos, vazios: vazios, ordem: ordem, rajadas: rajadas,
+             resumo: { configurados: itens.length + isentos.length, isentos: isentos.length, paraExternar: itens.length, externaram: externaram, faltaram: faltaram } };
+  }
+
+
+  // ==== VALIDAÇÃO PREVENTIVA ====================================================
+  REGRAS.validacao = {
+    inicio: "2026-10-31",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
+    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento"],
+    pendencias: ["Aba em aberto", "Não inventariado", "Preenchimento incorreto", "Outro"],
+    inventarioCritico: ["PLC do ar-condicionado", "Termostato wall mounted"],
+    inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
+    apontamentos: ["Sem apontamento", "Alarme sem contato no bloco", "Bloqueado pelo cliente", "Técnico informou que não externou", "Outro"],
+    ordemAlarmes: [{ antes: "FALHA DE ENERGIA AC", depois: "BATERIA EM DESCARGA" }],
+    rajada: { segundos: 3, minimo: 6 },
+    resultados: { validada: "Validada", ressalva: "Validada com ressalva", devolvida: "Devolvida ao técnico", offline: "Para validação offline" }
+  };
+  estado.val = { lista: [], filtro: "aba_pedida", setor: "", atual: null, pagina: "equip", equip: [], equipAviso: "", colar: null, pendente: null };
+
+  function dataLocalDe(iso) { const d = new Date(iso); return d.getFullYear() + "-" + doisDigitos(d.getMonth() + 1) + "-" + doisDigitos(d.getDate()); }
+  function horaDe(iso) { return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"; }
+  function horaSegDe(ms) { return ms == null ? "—" : new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+  function haQuanto(iso) {
+    const m = Math.max(0, Math.round(minutosDesde(iso)));
+    return m < 60 ? "há " + m + " min" : "há " + Math.floor(m / 60) + " h " + doisDigitos(m % 60);
+  }
+  function tipoCurto(t) { const p = String(t || "").split(" - "); return p[p.length - 1].trim(); }
+  function opcoesHtml(lista, valor, vazio) {
+    return '<option value="">' + esc(vazio || "—") + "</option>" + lista.map(function (o) {
+      return '<option value="' + esc(o) + '"' + (o === valor ? " selected" : "") + ">" + esc(o) + "</option>";
+    }).join("");
+  }
+  function doSetorVal(v) { const s = estado.val.setor; return !s || casaSetor(String(v.setor || "").trim().toUpperCase(), s); }
+
+  async function carregarValidacoes() {
+    const d0 = somarDias(hoje(), -45);
+    const desde = d0 > REGRAS.validacao.inicio ? d0 : REGRAS.validacao.inicio;
+    const todas = [];
+    for (let de = 0; ; de += 1000) {
+      const d = conferir(await banco.from("validacoes").select("*").gte("data", desde).order("id").range(de, de + 999));
+      for (const x of d) todas.push(x);
+      if (d.length < 1000) break;
+    }
+    return todas;
+  }
+  async function salvarVal(reg, campos) {
+    const c = Object.assign({}, campos, { atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() });
+    conferir(await banco.from("validacoes").update(c).eq("id", reg.id));
+    Object.assign(reg, c);
+  }
+  async function criarValidacaoDaVisita(visita, r) {
+    if (!r.comPreventiva || r.dataExecucao < REGRAS.validacao.inicio) return;
+    const setor = (estado.setorDaWO && r.wos.length && estado.setorDaWO[r.wos[0].wo]) || estado.setor || "";
+    conferir(await banco.from("validacoes").upsert({
+      visita_id: String(visita.id), data: r.dataExecucao, site: r.siteTexto, site_chave: limparSite(r.siteTexto), equipe: r.equipe.nome,
+      setor: setor, wos: r.wos, situacao: "em_campo", atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString()
+    }, { onConflict: "visita_id" }));
+  }
+  async function cancelarValidacaoDaVisita(visitaId) {
+    try { await banco.from("validacoes").update({ situacao: "cancelada", atualizado_em: new Date().toISOString() }).eq("visita_id", String(visitaId)); }
+    catch (e) { /* sem validação para essa visita */ }
+  }
+
+  function batimentoDoRegistro(reg) {
+    const al = reg.alarmes || {};
+    if (!al.config || !al.hist) return null;
+    return batimentoAlarmes(lerConfiguracaoAlarmes(al.config.texto), lerHistoricoAlarmes(al.hist.texto), al.apont || {}, REGRAS.validacao);
+  }
+
+  // Tudo o que, até agora, impede a WO de ser validada limpa.
+  function pendenciasDe(reg) {
+    const p = [];
+    const eq = reg.equipamentos || {};
+    Object.keys(eq).forEach(function (k) {
+      const e = eq[k];
+      if (e.pend) p.push({ tipo: e.pend === "Não inventariado" ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : "Outros"), texto: (e.tag || k) + " · " + e.pend });
+      if (e.fotos && e.fotos !== "Ok") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase() });
+    });
+    const inv = reg.inventario || {};
+    Object.keys(inv).forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
+    const b = batimentoDoRegistro(reg);
+    if (b) {
+      if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram" });
+      b.ordem.forEach(function (o) { if (o.status === "violada") p.push({ tipo: "Alarmes", texto: o.texto }); });
+    }
+    return p;
+  }
+  // Etapas que ainda não foram feitas (impedem "Validada").
+  function faltasDe(reg, linhasEquip) {
+    const f = [];
+    const eq = reg.equipamentos || {};
+    const sem = linhasEquip.filter(function (r) { const e = eq[chaveEquip(r)]; return !(e && (e.fotos || e.pend)); }).length;
+    if (sem > 0) f.push("Equipamentos e fotos: faltam conferir " + sem);
+    REGRAS.validacao.inventarioCritico.forEach(function (i) { if (!(reg.inventario || {})[i]) f.push("Inventário crítico: " + i); });
+    const al = reg.alarmes || {};
+    if (!al.semConfig) {
+      if (!al.config) f.push("Alarmes: falta a configuração do site");
+      if (!al.hist) f.push("Alarmes: falta o histórico");
+    }
+    if (!al.bornes) f.push("Alarmes: bornes sem “gatinho” não conferidos");
+    if (!al.fotos) f.push("Alarmes: fotos das abas de alarme não conferidas");
+    return f;
+  }
+  function chaveEquip(r) { return alNorm(r.tipo) + "|" + alNorm(r.tag); }
+
+  const SIT_VAL = { em_campo: ["Em campo", "v5"], aba_pedida: ["Aba pedida", "v3"], em_analise: ["Em análise", "v4"], encerrada: ["Encerrada", "v1"] };
+  function eventosDe(lista) {
+    const ev = [];
+    lista.forEach(function (v) { (v.historico || []).forEach(function (e) { if (e.tipo === "encerramento") ev.push(Object.assign({ setor: v.setor, reg: v }, e)); }); });
+    return ev;
+  }
+
+  // ---- Fila ----------------------------------------------------------------------------------
+  async function atualizarFila() {
+    try { estado.val.lista = await carregarValidacoes(); }
+    catch (e) { $("flCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar a fila: ' + esc(e.message) + "</div>"; return; }
+    desenharFila();
+  }
+  function desenharFila() {
+    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && doSetorVal(v); });
+    const h = hoje();
+    const n = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
+    lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
+    const encHoje = lista.filter(function (v) { return v.situacao === "encerrada" && v.encerrada_em && dataLocalDe(v.encerrada_em) === h; }).length;
+    const devHoje = eventosDe(lista).filter(function (e) { return e.resultado === "devolvida" && dataLocalDe(e.em) === h; }).length;
+    const f = estado.val.filtro;
+    let mostrar = lista.filter(function (v) { return f === "todas" || v.situacao === f; });
+    mostrar.sort(function (a, b) {
+      if (f === "aba_pedida") return String(a.aba_pedida_em).localeCompare(String(b.aba_pedida_em));
+      return String(b.criado_em).localeCompare(String(a.criado_em));
+    });
+    mostrar = mostrar.slice(0, 300);
+    const chips = [["aba_pedida", "Aba pedida", n.aba_pedida], ["em_analise", "Em análise", n.em_analise], ["em_campo", "Em campo", n.em_campo],
+                   ["encerrada", "Encerradas", n.encerrada], ["todas", "Todas", lista.length]];
+    let t = '<div class="vl-cards">' +
+      '<div class="vl-c"><div class="r">Em campo</div><div class="v">' + n.em_campo + "</div></div>" +
+      '<div class="vl-c amar"><div class="r">Aba pedida</div><div class="v">' + n.aba_pedida + "</div></div>" +
+      '<div class="vl-c"><div class="r">Em análise</div><div class="v">' + n.em_analise + "</div></div>" +
+      '<div class="vl-c verde"><div class="r">Encerradas hoje</div><div class="v">' + encHoje + "</div></div>" +
+      '<div class="vl-c verm"><div class="r">Devolvidas ao técnico hoje</div><div class="v">' + devHoje + "</div></div></div>";
+    t += '<div class="vl-chips" id="flChips">' + chips.map(function (c) {
+      return '<button data-f="' + c[0] + '"' + (c[0] === f ? ' class="ativo"' : "") + ">" + c[1] + " · " + c[2] + "</button>";
+    }).join("") + "</div>";
+    if (mostrar.length === 0) {
+      t += '<div class="vl-vazio">Nada nesta lista.</div>';
+    } else {
+      t += '<table><tr><th>Site</th><th>Equipe</th><th>WOs</th><th>Situação</th><th>Aba pedida</th><th>Já visto</th><th></th></tr>' +
+        mostrar.map(function (v) {
+          const s = SIT_VAL[v.situacao] || ["—", "v5"];
+          const p = pendenciasDe(v);
+          const tipos = {};
+          p.forEach(function (x) { tipos[x.tipo] = (tipos[x.tipo] || 0) + 1; });
+          const visto = p.length === 0 ? "—" : Object.keys(tipos).map(function (k) { return '<span class="vl-tag v2">' + esc(k) + " · " + tipos[k] + "</span>"; }).join("");
+          const wos = (v.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" · ");
+          const sitTxt = '<span class="vl-tag ' + s[1] + '">' + s[0] + "</span>" + (v.situacao === "em_analise" && v.analista ? '<div class="vl-mu" style="font-size:11px">' + esc(v.analista.split("@")[0]) + "</div>" : "");
+          const acao = { em_campo: ["aba", "Aba pedida", ""], aba_pedida: ["validar", "Validar", " p"], em_analise: ["abrir", "Continuar", ""], encerrada: ["abrir", "Abrir", ""] }[v.situacao];
+          return '<tr data-id="' + v.id + '"><td><b>' + esc(v.site) + "</b></td><td>" + esc(v.equipe) + "</td><td>" + esc(wos) + "</td><td>" + sitTxt + "</td><td>" +
+            (v.aba_pedida_em ? horaDe(v.aba_pedida_em) + " · " + haQuanto(v.aba_pedida_em) : "—") + "</td><td>" + visto + "</td>" +
+            '<td style="text-align:right">' + (acao ? '<button class="bt' + acao[2] + '" data-acao="' + acao[0] + '">' + acao[1] + "</button>" : "") + "</td></tr>";
+        }).join("") + "</table>";
+    }
+    $("flCorpo").innerHTML = t;
+  }
+  $("flCorpo").addEventListener("click", async function (e) {
+    const chip = e.target.closest("#flChips button");
+    if (chip) { estado.val.filtro = chip.dataset.f; desenharFila(); return; }
+    const botao = e.target.closest("button[data-acao]");
+    if (!botao) return;
+    const reg = estado.val.lista.find(function (v) { return String(v.id) === botao.closest("tr").dataset.id; });
+    if (!reg) return;
+    botao.disabled = true;
+    try {
+      if (botao.dataset.acao === "aba") {
+        await salvarVal(reg, { situacao: "aba_pedida", aba_pedida_em: new Date().toISOString() });
+        desenharFila();
+      } else if (botao.dataset.acao === "validar") {
+        await salvarVal(reg, { situacao: "em_analise", analista: estado.usuarioEmail, analise_em: new Date().toISOString() });
+        abrirSiteVal(reg.id);
+      } else {
+        abrirSiteVal(reg.id);
+      }
+    } catch (err) { botao.disabled = false; mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
+  });
+  $("flSetor").addEventListener("change", function () { estado.val.setor = $("flSetor").value; desenharFila(); });
+  $("flAtualizar").addEventListener("click", atualizarFila);
+
+  // ---- Resumo da validação (primeira tela) --------------------------------------------------------
+  async function atualizarResumoVal() {
+    if (!$("rvData").value) $("rvData").value = hoje();
+    $("rvSub").textContent = "Validação ativa a partir de " + dataBR(REGRAS.validacao.inicio) + ".";
+    try { estado.val.lista = await carregarValidacoes(); }
+    catch (e) { $("rvCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar: ' + esc(e.message) + " (o SQL da validação já foi rodado?)</div>"; return; }
+    desenharResumoVal();
+  }
+  function dadosResumoVal() {
+    const dia = $("rvData").value || hoje(), setor = $("rvSetor").value;
+    const lista = estado.val.lista.filter(function (v) { return !setor || casaSetor(String(v.setor || "").trim().toUpperCase(), setor); });
+    const ev = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia; });
+    const soma = function (fn) { return ev.filter(fn).reduce(function (s, e) { return s + (e.wos || 0); }, 0); };
+    const d = { dia: dia, ev: ev, lista: lista,
+      exec: soma(function () { return true; }),
+      sem: soma(function (e) { return e.resultado === "validada"; }),
+      dev: soma(function (e) { return e.resultado === "devolvida"; }),
+      res: soma(function (e) { return e.resultado === "ressalva"; }),
+      off: soma(function (e) { return e.resultado === "offline"; }) };
+    d.com = d.dev + d.res + d.off;
+    d.tipos = {};
+    ev.forEach(function (e) { (e.pendencias || []).forEach(function (p) { d.tipos[p.tipo] = (d.tipos[p.tipo] || 0) + 1; }); });
+    d.equipes = {};
+    ev.forEach(function (e) {
+      const q = d.equipes[e.equipe] = d.equipes[e.equipe] || { exec: 0, com: 0, dev: 0 };
+      q.exec += e.wos || 0;
+      if (e.resultado !== "validada") q.com += e.wos || 0;
+      if (e.resultado === "devolvida") q.dev += e.wos || 0;
+    });
+    d.fila = { aba: lista.filter(function (v) { return v.situacao === "aba_pedida"; }).length, ana: lista.filter(function (v) { return v.situacao === "em_analise"; }).length,
+               cam: lista.filter(function (v) { return v.situacao === "em_campo"; }).length };
+    return d;
+  }
+  function desenharResumoVal() {
+    const d = dadosResumoVal();
+    $("rvTitulo").textContent = "Resumo da validação · " + dataBR(d.dia).slice(0, 5);
+    const pc = d.exec ? Math.round(d.com * 100 / d.exec) : 0;
+    let t = '<div class="vl-funil">' +
+      '<div class="b"><div class="r">WOs executadas</div><div class="v">' + d.exec + "</div><small>passaram pela validação</small></div><div class=\"ar\">›</div>" +
+      '<div class="b gr"><div class="r">Validadas sem pendência</div><div class="v">' + d.sem + "</div></div><div class=\"ar\"></div>" +
+      '<div class="b am"><div class="r">Com pendência</div><div class="v">' + d.com + "</div><small>" + pc + "% das executadas</small></div><div class=\"ar\">›</div>" +
+      '<div class="b rd"><div class="r">Devolvidas ao técnico</div><div class="v">' + d.dev + "</div></div><div class=\"ar\"></div>" +
+      '<div class="b am"><div class="r">Validadas com ressalva</div><div class="v">' + d.res + "</div></div><div class=\"ar\"></div>" +
+      '<div class="b"><div class="r">Para validação offline</div><div class="v">' + d.off + "</div></div></div>";
+    t += '<div class="sub">Na fila agora: ' + d.fila.aba + " com aba pedida · " + d.fila.ana + " em análise · " + d.fila.cam + " em campo</div>";
+    const tk = Object.keys(d.tipos).sort(function (a, b) { return d.tipos[b] - d.tipos[a]; });
+    const mx = tk.length ? d.tipos[tk[0]] : 1;
+    t += '<div class="vl-2c"><div><h3>Pendências por tipo</h3>' + (tk.length ? tk.map(function (k) {
+      return '<div class="vl-bar"><span class="n">' + esc(k) + '</span><i style="width:' + Math.max(6, Math.round(d.tipos[k] * 220 / mx)) + 'px"></i><b>' + d.tipos[k] + "</b></div>";
+    }).join("") : '<div class="vl-mu">Nenhuma pendência neste dia.</div>') + "</div>";
+    const eqs = Object.keys(d.equipes).sort();
+    t += "<div><h3>Por equipe</h3>" + (eqs.length ? "<table><tr><th>Equipe</th><th>Executadas</th><th>Com pendência</th><th>Devolvidas</th></tr>" + eqs.map(function (k) {
+      return "<tr><td>" + esc(k) + "</td><td>" + d.equipes[k].exec + "</td><td>" + d.equipes[k].com + "</td><td>" + d.equipes[k].dev + "</td></tr>";
+    }).join("") + "</table>" : '<div class="vl-mu">Sem validações neste dia.</div>') + "</div></div>";
+    // O que o coordenador precisa tratar: último resultado de cada site com pendência.
+    const tratar = d.lista.filter(function (v) {
+      const evs = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; });
+      if (!evs.length) return false;
+      const u = evs[evs.length - 1];
+      return dataLocalDe(u.em) === d.dia && u.resultado !== "validada";
+    });
+    t += '<h3 style="margin-top:16px">Para o coordenador tratar</h3>';
+    if (!tratar.length) t += '<div class="vl-vazio">Nada para tratar neste dia.</div>';
+    else t += "<table><tr><th>Site</th><th>WOs</th><th>Resultado</th><th>Pendências</th><th>Tratativa</th></tr>" + tratar.slice(0, 60).map(function (v) {
+      const evs = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; });
+      const u = evs[evs.length - 1];
+      const classe = { devolvida: "v2", ressalva: "v3", offline: "v4" }[u.resultado];
+      const trat = u.resultado === "devolvida" ? (v.situacao === "encerrada" ? ["Revalidada", "v1"] : ["Aguardando técnico", "v5"]) : u.resultado === "offline" ? ["Validação offline", "v4"] : ["Com ressalva", "v3"];
+      return "<tr><td><b>" + esc(v.site) + "</b></td><td>" + esc((v.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" · ")) + '</td><td><span class="vl-tag ' + classe + '">' +
+        esc(REGRAS.validacao.resultados[u.resultado]) + "</span></td><td>" + esc((u.pendencias || []).map(function (p) { return p.texto; }).join(" · ") || u.motivo || "—") +
+        '</td><td><span class="vl-tag ' + trat[1] + '">' + trat[0] + "</span></td></tr>";
+    }).join("") + "</table>";
+    $("rvCorpo").innerHTML = t;
+    estado.val.textoResumo = textoResumoVal(d);
+  }
+  function textoResumoVal(d) {
+    const s = $("rvSetor").value;
+    const tk = Object.keys(d.tipos).sort(function (a, b) { return d.tipos[b] - d.tipos[a]; });
+    return "Resumo da validação · " + dataBR(d.dia).slice(0, 5) + (s ? " · " + NOME_SETOR[s] : "") + "\n" +
+      "WOs executadas: " + d.exec + "\nValidadas sem pendência: " + d.sem + "\nCom pendência: " + d.com +
+      " (" + d.dev + " devolvidas ao técnico · " + d.res + " com ressalva · " + d.off + " para validação offline)" +
+      (tk.length ? "\nPendências: " + tk.map(function (k) { return k + " " + d.tipos[k]; }).join(" · ") : "");
+  }
+  $("rvSetor").addEventListener("change", desenharResumoVal);
+  $("rvData").addEventListener("change", desenharResumoVal);
+  $("rvAtualizar").addEventListener("click", atualizarResumoVal);
+  $("rvCopiar").addEventListener("click", async function () {
+    try { await navigator.clipboard.writeText(estado.val.textoResumo || ""); mostrarAviso("Resumo copiado."); }
+    catch (e) { mostrarAviso("Não consegui copiar: " + e.message, "erro"); }
+  });
+
+  // ---- Página do site ----------------------------------------------------------------------------
+  async function abrirSiteVal(id) {
+    const reg = estado.val.lista.find(function (v) { return String(v.id) === String(id); });
+    if (!reg) return;
+    estado.val.atual = reg; estado.val.pagina = "equip"; estado.val.colar = null; estado.val.pendente = null; estado.val.equip = []; estado.val.equipAviso = "";
+    irParaTela("SiteVal");
+    $("svCorpo").innerHTML = '<div class="vl-vazio">Carregando...</div>';
+    try {
+      const todas = conferir(await banco.from("equipamentos_base").select("*").eq("site_chave", reg.site_chave).order("segmento").order("tag"));
+      const tipos = (reg.wos || []).map(function (w) { return alNorm(w.tipo); });
+      let casam = todas.filter(function (r) { const t = alNorm(r.tipo); return t && tipos.some(function (x) { return x.indexOf(t) >= 0 || t.indexOf(x) >= 0; }); });
+      if (!casam.length && todas.length) { casam = todas; estado.val.equipAviso = "Os tipos da planilha não casaram com as WOs; mostrando todos os equipamentos do site."; }
+      estado.val.equip = casam;
+      if (!(reg.alarmes && reg.alarmes.config)) {
+        const r = conferir(await banco.from("alarmes_site").select("*").eq("site_chave", reg.site_chave).limit(1));
+        if (r.length && r[0].config_texto) reg.alarmes = Object.assign({}, reg.alarmes, { config: { texto: r[0].config_texto, em: r[0].config_em, reaproveitada: true } });
+      }
+    } catch (e) { mostrarAviso("Não consegui carregar os equipamentos: " + e.message, "erro"); }
+    desenharSiteVal();
+  }
+
+  function cabecalhoSiteVal(reg, linhas) {
+    const eq = reg.equipamentos || {};
+    const feitos = linhas.filter(function (r) { const e = eq[chaveEquip(r)]; return e && (e.fotos || e.pend); }).length;
+    const al = reg.alarmes || {};
+    const partes = (al.semConfig ? 2 : (al.config ? 1 : 0) + (al.hist ? 1 : 0));
+    const pg = estado.val.pagina;
+    return '<div class="tr">Painel / Validação / <span>' + esc(reg.site) + "</span></div>" +
+      '<div class="vl-topo"><h1>' + esc(reg.site) + " · " + esc(reg.equipe) + '</h1><div class="vl-ferr"><button class="bt" data-sv="voltar">Voltar para a fila</button></div></div>' +
+      '<div class="vl-head"><div><span>WOs do site</span>' + esc((reg.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" · ")) + "</div>" +
+      "<div><span>Aba pedida</span>" + (reg.aba_pedida_em ? horaDe(reg.aba_pedida_em) : "—") + "</div>" +
+      "<div><span>Em análise</span>" + (reg.analista ? esc(reg.analista.split("@")[0]) + ", desde " + horaDe(reg.analise_em) : "—") + "</div></div>" +
+      '<div class="vl-pg">' +
+      '<button data-sv="pg" data-p="equip" class="' + (pg === "equip" ? "ativo" : "") + '">Equipamentos e fotos<small>' + (linhas.length ? feitos + " de " + linhas.length + " conferidos" : "sem equipamentos na planilha") + "</small></button>" +
+      '<button data-sv="pg" data-p="alarmes" class="' + (pg === "alarmes" ? "ativo" : "") + '">Alarmes<small>' + partes + " de 2 colados</small></button>" +
+      '<button data-sv="pg" data-p="enc" class="' + (pg === "enc" ? "ativo" : "") + '">Encerrar<small>resumo do que foi conferido</small></button></div>';
+  }
+
+  function paginaEquip(reg, linhas) {
+    const eq = reg.equipamentos || {};
+    let t = estado.val.equipAviso ? '<div class="vl-alerta am">' + esc(estado.val.equipAviso) + "</div>" : "";
+    if (!linhas.length) {
+      t += '<div class="vl-vazio">Este site não tem equipamentos na planilha enviada.</div>';
+    } else {
+      const grupos = {};
+      linhas.forEach(function (r) { const g = r.segmento || "Sem segmento"; (grupos[g] = grupos[g] || []).push(r); });
+      t += "<table><tr><th style=\"width:240px\">Equipamento</th><th>Planilha</th><th>Preench.</th><th>Fotos</th><th>Pendência</th><th>Observação</th></tr>";
+      Object.keys(grupos).forEach(function (g) {
+        const ok = (reg.grupos_ok || []).indexOf(g) >= 0;
+        t += '<tr><td class="grp" colspan="6">' + esc(g.toUpperCase()) + " · " + grupos[g].length + ' equipamentos <button class="bt peq' + (ok ? " p" : "") + '" style="float:right" data-sv="grupo" data-g="' + esc(g) + '">Grupo e fotos conferidos' + (ok ? " ✓" : "") + "</button></td></tr>";
+        grupos[g].forEach(function (r) {
+          const k = chaveEquip(r), e = eq[k] || {};
+          const q = r.qtd_realizadas;
+          t += '<tr data-k="' + esc(k) + '" data-tag="' + esc(r.tag || "") + '" data-seg="' + esc(g) + '"><td>' + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td>" +
+            '<td class="' + (q > 1 ? "vl-no" : "") + '">' + (q == null ? "—" : q + "×") + "</td>" +
+            '<td><select data-sv="eq" data-c="fotos">' + opcoesHtml(REGRAS.validacao.fotos, e.fotos) + "</select></td>" +
+            '<td><select data-sv="eq" data-c="pend">' + opcoesHtml(REGRAS.validacao.pendencias, e.pend) + "</select></td>" +
+            '<td><input type="text" data-sv="eq" data-c="obs" value="' + esc(e.obs || "") + '" style="width:100%"></td></tr>';
+        });
+      });
+      t += "</table>";
+    }
+    t += '<div class="vl-caixa crit"><h3>Inventário crítico</h3>' + REGRAS.validacao.inventarioCritico.map(function (i) {
+      return '<div class="vl-ck"><span style="width:240px">' + esc(i) + '</span><select data-sv="inv" data-i="' + esc(i) + '">' + opcoesHtml(REGRAS.validacao.inventarioOpcoes, (reg.inventario || {})[i], "Não conferido") + "</select></div>";
+    }).join("") + "</div>";
+    return t;
+  }
+
+  function slotAlarme(rot, num, desc, dado, tipo, aviso) {
+    const cor = dado ? " ok" : "";
+    let st = '<div class="st vl-mu">Ainda não colado</div>';
+    if (dado) st = '<div class="st vl-ok">✓ ' + (dado.reaproveitada ? "Configuração de " + dataBR(dataLocalDe(dado.em)).slice(0, 5) + " (reaproveitada)" : "Colado às " + horaDe(dado.em)) + "</div>";
+    return '<div class="vl-slot' + cor + '"><div class="n">' + num + "</div><h3>" + rot + '</h3><div class="d">' + desc + '</div><button class="bt' + (dado ? "" : " p") + '" data-sv="colar" data-t="' + tipo + '">' + (dado ? "Colar de novo" : "Colar " + (tipo === "config" ? "configuração" : "histórico")) + "</button>" + st + "</div>";
+  }
+  function paginaAlarmes(reg) {
+    const al = reg.alarmes || {};
+    let t = '<div class="vl-slots">';
+    let dc = "Copie no sistema do cliente a tela com os alarmes configurados do site.", dh = "Copie o que externou durante a visita.";
+    if (al.config) { const c = lerConfiguracaoAlarmes(al.config.texto); dc = c.blocos.length + " blocos · " + c.total + " portas"; }
+    if (al.hist) { const h = lerHistoricoAlarmes(al.hist.texto); dh = h.eventos.length + " alarmes lidos"; }
+    t += slotAlarme("Configuração do site", 1, dc, al.config, "config") + slotAlarme("Histórico de alarmes", 2, dh, al.hist, "hist") + "</div>";
+    t += '<div class="vl-ck"><input type="checkbox" id="svSemConfig" data-sv="semconfig"' + (al.semConfig ? " checked" : "") + '><label for="svSemConfig" style="margin:0;font-size:13px;color:#161616">Site sem configuração de alarme para conferir</label></div>';
+    const c = estado.val.colar;
+    if (c) {
+      t += '<div class="vl-colar"><b>' + (c.tipo === "config" ? "Colar configuração" : "Colar histórico") + '</b><div class="vl-mu" style="margin:4px 0 6px">Cole o texto aqui (Ctrl+V).</div><textarea id="svTexto" placeholder=""></textarea>' +
+        '<div style="margin-top:8px"><button class="bt p" data-sv="usartexto">Usar texto</button> <button class="bt" data-sv="cancelarcolar">Cancelar</button></div></div>';
+    }
+    const p = estado.val.pendente;
+    if (p) {
+      t += '<div class="vl-alerta am"><b>Isso parece ' + (p.detectado === "hist" ? "o histórico, não a configuração" : "a configuração, não o histórico") + '.</b> Quer guardar no campo ' +
+        (p.detectado === "hist" ? "do histórico" : "da configuração") + '? <button class="bt peq p" data-sv="guardardetectado">Guardar ' + (p.detectado === "hist" ? "no histórico" : "na configuração") + '</button> <button class="bt peq" data-sv="descartar">Cancelar</button></div>';
+    }
+    if (estado.val.msgAlarme) t += '<div class="vl-alerta">' + esc(estado.val.msgAlarme) + "</div>";
+    const b = batimentoDoRegistro(reg);
+    if (b) {
+      const r = b.resumo;
+      t += '<div class="vl-cards"><div class="vl-c"><div class="r">Configurados</div><div class="v">' + r.configurados + '</div></div><div class="vl-c"><div class="r">Isentos (bloqueados pelo cliente)</div><div class="v">' + r.isentos +
+        '</div></div><div class="vl-c"><div class="r">Para externar</div><div class="v">' + r.paraExternar + '</div></div><div class="vl-c verde"><div class="r">Externaram</div><div class="v">' + r.externaram +
+        '</div></div><div class="vl-c ' + (r.faltaram ? "verm" : "verde") + '"><div class="r">Faltaram</div><div class="v">' + r.faltaram + "</div></div></div>";
+      const falt = b.itens.filter(function (i) { return !i.externou && !i.dispensado; });
+      if (falt.length) {
+        const por = {};
+        falt.forEach(function (i) { (por[i.bloco] = por[i.bloco] || []).push(i.texto); });
+        t += '<div class="vl-alerta"><b>Faltou externar (' + falt.length + "):</b> " + Object.keys(por).map(function (k) { return k + " · " + por[k].join(", "); }).join(" &nbsp;|&nbsp; ") + "</div>";
+      }
+      b.ordem.forEach(function (o) { if (o.status !== "ok") t += '<div class="vl-alerta' + (o.status === "violada" ? "" : " am") + '"><b>' + (o.status === "violada" ? "Regra de ordem:" : "Ordem:") + "</b> " + esc(o.texto) + "</div>"; });
+      b.rajadas.forEach(function (j) { t += '<div class="vl-alerta am"><b>Atenção:</b> ' + j.qtd + " alarmes externaram entre " + horaSegDe(j.de) + " e " + horaSegDe(j.ate) + ". Confira os bornes.</div>"; });
+      t += "<table><tr><th>Bloco</th><th>Alarme configurado</th><th>Severidade</th><th>Resultado</th><th>Hora no equipamento</th><th>Apontamento do técnico</th></tr>";
+      const blocos = [];
+      b.itens.forEach(function (i) { if (blocos.indexOf(i.bloco) < 0) blocos.push(i.bloco); });
+      blocos.forEach(function (bl) {
+        const its = b.itens.filter(function (i) { return i.bloco === bl; });
+        t += '<tr><td class="grp" colspan="6">' + bl + " · " + its.filter(function (i) { return i.externou; }).length + " de " + its.length + " externaram</td></tr>";
+        its.forEach(function (i) {
+          t += "<tr><td>" + i.bloco + "</td><td>" + esc(i.texto) + "</td><td>" + esc(i.severidade) + "</td><td class=\"" + (i.externou ? "vl-ok" : (i.dispensado ? "vl-mu" : "vl-no")) + '">' +
+            (i.externou ? "Externou" : (i.dispensado ? "Dispensado" : "Faltou")) + "</td><td>" + horaSegDe(i.quando) + "</td><td>" +
+            (i.externou ? "" : '<select data-sv="apont" data-k="' + esc(i.chave) + '">' + opcoesHtml(REGRAS.validacao.apontamentos, i.apontamento, "Sem apontamento") + "</select>") + "</td></tr>";
+        });
+      });
+      if (b.isentos.length) {
+        const nomes = b.isentos.slice(0, 2).map(function (x) { return x.texto; }).join(", ");
+        t += '<tr><td class="grp" colspan="6">' + b.isentos.length + " alarmes bloqueados pelo cliente (isentos)</td></tr><tr><td colspan=\"6\" class=\"vl-mu\">" + esc(nomes) + (b.isentos.length > 2 ? " e outros " + (b.isentos.length - 2) : "") + "</td></tr>";
+      }
+      t += "</table>";
+    }
+    t += '<div class="vl-caixa"><h3>Conferência do bloco</h3><div class="vl-ck"><input type="checkbox" id="svBornes" data-sv="chk" data-c="bornes"' + (al.bornes ? " checked" : "") + '><label for="svBornes" style="margin:0;font-size:13px;color:#161616">Fios conectados nos bornes (sem “gatinho”)</label></div>' +
+      '<div class="vl-ck"><input type="checkbox" id="svFotosAl" data-sv="chk" data-c="fotos"' + (al.fotos ? " checked" : "") + '><label for="svFotosAl" style="margin:0;font-size:13px;color:#161616">Conferi as fotos das abas de alarme no sistema do cliente</label></div></div>';
+    return t;
+  }
+
+  function paginaEncerrar(reg, linhas) {
+    const pend = pendenciasDe(reg), falt = faltasDe(reg, linhas);
+    const porTipo = function (tipo) { return pend.filter(function (p) { return p.tipo === tipo; }); };
+    function linha(rot, itens, vazioOk) {
+      return '<div class="vl-r"><span>' + rot + '</span><span class="' + (itens.length ? "vl-no" : "vl-ok") + '">' + (itens.length ? esc(itens.map(function (p) { return p.texto; }).join(" · ")) : vazioOk) + "</span></div>";
+    }
+    let t = '<div class="vl-caixa"><h3>Resumo da conferência</h3>' +
+      linha("Equipamentos e fotos", porTipo("Aba em aberto").concat(porTipo("Foto"), porTipo("Outros")), "Sem pendência") +
+      linha("Inventário crítico e equipamentos", porTipo("Inventário"), "Sem pendência") +
+      linha("Alarmes · batimento", porTipo("Alarmes"), "Sem pendência") +
+      '<div class="vl-r"><span>Etapas não feitas</span><span class="' + (falt.length ? "vl-no" : "vl-ok") + '">' + (falt.length ? esc(falt.join(" · ")) : "Todas feitas") + "</span></div></div>";
+    const sugestao = estado.val.motivo != null ? estado.val.motivo : pend.map(function (p) { return p.texto; }).join(" · ");
+    const livre = pend.length === 0 && falt.length === 0;
+    t += '<div class="vl-caixa"><h3>Resultado</h3><div class="vl-ferr">' +
+      '<button class="bt g" data-sv="res" data-r="validada"' + (livre ? "" : " disabled") + ">Validada</button>" +
+      '<button class="bt" data-sv="res" data-r="ressalva"' + (falt.length ? " disabled" : "") + ">Validada com ressalva</button>" +
+      '<button class="bt r" data-sv="res" data-r="devolvida">Devolver ao técnico</button>' +
+      '<button class="bt" data-sv="res" data-r="offline">Encaminhar para validação offline</button></div>' +
+      '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo (obrigatório, menos na validada)</div><textarea id="svMotivo">' + esc(sugestao) + "</textarea></div>";
+    return t;
+  }
+
+  function desenharSiteVal() {
+    const reg = estado.val.atual;
+    if (!reg) return;
+    const linhas = estado.val.equip;
+    const pg = estado.val.pagina;
+    $("svCorpo").innerHTML = cabecalhoSiteVal(reg, linhas) + (pg === "equip" ? paginaEquip(reg, linhas) : pg === "alarmes" ? paginaAlarmes(reg) : paginaEncerrar(reg, linhas));
+  }
+
+  async function guardarAlarme(tipo, texto) {
+    const reg = estado.val.atual;
+    const dado = { texto: texto, em: new Date().toISOString() };
+    const al = Object.assign({}, reg.alarmes || {});
+    al[tipo] = dado;
+    await salvarVal(reg, { alarmes: al });
+    if (tipo === "config") {
+      try { conferir(await banco.from("alarmes_site").upsert({ site_chave: reg.site_chave, site: reg.site, config_texto: texto, config_em: dado.em, atualizado_por: estado.usuarioEmail }, { onConflict: "site_chave" })); }
+      catch (e) { mostrarAviso("Configuração colada, mas não consegui guardá-la para a próxima visita: " + e.message, "erro"); }
+    }
+  }
+  async function receberTextoAlarme(texto, destino) {
+    estado.val.msgAlarme = ""; estado.val.pendente = null;
+    const det = detectarTextoAlarme(texto);
+    if (!det) { estado.val.msgAlarme = "Não consegui ler este texto. Copie de novo e cole."; desenharSiteVal(); return; }
+    if (destino && destino !== det) { estado.val.pendente = { texto: texto, detectado: det }; estado.val.colar = null; desenharSiteVal(); return; }
+    estado.val.colar = null;
+    try { await guardarAlarme(det, texto); } catch (e) { mostrarAviso("Erro ao gravar: " + e.message, "erro"); }
+    desenharSiteVal();
+  }
+  document.addEventListener("paste", function (e) {
+    if (estado.val.pagina !== "alarmes" || $("telaSiteVal").classList.contains("oculto")) return;
+    if (e.target && /^(textarea|input|select)$/i.test(e.target.tagName)) return;
+    const texto = e.clipboardData ? e.clipboardData.getData("text") : "";
+    if (texto) { e.preventDefault(); receberTextoAlarme(texto, null); }
+  });
+
+  $("svCorpo").addEventListener("click", async function (e) {
+    const el = e.target.closest("[data-sv]");
+    if (!el) return;
+    const reg = estado.val.atual, a = el.dataset.sv;
+    if (a === "voltar") { irParaTela("FilaVal"); return; }
+    if (a === "pg") { estado.val.pagina = el.dataset.p; estado.val.motivo = null; desenharSiteVal(); return; }
+    if (!reg) return;
+    try {
+      if (a === "grupo") {
+        const g = el.dataset.g;
+        const ok = (reg.grupos_ok || []).slice();
+        const eq = JSON.parse(JSON.stringify(reg.equipamentos || {}));
+        if (ok.indexOf(g) >= 0) { ok.splice(ok.indexOf(g), 1); }
+        else {
+          ok.push(g);
+          estado.val.equip.filter(function (r) { return (r.segmento || "Sem segmento") === g; }).forEach(function (r) {
+            const k = chaveEquip(r), x = eq[k] || { tag: r.tag, segmento: g };
+            if (!x.fotos && !x.pend) { x.fotos = "Ok"; eq[k] = x; }
+          });
+        }
+        await salvarVal(reg, { grupos_ok: ok, equipamentos: eq });
+        desenharSiteVal();
+      } else if (a === "colar") {
+        const tipo = el.dataset.t;
+        estado.val.msgAlarme = ""; estado.val.pendente = null;
+        let texto = "";
+        try { texto = await navigator.clipboard.readText(); } catch (err) { texto = ""; }
+        if (texto && detectarTextoAlarme(texto)) { await receberTextoAlarme(texto, tipo); }
+        else { estado.val.colar = { tipo: tipo }; desenharSiteVal(); const ta = $("svTexto"); if (ta) ta.focus(); }
+      } else if (a === "usartexto") {
+        const texto = $("svTexto").value;
+        await receberTextoAlarme(texto, estado.val.colar ? estado.val.colar.tipo : null);
+      } else if (a === "cancelarcolar") { estado.val.colar = null; desenharSiteVal(); }
+      else if (a === "descartar") { estado.val.pendente = null; desenharSiteVal(); }
+      else if (a === "guardardetectado") {
+        const p = estado.val.pendente; estado.val.pendente = null;
+        await guardarAlarme(p.detectado, p.texto); desenharSiteVal();
+      } else if (a === "res") { await encerrarValidacao(el.dataset.r); }
+    } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
+  });
+
+  $("svCorpo").addEventListener("change", async function (e) {
+    const el = e.target.closest("[data-sv]");
+    if (!el) return;
+    const reg = estado.val.atual, a = el.dataset.sv;
+    if (!reg) return;
+    try {
+      if (a === "eq") {
+        const tr = el.closest("tr"), k = tr.dataset.k;
+        const eq = JSON.parse(JSON.stringify(reg.equipamentos || {}));
+        const x = eq[k] || { tag: tr.dataset.tag, segmento: tr.dataset.seg };
+        x[el.dataset.c] = el.value;
+        if (!x.fotos && !x.pend && !x.obs) delete eq[k]; else eq[k] = x;
+        await salvarVal(reg, { equipamentos: eq });
+        desenharSiteVal();
+      } else if (a === "inv") {
+        const inv = Object.assign({}, reg.inventario || {});
+        if (el.value) inv[el.dataset.i] = el.value; else delete inv[el.dataset.i];
+        await salvarVal(reg, { inventario: inv });
+        desenharSiteVal();
+      } else if (a === "apont") {
+        const al = Object.assign({}, reg.alarmes || {});
+        al.apont = Object.assign({}, al.apont || {});
+        if (el.value && el.value !== "Sem apontamento") al.apont[el.dataset.k] = el.value; else delete al.apont[el.dataset.k];
+        await salvarVal(reg, { alarmes: al });
+        desenharSiteVal();
+      } else if (a === "chk") {
+        const al = Object.assign({}, reg.alarmes || {});
+        al[el.dataset.c] = el.checked;
+        await salvarVal(reg, { alarmes: al });
+        desenharSiteVal();
+      } else if (a === "semconfig") {
+        const al = Object.assign({}, reg.alarmes || {});
+        al.semConfig = el.checked;
+        await salvarVal(reg, { alarmes: al });
+        desenharSiteVal();
+      }
+    } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
+  });
+  $("svCorpo").addEventListener("input", function (e) { if (e.target.id === "svMotivo") estado.val.motivo = e.target.value; });
+
+  async function encerrarValidacao(resultado) {
+    const reg = estado.val.atual, linhas = estado.val.equip;
+    const motivo = ($("svMotivo").value || "").trim();
+    if (resultado !== "validada" && !motivo) { mostrarAviso("Informe o motivo.", "erro"); return; }
+    const pend = pendenciasDe(reg);
+    const agora = new Date().toISOString();
+    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, motivo: motivo || null, pendencias: pend,
+                 wos: (reg.wos || []).length, equipe: reg.equipe, site: reg.site };
+    const campos = { historico: (reg.historico || []).concat([ev]), resultado: resultado, motivo: motivo || null };
+    if (resultado === "devolvida") { Object.assign(campos, { situacao: "em_campo", aba_pedida_em: null, analista: null, analise_em: null, encerrada_em: null }); }
+    else { Object.assign(campos, { situacao: "encerrada", encerrada_em: agora }); }
+    await salvarVal(reg, campos);
+    estado.val.motivo = null;
+    mostrarAviso(reg.site + ": " + REGRAS.validacao.resultados[resultado] + ".");
+    irParaTela("FilaVal");
+  }
+
   (async function () {
     try {
       const r = await banco.auth.getSession();
