@@ -216,7 +216,7 @@
     #telaResumoDia .rd-resp { width:84px; padding:4px 6px; color:#393939; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-resp { justify-content:center; text-align:center; }
     #telaResumoDia .rd-prev { width:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    #telaResumoDia .rd-sites { flex-grow:1; display:flex; }
+    #telaResumoDia .rd-sites { flex:1 1 0; min-width:0; display:flex; }
     #telaResumoDia .rd-site { flex:1 1 0; min-width:0; box-sizing:border-box; display:flex; border-left:1px solid #e0e0e0; }
     #telaResumoDia .rd-cab .rd-site { justify-content:center; align-items:center; padding:8px 4px; border-left-color:#c6c6c6; }
     #telaResumoDia .rd-site { flex-direction:column; justify-content:center; padding:5px 8px; line-height:1.3; }
@@ -516,7 +516,7 @@
     aside .marca .fechar { background:transparent; border:0; color:#fff; font-size:20px; cursor:pointer; padding:0 8px 0 0; }
     .nav-titulo { padding:14px 20px 4px; font-size:11px; letter-spacing:.06em; color:#8d9bb5; text-transform:uppercase; }
     main { max-width:none; padding:18px 40px 60px; }
-    main:has(#telaResumoDia:not(.oculto)) { max-width:1360px; }
+    main:has(#telaResumoDia:not(.oculto)) { max-width:none; }
 
     /* ===== Validação ===== */
     .vl { font-size:13px; color:#161616; }
