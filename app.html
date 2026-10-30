@@ -1940,12 +1940,6 @@
       if (grupoDaPreventiva(l.tipo) === "EPS" && (!estado.setor || casaSetor(setorDe(l), estado.setor))) porWo[l.wo] = { base: l, relatorios: [] };
     });
     const revisar = [];
-    const temRelatorioEmOutroMes = {};       // WO que já tem relatório em outra pasta de mês (não vira "armazenar")
-    estado.relatoriosEPS.forEach(function (r) {
-      if (r.competencia === mes) return;
-      const lig = ligarRelatorio(r);
-      if (lig.wo) temRelatorioEmOutroMes[lig.wo] = true;
-    });
     estado.relatoriosEPS.forEach(function (r) {
       if (r.competencia !== mes) return;
       const lig = ligarRelatorio(r);
@@ -1962,9 +1956,8 @@
     Object.keys(porWo).forEach(function (wo) {
       const e = porWo[wo];
       const status = String(e.base.status_final || "").trim().toLowerCase();
-      let grupo = status === "executada" ? (e.relatorios.length > 0 || temRelatorioEmOutroMes[wo] ? "lancada" : "armazenar") : (e.relatorios.length > 0 ? "falta" : "aguardando");
-      // Executada sem relatório em nenhum mês fica sempre em "Armazenar relatório". As lançadas só entram no mês em que foram lançadas (ou se tiverem relatório do mês).
-      if (grupo === "lancada" && e.relatorios.length === 0 && !String(e.base.data_fim || "").startsWith(mes)) return;
+      let grupo = status === "executada" ? (e.relatorios.length > 0 ? "lancada" : "armazenar") : (e.relatorios.length > 0 ? "falta" : "aguardando");
+      // Executada sem relatório na pasta do mês fica em "Armazenar relatório", seja qual for a data fim.
       const empresas = [];
       e.relatorios.forEach(function (r) { if (empresas.indexOf(r.pasta_raiz) < 0) empresas.push(r.pasta_raiz); });
       let prevista = false;
