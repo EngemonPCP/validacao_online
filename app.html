@@ -533,6 +533,16 @@
     .vl-ferr select, .vl-ferr input { width:auto; min-width:160px; }
     .vl-ck select { width:340px; max-width:100%; }
     .vl td select { width:100%; }
+    .vl-wo { background:#fff; margin-top:12px; border-top:3px solid #0f62fe; }
+    .vl-wo.cl { border-top-color:#198038; }
+    .vl-wo .wh { display:flex; align-items:center; gap:14px; padding:10px 14px; border-bottom:1px solid #e0e0e0; flex-wrap:wrap; }
+    .vl-wo .wh b { font-size:15px; } .vl-wo .wh .m { color:#525252; font-size:12px; } .vl-wo .wh .sp { flex:1; }
+    .vl-wo table th { background:#f4f4f4; color:#525252; font-size:11px; padding:6px 10px; border-bottom:1px solid #c6c6c6; }
+    .vl-wo table td { padding:4px 10px; font-size:12.5px; }
+    .vl-wo td.seg { color:#525252; font-size:11px; font-weight:600; letter-spacing:.3px; }
+    .vl-wo tr.na td { background:#fafafa; color:#6f6f6f; }
+    .vl-wo td select { padding:4px 8px; font-size:12.5px; } .vl-wo td select.fok { color:#198038; font-weight:600; }
+    .vl-wo .fw { padding:8px 14px; color:#525252; font-size:12px; border-top:1px solid #e0e0e0; background:#fafafa; }
     .vl-cards { display:flex; gap:18px; flex-wrap:wrap; margin:10px 0 14px; }
     .vl-c { flex:1 1 150px; }
     .vl-c .r { font-size:11px; color:#525252; }
@@ -2576,13 +2586,14 @@
       if (r.jaNoSite) visita.hora_entrada = r.chegada.toISOString();
       if (r.retro) visita.hora_saida = r.saida.toISOString();
       const visitaCriada = await criarVisita(visita, r.wos);
-      try { await criarValidacaoDaVisita(visitaCriada, r); }
+      let notaVal = "";
+      try { if (await criarValidacaoDaVisita(visitaCriada, r) === "duplicada") notaVal = " Este site já está na Fila da Validação; mantive o registro que já existe."; }
       catch (e3) { mostrarAviso("Visita gravada, mas não consegui enviá-la para a Validação: " + e3.message, "erro"); }
       try { await marcarEscalaPelaVisita(r); }
       catch (e2) { mostrarAviso("Visita gravada, mas não consegui marcar a equipe no dia: " + e2.message, "erro"); }
       ocultarResumo();
-      msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + (r.retro ? ". Visita de " + r.dataExecucao.split("-").reverse().join("/") + " registrada sem horário." : ". Acompanhe em “Equipes em campo”.") + "</span>";
-      mostrarAviso(r.retro ? "Visita registrada sem horário: " + r.siteTexto + " · " + r.equipe.nome : (r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome);
+      msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + (r.retro ? ". Visita de " + r.dataExecucao.split("-").reverse().join("/") + " registrada sem horário." : ". Acompanhe em “Equipes em campo”.") + esc(notaVal) + "</span>";
+      mostrarAviso(r.retro ? "Visita registrada sem horário: " + r.siteTexto + " · " + r.equipe.nome : (r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome + notaVal);
       $("campoSite").value = ""; $("campoDetalhe").value = ""; $("campoConferi").checked = false; $("campoObservacao").value = "";
       $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoAlarme").selectedIndex = 0;
       $("campoSituacaoInicial").value = "desloc"; $("campoHoraAviso").value = ""; $("campoHoraChegada").value = "";
@@ -3690,9 +3701,9 @@
   // ==== VALIDAÇÃO PREVENTIVA ====================================================
   REGRAS.validacao = {
     inicio: "2026-10-30",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
-    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento"],
+    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente"],
     pendencias: ["Aba em aberto", "Não inventariado", "Preenchimento incorreto", "Outro"],
-    inventarioCritico: ["PLC do ar-condicionado", "Termostato wall mounted"],
+    inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
     apontamentos: ["Sem apontamento", "Alarme sem contato no bloco", "Bloqueado pelo cliente", "Técnico informou que não externou", "Outro"],
     ordemAlarmes: [{ antes: "FALHA DE ENERGIA AC", depois: "BATERIA EM DESCARGA" }],
@@ -3735,6 +3746,10 @@
   async function criarValidacaoDaVisita(visita, r) {
     if (!r.comPreventiva || r.dataExecucao < REGRAS.validacao.inicio) return;
     const setor = (estado.setorDaWO && r.wos.length && estado.setorDaWO[r.wos[0].wo]) || estado.setor || "";
+    const abertas = conferir(await banco.from("validacoes").select("id,wos,situacao").eq("site_chave", limparSite(r.siteTexto)).eq("data", r.dataExecucao).in("situacao", ["em_campo", "aba_pedida", "em_analise"]));
+    if (abertas.some(function (v) { return (v.wos || []).some(function (w) { return r.wos.some(function (x) { return x.wo === w.wo; }); }); })) {
+      return "duplicada";
+    }
     conferir(await banco.from("validacoes").upsert({
       visita_id: String(visita.id), data: r.dataExecucao, site: r.siteTexto, site_chave: limparSite(r.siteTexto), equipe: r.equipe.nome,
       setor: setor, wos: r.wos, situacao: "em_campo", atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString()
@@ -3761,7 +3776,7 @@
       if (e.fotos && e.fotos !== "Ok") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase() });
     });
     const inv = reg.inventario || {};
-    Object.keys(inv).forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
+    REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
     const b = batimentoDoRegistro(reg);
     if (b) {
       if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram" });
@@ -3773,9 +3788,11 @@
   function faltasDe(reg, linhasEquip) {
     const f = [];
     const eq = reg.equipamentos || {};
-    const sem = linhasEquip.filter(function (r) { const e = eq[chaveEquip(r)]; return !(e && (e.fotos || e.pend)); }).length;
+    const sem = linhasEquip.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !(e && (e.fotos || e.pend)); }).length;
     if (sem > 0) f.push("Equipamentos e fotos: faltam conferir " + sem);
-    REGRAS.validacao.inventarioCritico.forEach(function (i) { if (!(reg.inventario || {})[i]) f.push("Inventário crítico: " + i); });
+    if ((reg.wos || []).some(ehClima)) {
+      REGRAS.validacao.inventarioCritico.forEach(function (i) { if (!(reg.inventario || {})[i]) f.push("Inventário crítico: " + i); });
+    }
     const al = reg.alarmes || {};
     if (!al.semConfig) {
       if (!al.config) f.push("Alarmes: falta a configuração do site");
@@ -3793,8 +3810,20 @@
     const a = palavrasDoTipo(tipoEquip), b = palavrasDoTipo(tipoWO);
     return a.some(function (x) { return b.indexOf(x) >= 0; });
   }
-  function chaveEquip(r) { return alNorm(r.tipo) + "|" + alNorm(r.tag); }
+  function chaveEquip(r) { return alNorm(r.tipo) + "|" + (r.tag ? alNorm(r.tag) : "SEG:" + alNorm(r.segmento)); }
+  function ehNA(r) { return alNorm(r.situacao_prev) === "N/A"; }
+  function ehClima(w) { return alNorm(w.tipo).indexOf("CLIMAT") >= 0; }
+  function woDaLinha(r, wos) { return wos.find(function (w) { return tipoCasa(r.tipo, w.tipo); }) || null; }
 
+  // Cada WO conta uma vez por dia: o último resultado do dia se sobrepõe aos anteriores.
+  function eventosFinaisDoDia(lista, dia) {
+    const evs = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia; }).sort(function (a, b) { return String(a.em).localeCompare(String(b.em)); });
+    const dono = {};
+    evs.forEach(function (e) { (e.wo_ids || (e.reg.wos || []).map(function (w) { return w.wo; })).forEach(function (id) { dono[id] = e; }); });
+    const cont = new Map();
+    Object.keys(dono).forEach(function (id) { cont.set(dono[id], (cont.get(dono[id]) || 0) + 1); });
+    return Array.from(cont.entries()).map(function (x) { return Object.assign({}, x[0], { wosFinais: x[1] }); });
+  }
   const SIT_VAL = { em_campo: ["Em campo", "v5"], aba_pedida: ["Aba pedida", "v3"], em_analise: ["Em análise", "v4"], encerrada: ["Encerrada", "v1"] };
   function eventosDe(lista) {
     const ev = [];
@@ -3814,7 +3843,7 @@
     const n = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
     lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
     const encHoje = lista.filter(function (v) { return v.situacao === "encerrada" && v.encerrada_em && dataLocalDe(v.encerrada_em) === h; }).length;
-    const devHoje = eventosDe(lista).filter(function (e) { return e.resultado === "devolvida" && dataLocalDe(e.em) === h; }).length;
+    const devHoje = eventosFinaisDoDia(lista, h).filter(function (e) { return e.resultado === "devolvida"; }).length;
     const f = estado.val.filtro;
     let mostrar = lista.filter(function (v) { return f === "todas" || v.situacao === f; });
     mostrar.sort(function (a, b) {
@@ -3887,8 +3916,8 @@
   function dadosResumoVal() {
     const dia = $("rvData").value || hoje(), setor = $("rvSetor").value;
     const lista = estado.val.lista.filter(function (v) { return !setor || casaSetor(String(v.setor || "").trim().toUpperCase(), setor); });
-    const ev = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia; });
-    const soma = function (fn) { return ev.filter(fn).reduce(function (s, e) { return s + (e.wos || 0); }, 0); };
+    const ev = eventosFinaisDoDia(lista, dia);
+    const soma = function (fn) { return ev.filter(fn).reduce(function (s, e) { return s + e.wosFinais; }, 0); };
     const d = { dia: dia, ev: ev, lista: lista,
       exec: soma(function () { return true; }),
       sem: soma(function (e) { return e.resultado === "validada"; }),
@@ -3901,9 +3930,9 @@
     d.equipes = {};
     ev.forEach(function (e) {
       const q = d.equipes[e.equipe] = d.equipes[e.equipe] || { exec: 0, com: 0, dev: 0 };
-      q.exec += e.wos || 0;
-      if (e.resultado !== "validada") q.com += e.wos || 0;
-      if (e.resultado === "devolvida") q.dev += e.wos || 0;
+      q.exec += e.wosFinais;
+      if (e.resultado !== "validada") q.com += e.wosFinais;
+      if (e.resultado === "devolvida") q.dev += e.wosFinais;
     });
     d.fila = { aba: lista.filter(function (v) { return v.situacao === "aba_pedida"; }).length, ana: lista.filter(function (v) { return v.situacao === "em_analise"; }).length,
                cam: lista.filter(function (v) { return v.situacao === "em_campo"; }).length };
@@ -3930,24 +3959,23 @@
     t += "<div><h3>Por equipe</h3>" + (eqs.length ? "<table><tr><th>Equipe</th><th>Executadas</th><th>Com pendência</th><th>Devolvidas</th></tr>" + eqs.map(function (k) {
       return "<tr><td>" + esc(k) + "</td><td>" + d.equipes[k].exec + "</td><td>" + d.equipes[k].com + "</td><td>" + d.equipes[k].dev + "</td></tr>";
     }).join("") + "</table>" : '<div class="vl-mu">Sem validações neste dia.</div>') + "</div></div>";
-    // O que o coordenador precisa tratar: último resultado de cada site com pendência.
-    const tratar = d.lista.filter(function (v) {
-      const evs = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; });
-      if (!evs.length) return false;
-      const u = evs[evs.length - 1];
-      return dataLocalDe(u.em) === d.dia && u.resultado !== "validada";
-    });
+    // O que o coordenador precisa tratar: resultado final de cada site com pendência.
+    const tratar = d.ev.filter(function (e) { return e.resultado !== "validada"; });
     t += '<h3 style="margin-top:16px">Para o coordenador tratar</h3>';
     if (!tratar.length) t += '<div class="vl-vazio">Nada para tratar neste dia.</div>';
-    else t += "<table><tr><th>Site</th><th>WOs</th><th>Resultado</th><th>Pendências</th><th>Tratativa</th></tr>" + tratar.slice(0, 60).map(function (v) {
-      const evs = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; });
-      const u = evs[evs.length - 1];
+    else t += "<table><tr><th>Site</th><th>WOs</th><th>Resultado</th><th>Pendências</th><th>Tratativa</th></tr>" + tratar.slice(0, 60).map(function (u) {
+      const v = u.reg;
       const classe = { devolvida: "v2", ressalva: "v3", offline: "v4" }[u.resultado];
       const trat = u.resultado === "devolvida" ? (v.situacao === "encerrada" ? ["Revalidada", "v1"] : ["Aguardando técnico", "v5"]) : u.resultado === "offline" ? ["Validação offline", "v4"] : ["Com ressalva", "v3"];
       return "<tr><td><b>" + esc(v.site) + "</b></td><td>" + esc((v.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" · ")) + '</td><td><span class="vl-tag ' + classe + '">' +
         esc(REGRAS.validacao.resultados[u.resultado]) + "</span></td><td>" + esc((u.pendencias || []).map(function (p) { return p.texto; }).join(" · ") || u.motivo || "—") +
         '</td><td><span class="vl-tag ' + trat[1] + '">' + trat[0] + "</span></td></tr>";
     }).join("") + "</table>";
+    const naLista = d.ev.filter(function (e) { return (e.na || []).length; });
+    if (naLista.length) {
+      t += '<h3 style="margin-top:16px">Equipamentos que o site não possui</h3><table><tr><th>Site</th><th>Equipamentos</th></tr>' +
+        naLista.map(function (e) { return "<tr><td><b>" + esc(e.site) + "</b></td><td>" + esc(e.na.join(", ")) + "</td></tr>"; }).join("") + "</table>";
+    }
     $("rvCorpo").innerHTML = t;
     estado.val.textoResumo = textoResumoVal(d);
   }
@@ -3992,7 +4020,9 @@
 
   function cabecalhoSiteVal(reg, linhas) {
     const eq = reg.equipamentos || {};
-    const feitos = linhas.filter(function (r) { const e = eq[chaveEquip(r)]; return e && (e.fotos || e.pend); }).length;
+    const reaisCab = linhas.filter(function (r) { return !ehNA(r); });
+    const feitos = reaisCab.filter(function (r) { const e = eq[chaveEquip(r)]; return e && (e.fotos || e.pend); }).length;
+    const nNA = linhas.length - reaisCab.length;
     const al = reg.alarmes || {};
     const partes = (al.semConfig ? 2 : (al.config ? 1 : 0) + (al.hist ? 1 : 0));
     const pg = estado.val.pagina;
@@ -4002,38 +4032,52 @@
       "<div><span>Aba pedida</span>" + (reg.aba_pedida_em ? horaDe(reg.aba_pedida_em) : "—") + "</div>" +
       "<div><span>Em análise</span>" + (reg.analista ? esc(reg.analista.split("@")[0]) + ", desde " + horaDe(reg.analise_em) : "—") + "</div></div>" +
       '<div class="vl-pg">' +
-      '<button data-sv="pg" data-p="equip" class="' + (pg === "equip" ? "ativo" : "") + '">Equipamentos e fotos<small>' + (linhas.length ? feitos + " de " + linhas.length + " conferidos" : "sem equipamentos na planilha") + "</small></button>" +
+      '<button data-sv="pg" data-p="equip" class="' + (pg === "equip" ? "ativo" : "") + '">Equipamentos e fotos<small>' + (linhas.length ? feitos + " de " + reaisCab.length + " conferidos" + (nNA ? " · " + nNA + " não existem no site" : "") : "sem equipamentos na planilha") + "</small></button>" +
       '<button data-sv="pg" data-p="alarmes" class="' + (pg === "alarmes" ? "ativo" : "") + '">Alarmes<small>' + partes + " de 2 colados</small></button>" +
       '<button data-sv="pg" data-p="enc" class="' + (pg === "enc" ? "ativo" : "") + '">Encerrar<small>resumo do que foi conferido</small></button></div>';
   }
 
   function paginaEquip(reg, linhas) {
-    const eq = reg.equipamentos || {};
+    const eq = reg.equipamentos || {}, wos = reg.wos || [];
     let t = estado.val.equipAviso ? '<div class="vl-alerta am">' + esc(estado.val.equipAviso) + "</div>" : "";
-    if (!linhas.length) {
-      t += '<div class="vl-vazio">Este site não tem equipamentos na planilha enviada.</div>';
-    } else {
-      const grupos = {};
-      linhas.forEach(function (r) { const g = r.segmento || "Sem segmento"; (grupos[g] = grupos[g] || []).push(r); });
-      t += "<table><tr><th style=\"width:240px\">Equipamento</th><th>Planilha</th><th>Preench.</th><th>Fotos</th><th>Pendência</th><th>Observação</th></tr>";
-      Object.keys(grupos).forEach(function (g) {
-        const ok = (reg.grupos_ok || []).indexOf(g) >= 0;
-        t += '<tr><td class="grp" colspan="6">' + esc(g.toUpperCase()) + " · " + grupos[g].length + ' equipamentos <button class="bt peq' + (ok ? " p" : "") + '" style="float:right" data-sv="grupo" data-g="' + esc(g) + '">Grupo e fotos conferidos' + (ok ? " ✓" : "") + "</button></td></tr>";
-        grupos[g].forEach(function (r) {
-          const k = chaveEquip(r), e = eq[k] || {};
-          const q = r.qtd_realizadas;
-          t += '<tr data-k="' + esc(k) + '" data-tag="' + esc(r.tag || "") + '" data-seg="' + esc(g) + '"><td>' + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td>" +
+    if (!linhas.length) t += '<div class="vl-vazio">Este site não tem equipamentos na planilha enviada.</div>';
+    const cartoes = wos.map(function (w) { return { w: w, rows: linhas.filter(function (r) { return woDaLinha(r, wos) === w; }) }; });
+    const soltas = linhas.filter(function (r) { return !woDaLinha(r, wos); });
+    if (soltas.length) cartoes.push({ w: { wo: "", tipo: "Outros equipamentos" }, rows: soltas });
+    cartoes.forEach(function (c) {
+      const reais = c.rows.filter(function (r) { return !ehNA(r); }), nas = c.rows.filter(ehNA);
+      const feitos = reais.filter(function (r) { const e = eq[chaveEquip(r)]; return e && (e.fotos || e.pend); }).length;
+      const clima = ehClima(c.w), ok = (reg.grupos_ok || []).indexOf(c.w.wo) >= 0;
+      c.rows.sort(function (a, b) { return String(a.segmento).localeCompare(String(b.segmento)) || String(a.tag).localeCompare(String(b.tag)); });
+      t += '<div class="vl-wo' + (clima ? " cl" : "") + '"><div class="wh"><b>' + esc(tipoCurto(c.w.tipo)) + '</b><span class="m">' + esc(c.w.wo) + "</span>" +
+        '<span class="vl-tag ' + (reais.length && feitos === reais.length ? "v1" : "v2") + '">' + feitos + " de " + reais.length + " conferidos</span>" +
+        (nas.length ? '<span class="vl-tag v5">' + nas.length + " não existem no site</span>" : "") + '<span class="sp"></span>' +
+        (reais.length ? '<button class="bt peq' + (ok ? " p" : "") + '" data-sv="grupo" data-w="' + esc(c.w.wo) + '">Conferir tudo desta WO' + (ok ? " ✓" : "") + "</button>" : "") + "</div>";
+      if (!c.rows.length) t += '<div class="fw">Sem equipamentos na planilha para esta WO.</div>';
+      else {
+        t += '<table><tr><th style="width:120px">Segmento</th><th style="width:220px">Equipamento</th><th>Planilha</th><th>Preench.</th><th style="width:230px">Fotos</th><th style="width:200px">Pendência</th><th>Observação</th></tr>';
+        c.rows.forEach(function (r) {
+          const k = chaveEquip(r), e = eq[k] || {}, q = r.qtd_realizadas;
+          if (ehNA(r)) {
+            t += '<tr class="na"><td class="seg">' + esc(r.segmento || "—") + "</td><td>Não existe no site</td><td>N/A</td><td>—</td><td>Não se aplica</td><td>—</td><td></td></tr>";
+            return;
+          }
+          t += '<tr data-k="' + esc(k) + '" data-tag="' + esc(r.tag || r.segmento || "") + '" data-seg="' + esc(r.segmento || "") + '"><td class="seg">' + esc(r.segmento || "—") + "</td><td>" + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td>" +
             '<td class="' + (q > 1 ? "vl-no" : "") + '">' + (q == null ? "—" : q + "×") + "</td>" +
-            '<td><select data-sv="eq" data-c="fotos">' + opcoesHtml(REGRAS.validacao.fotos, e.fotos) + "</select></td>" +
+            '<td><select data-sv="eq" data-c="fotos" class="' + (e.fotos === "Ok" ? "fok" : "") + '">' + opcoesHtml(REGRAS.validacao.fotos, e.fotos) + "</select></td>" +
             '<td><select data-sv="eq" data-c="pend">' + opcoesHtml(REGRAS.validacao.pendencias, e.pend) + "</select></td>" +
             '<td><input type="text" data-sv="eq" data-c="obs" value="' + esc(e.obs || "") + '" style="width:100%"></td></tr>';
         });
-      });
-      t += "</table>";
-    }
-    t += '<div class="vl-caixa crit"><h3>Inventário crítico</h3>' + REGRAS.validacao.inventarioCritico.map(function (i) {
-      return '<div class="vl-ck"><span style="width:240px">' + esc(i) + '</span><select data-sv="inv" data-i="' + esc(i) + '">' + opcoesHtml(REGRAS.validacao.inventarioOpcoes, (reg.inventario || {})[i], "Não conferido") + "</select></div>";
-    }).join("") + "</div>";
+        t += "</table>";
+      }
+      if (nas.length) t += '<div class="fw">Não existem no site: <b>' + esc(nas.map(function (r) { return r.segmento || "—"; }).join(", ")) + "</b>. Entram no resumo da validação.</div>";
+      if (clima) {
+        t += '<div class="fw" style="color:#161616"><b>Inventário crítico</b>' + REGRAS.validacao.inventarioCritico.map(function (i) {
+          return ' &nbsp; ' + esc(i) + ' <select data-sv="inv" data-i="' + esc(i) + '" style="width:190px;display:inline-block">' + opcoesHtml(REGRAS.validacao.inventarioOpcoes, (reg.inventario || {})[i], "Não conferido") + "</select>";
+        }).join("") + "</div>";
+      }
+      t += "</div>";
+    });
     return t;
   }
 
@@ -4165,14 +4209,14 @@
     if (!reg) return;
     try {
       if (a === "grupo") {
-        const g = el.dataset.g;
+        const w = el.dataset.w, wos = reg.wos || [];
         const ok = (reg.grupos_ok || []).slice();
         const eq = JSON.parse(JSON.stringify(reg.equipamentos || {}));
-        if (ok.indexOf(g) >= 0) { ok.splice(ok.indexOf(g), 1); }
+        if (ok.indexOf(w) >= 0) { ok.splice(ok.indexOf(w), 1); }
         else {
-          ok.push(g);
-          estado.val.equip.filter(function (r) { return (r.segmento || "Sem segmento") === g; }).forEach(function (r) {
-            const k = chaveEquip(r), x = eq[k] || { tag: r.tag, segmento: g };
+          ok.push(w);
+          estado.val.equip.filter(function (r) { const x = woDaLinha(r, wos); return !ehNA(r) && ((x ? x.wo : "") === w); }).forEach(function (r) {
+            const k = chaveEquip(r), x = eq[k] || { tag: r.tag || r.segmento, segmento: r.segmento };
             if (!x.fotos && !x.pend) { x.fotos = "Ok"; eq[k] = x; }
           });
         }
@@ -4244,7 +4288,8 @@
     const pend = pendenciasDe(reg);
     const agora = new Date().toISOString();
     const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, motivo: motivo || null, pendencias: pend,
-                 wos: (reg.wos || []).length, equipe: reg.equipe, site: reg.site };
+                 wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site,
+                 na: linhas.filter(ehNA).map(function (r) { return r.segmento || "—"; }) };
     const campos = { historico: (reg.historico || []).concat([ev]), resultado: resultado, motivo: motivo || null };
     if (resultado === "devolvida") { Object.assign(campos, { situacao: "em_campo", aba_pedida_em: null, analista: null, analise_em: null, encerrada_em: null }); }
     else { Object.assign(campos, { situacao: "encerrada", encerrada_em: agora }); }
