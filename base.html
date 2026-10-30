@@ -72,6 +72,17 @@
     <div id="msgGravarSites"></div>
   </div>
 
+
+  <div class="caixa oculto" id="caixaEquip">
+    <h2>Equipamentos (base baixada do sistema)</h2>
+    <div class="pequeno" id="ultimaEquip"></div>
+    <input id="arquivoEquip" type="file" accept=".xlsx,.xlsm">
+    <div id="msgEquip"></div>
+    <div id="resumoEquip"></div>
+    <button id="botaoGravarEquip" disabled>Gravar equipamentos</button>
+    <div id="msgGravarEquip"></div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
@@ -343,6 +354,8 @@
         $("msgLogin").innerHTML = '<span class="ok">Login feito.</span>';
         $("caixaArquivo").classList.remove("oculto");
         $("caixaSites").classList.remove("oculto");
+        $("caixaEquip").classList.remove("oculto");
+        mostrarUltimaEquip();
         mostrarUltimaAtualizacao();
         mostrarUltimaSites();
       });
@@ -529,6 +542,96 @@
           : '<span class="ok">Pronto: ' + gravadas + " siglas gravadas.</span>";
         mostrarUltimaSites();
         $("botaoGravarSites").disabled = false;
+      });
+
+      // ---- equipamentos (aba "Equipamentos" da base baixada do sistema) -------------
+      let equipParaGravar = [];
+      const COLUNAS_EQUIP = { site: "site", tipo: "tipo preventiva", segmento: "segmento", tag: "tag",
+                              status: "status eqpto", situacao: "situacao prev", qtd: "qtd realizadas" };
+
+      function montarEquipamentos(matriz) {
+        let cab = -1;
+        for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+          const nomes = matriz[i].map(limpar);
+          if (nomes.indexOf("site") >= 0 && nomes.indexOf("tag") >= 0 && nomes.indexOf("segmento") >= 0) { cab = i; break; }
+        }
+        if (cab < 0) return null;
+        const nomes = matriz[cab].map(limpar);
+        const pos = {};
+        Object.keys(COLUNAS_EQUIP).forEach(function (k) { pos[k] = nomes.indexOf(COLUNAS_EQUIP[k]); });
+        function cel(l, k) { return pos[k] < 0 ? "" : String(l[pos[k]] == null ? "" : l[pos[k]]).trim(); }
+        const linhas = [];
+        let semSite = 0;
+        for (let i = cab + 1; i < matriz.length; i++) {
+          const l = matriz[i];
+          if (!l.some(function (c) { return String(c).trim() !== ""; })) continue;
+          const site = cel(l, "site");
+          if (!site) { semSite++; continue; }
+          const q = parseInt(cel(l, "qtd"), 10);
+          linhas.push({ site: site, site_chave: chaveDeSigla(site), tipo: cel(l, "tipo") || null, segmento: cel(l, "segmento") || null,
+                        tag: cel(l, "tag") || null, status_eqpto: cel(l, "status") || null, situacao_prev: cel(l, "situacao") || null,
+                        qtd_realizadas: isNaN(q) ? null : q });
+        }
+        return { linhas: linhas, semSite: semSite, faltando: Object.keys(pos).filter(function (k) { return pos[k] < 0; }) };
+      }
+
+      async function mostrarUltimaEquip() {
+        const r = await banco.from("equipamentos_base").select("atualizado_em").order("atualizado_em", { ascending: false }).limit(1);
+        if (r.error) { $("ultimaEquip").innerHTML = '<span class="erro">Não consegui ler os equipamentos (o SQL da validação já foi rodado?): ' + r.error.message + "</span>"; return; }
+        $("ultimaEquip").textContent = r.data.length
+          ? "Última atualização dos equipamentos: " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
+          : "Os equipamentos ainda não foram enviados.";
+      }
+
+      $("arquivoEquip").addEventListener("change", async function (evento) {
+        const arquivo = evento.target.files[0];
+        if (!arquivo) return;
+        $("msgEquip").textContent = "Lendo o arquivo...";
+        $("botaoGravarEquip").disabled = true;
+        let pasta;
+        try { pasta = XLSX.read(await arquivo.arrayBuffer(), { type: "array" }); }
+        catch (e) { $("msgEquip").innerHTML = '<span class="erro">Não consegui abrir o arquivo: ' + e.message + "</span>"; return; }
+        let r = null, aba = "";
+        for (const nome of pasta.SheetNames) {
+          const matriz = XLSX.utils.sheet_to_json(pasta.Sheets[nome], { header: 1, raw: true, defval: "" });
+          const m = montarEquipamentos(matriz);
+          if (m) { r = m; aba = nome; break; }
+        }
+        if (!r) { $("msgEquip").innerHTML = '<span class="erro">Nenhuma aba tem as colunas SITE, SEGMENTO e TAG.</span>'; return; }
+        $("msgEquip").textContent = "";
+        equipParaGravar = r.linhas;
+        const sites = {};
+        r.linhas.forEach(function (l) { sites[l.site_chave] = true; });
+        $("resumoEquip").innerHTML = "<p>Aba lida: <b>" + aba + "</b> · equipamentos: <b>" + r.linhas.length + "</b> · sites: <b>" + Object.keys(sites).length + "</b>" +
+          (r.semSite ? " · linhas sem site (ignoradas): " + r.semSite : "") + "</p>" +
+          (r.faltando.length ? '<p class="aviso">Colunas não encontradas: ' + r.faltando.join(", ") + "</p>" : "");
+        $("botaoGravarEquip").disabled = r.linhas.length === 0;
+        $("msgGravarEquip").textContent = "";
+      });
+
+      $("botaoGravarEquip").addEventListener("click", async function () {
+        $("botaoGravarEquip").disabled = true;
+        const carimbo = new Date().toISOString();
+        const lote = 500;
+        let gravadas = 0;
+        for (let i = 0; i < equipParaGravar.length; i += lote) {
+          const parte = equipParaGravar.slice(i, i + lote).map(function (l) { return Object.assign({}, l, { atualizado_em: carimbo }); });
+          const r = await banco.from("equipamentos_base").insert(parte);
+          if (r.error) {
+            $("msgGravarEquip").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message + " (os equipamentos anteriores foram mantidos)</span>";
+            $("botaoGravarEquip").disabled = false;
+            await banco.from("equipamentos_base").delete().eq("atualizado_em", carimbo);
+            return;
+          }
+          gravadas += parte.length;
+          $("msgGravarEquip").textContent = "Gravando... " + gravadas + " de " + equipParaGravar.length;
+        }
+        const limpeza = await banco.from("equipamentos_base").delete().lt("atualizado_em", carimbo);
+        $("msgGravarEquip").innerHTML = limpeza.error
+          ? '<span class="aviso">Gravei ' + gravadas + " equipamentos, mas não consegui remover os antigos: " + limpeza.error.message + "</span>"
+          : '<span class="ok">Pronto: ' + gravadas + " equipamentos gravados.</span>";
+        mostrarUltimaEquip();
+        $("botaoGravarEquip").disabled = false;
       });
     }
   </script>
