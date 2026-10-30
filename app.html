@@ -3785,6 +3785,14 @@
     if (!al.fotos) f.push("Alarmes: fotos das abas de alarme não conferidas");
     return f;
   }
+  // "Energia Elétrica" (planilha) casa com "Preventiva infra - Energia" (WO): basta uma palavra principal em comum.
+  function palavrasDoTipo(t) {
+    return alNorm(t).split(/[^A-Z0-9]+/).filter(function (x) { return x.length >= 4 && ["PREVENTIVA", "INFRA", "MANUTENCAO"].indexOf(x) < 0; }).map(function (x) { return x.slice(0, 6); });
+  }
+  function tipoCasa(tipoEquip, tipoWO) {
+    const a = palavrasDoTipo(tipoEquip), b = palavrasDoTipo(tipoWO);
+    return a.some(function (x) { return b.indexOf(x) >= 0; });
+  }
   function chaveEquip(r) { return alNorm(r.tipo) + "|" + alNorm(r.tag); }
 
   const SIT_VAL = { em_campo: ["Em campo", "v5"], aba_pedida: ["Aba pedida", "v3"], em_analise: ["Em análise", "v4"], encerrada: ["Encerrada", "v1"] };
@@ -3968,9 +3976,11 @@
     $("svCorpo").innerHTML = '<div class="vl-vazio">Carregando...</div>';
     try {
       const todas = conferir(await banco.from("equipamentos_base").select("*").eq("site_chave", reg.site_chave).order("segmento").order("tag"));
-      const tipos = (reg.wos || []).map(function (w) { return alNorm(w.tipo); });
-      let casam = todas.filter(function (r) { const t = alNorm(r.tipo); return t && tipos.some(function (x) { return x.indexOf(t) >= 0 || t.indexOf(x) >= 0; }); });
+      const wos = reg.wos || [];
+      let casam = todas.filter(function (r) { return wos.some(function (w) { return tipoCasa(r.tipo, w.tipo); }); });
+      const semEquip = wos.filter(function (w) { return !todas.some(function (r) { return tipoCasa(r.tipo, w.tipo); }); }).map(function (w) { return tipoCurto(w.tipo); });
       if (!casam.length && todas.length) { casam = todas; estado.val.equipAviso = "Os tipos da planilha não casaram com as WOs; mostrando todos os equipamentos do site."; }
+      else if (semEquip.length) estado.val.equipAviso = "Sem equipamentos na planilha para: " + semEquip.join(", ") + ".";
       estado.val.equip = casam;
       if (!(reg.alarmes && reg.alarmes.config)) {
         const r = conferir(await banco.from("alarmes_site").select("*").eq("site_chave", reg.site_chave).limit(1));
