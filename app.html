@@ -402,14 +402,14 @@
     #telaDivergencias button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; cursor:pointer; }
     #telaDivergencias button.sec:hover { background:#e5f0ff; }
     #telaDivergencias .dv-rolagem { overflow-x:auto; }
-    #telaDivergencias .dv-l { display:grid; grid-template-columns:110px 80px minmax(90px,.8fr) 110px 150px minmax(180px,1.5fr) minmax(300px,1.6fr); min-width:960px; font-size:12px; border-bottom:1px solid #e0e0e0; align-items:start; }
+    #telaDivergencias .dv-l { display:grid; grid-template-columns:150px 120px 80px 100px 210px minmax(240px,1.6fr) minmax(330px,1.2fr); min-width:1240px; font-size:12px; border-bottom:1px solid #e0e0e0; align-items:start; }
     #telaDivergencias .dv-l > div { padding:5px 8px; min-width:0; word-break:break-word; }
     #telaDivergencias .dv-cab { background:#e0e0e0; font-weight:600; position:sticky; top:0; z-index:1; align-items:center; }
     #telaDivergencias .dv-l:not(.dv-cab):nth-child(even) { background:#f9f9f9; }
     #telaDivergencias .dv-l.trat { box-shadow:inset 3px 0 0 #198038; }
     #telaDivergencias .dv-l.pend { box-shadow:inset 3px 0 0 #da1e28; }
     #telaDivergencias .dv-l.med { box-shadow:inset 3px 0 0 #f1c21b; }
-    #telaDivergencias .dv-wo { font-weight:600; }
+    #telaDivergencias .dv-wo { font-weight:600; white-space:nowrap; } #telaDivergencias .dv-l > div { word-break:normal; overflow-wrap:anywhere; } #telaDivergencias .dv-l .pill { white-space:nowrap; }
     #telaDivergencias .dv-sub { display:block; color:#525252; font-size:11px; margin-top:2px; }
     #telaDivergencias .dv-trat { display:flex; gap:6px; } #telaDivergencias .dv-trat select { flex:0 0 150px; width:150px; } #telaDivergencias .dv-trat input[type=text] { flex:1; min-width:0; }
     #telaDivergencias .dv-vazio { padding:16px 8px; color:#525252; }
