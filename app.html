@@ -3962,7 +3962,7 @@
   // ==== VALIDAÇÃO PREVENTIVA ====================================================
   REGRAS.validacao = {
     inicio: "2026-10-30",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
-    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente"],
+    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente", "Local diferente do site", "Aba duplicada", "Inventário duplicado"],
     pendencias: ["Aba em aberto", "Não inventariado", "Preenchimento incorreto", "Aba duplicada", "Inventário duplicado", "Outro"],
     inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
@@ -4101,7 +4101,7 @@
     Object.keys(eq).forEach(function (k) {
       const e = eq[k];
       if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend });
-      if (e.fotos && e.fotos !== "Ok" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase() });
+      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase() });
     });
     const inv = reg.inventario || {};
     REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
@@ -4632,7 +4632,13 @@
         const tr = el.closest("tr"), k = tr.dataset.k;
         const eq = JSON.parse(JSON.stringify(reg.equipamentos || {}));
         const x = eq[k] || { tag: tr.dataset.tag, segmento: tr.dataset.seg };
-        x[el.dataset.c] = el.value;
+        const DUP = ["Aba duplicada", "Inventário duplicado"], campo = el.dataset.c, antigo = x[campo];
+        x[campo] = el.value;
+        const outro = campo === "fotos" ? "pend" : (campo === "pend" ? "fotos" : "");
+        if (outro) {
+          if (DUP.indexOf(el.value) >= 0) x[outro] = el.value;
+          else if (DUP.indexOf(antigo) >= 0 && x[outro] === antigo) x[outro] = "";
+        }
         if (!x.fotos && !x.pend && !x.obs) delete eq[k]; else eq[k] = x;
         await salvarVal(reg, { equipamentos: eq });
         desenharSiteVal();
