@@ -256,12 +256,12 @@
     /* ---- REGISTRAR (estilo IBM: cantos retos, campos com linha inferior) ---- */
     #telaRegistrar { font-size:12px; color:#161616; max-width:none; }
     #telaRegistrar .rg-cols { display:flex; gap:32px; align-items:flex-start; margin-top:12px; }
-    #telaRegistrar .rg-esq { flex:0 0 520px; width:520px; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
-    #telaRegistrar .rg-dir { flex:1 1 0; min-width:0; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
+    #telaRegistrar .rg-esq { order:2; flex:0 0 520px; width:520px; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
+    #telaRegistrar .rg-dir { order:1; flex:1 1 0; min-width:0; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
     #telaRegistrar .rg-esq > .ib-secao:first-child, #telaRegistrar .rg-dir > .ib-secao:first-child { margin-top:12px; }
     #telaRegistrar .rg-esq .ib-grade { grid-template-columns:1fr; }
     #telaRegistrar .rg-esq select, #telaRegistrar .rg-esq input[type=text], #telaRegistrar .rg-esq input[type=time], #telaRegistrar .rg-esq textarea { background:#f4f4f4; }
-    @media (max-width:1100px) { #telaRegistrar .rg-cols { flex-direction:column; } #telaRegistrar .rg-esq { flex:none; width:100%; } #telaRegistrar .rg-dir { width:100%; flex:none; } }
+    @media (max-width:1100px) { #telaRegistrar .rg-cols { flex-direction:column; } #telaRegistrar .rg-esq { flex:none; order:1; width:100%; } #telaRegistrar .rg-dir { width:100%; flex:none; order:2; } }
     #telaRegistrar .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaRegistrar .ib-trilha span { color:#161616; }
     #telaRegistrar .ib-titulo { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:8px; margin:0 0 2px; }
@@ -1530,11 +1530,13 @@
     $("perAno").innerHTML = anos.map(function (a) { return "<option" + (a === P.ano ? " selected" : "") + ">" + a + "</option>"; }).join("");
     const c = estado.contMes[P.ano] || {};
     let total = 0, temTotal = false;
-    const meses = NOMES_MES.map(function (n, i) {
+    const meses = [];
+    NOMES_MES.forEach(function (n, i) {
       const q = c[P.ano + "-" + doisDigitos(i + 1)];
       if (typeof q === "number") { total += q; temTotal = true; }
+      if (q === 0 && P.mes !== i + 1) return;                  // mês sem base não aparece na lista
       const rot = typeof q === "number" ? (q > 0 ? " · " + q.toLocaleString("pt-BR") + " WOs" : " · sem base") : "";
-      return '<option value="' + (i + 1) + '"' + (P.mes === i + 1 ? " selected" : "") + ">" + n + rot + "</option>";
+      meses.push('<option value="' + (i + 1) + '"' + (P.mes === i + 1 ? " selected" : "") + ">" + n + rot + "</option>");
     });
     meses.push('<option value="0"' + (P.mes === 0 ? " selected" : "") + ">Ano inteiro" + (temTotal ? " · " + total.toLocaleString("pt-BR") + " WOs" : "") + "</option>");
     $("perMes").innerHTML = meses.join("");
@@ -3550,7 +3552,7 @@
     }
     $("rdAtivMsg").textContent = "";
     let html = '<div class="l cab"><div>Equipe</div><div>Atividade</div><div>Início</div><div>Fim</div><div>Observação</div><div></div></div>';
-    if (lista.length === 0) html += '<div class="vazio">Nenhuma atividade sem site neste dia. Escolha a equipe e uma atividade como “Retirada de chave” acima.</div>';
+    if (lista.length === 0) html += '<div class="vazio">Nenhuma atividade sem site neste dia.</div>';
     lista.forEach(function (a) {
       html += '<div class="l" data-id="' + esc(a.id) + '"><div>' + esc(a.equipe) + "</div><div>" + esc(a.atividade) + "</div>" +
         '<div><input type="time" data-campo="inicio" value="' + esc(hm(a.inicio)) + '"></div>' +
@@ -3607,7 +3609,7 @@
     };
     let html = '<div class="l cab"><div>Equipe</div><div>Atividade</div><div>Grupo</div><div>Observação</div><div></div></div>';
     if (lista.length === 0) {
-      html += '<div class="vazio">Nenhuma equipe registrada neste dia. Use o formulário acima ou “Copiar do dia anterior”.</div>';
+      html += '<div class="vazio">Nenhuma equipe registrada neste dia.</div>';
     }
     lista.forEach(function (e) {
       const id = esc(e.equipe_id);
@@ -4172,7 +4174,7 @@
     }).join("") + "</table>" : '<div class="vl-mu">Sem validações neste dia.</div>') + "</div></div>";
     // O que o coordenador precisa tratar: resultado final de cada site com pendência.
     const tratar = d.ev.filter(function (e) { return e.resultado !== "validada"; });
-    t += '<h3 style="margin-top:16px">Para o coordenador tratar</h3>';
+    t += '<h3 style="margin-top:16px">Pendências de Tratativa</h3>';
     if (!tratar.length) t += '<div class="vl-vazio">Nada para tratar neste dia.</div>';
     else t += "<table><tr><th>Site</th><th>WOs</th><th>Resultado</th><th>Pendências</th><th>Tratativa</th></tr>" + tratar.slice(0, 60).map(function (u) {
       const v = u.reg;
