@@ -626,6 +626,11 @@
     .vl-alerta { padding:7px 12px; margin:6px 0; background:#fff1f1; border-left:3px solid #da1e28; }
     .vl-alerta.am { background:#fcf4d6; border-left-color:#f1c21b; }
     .vl-r { display:flex; justify-content:space-between; gap:16px; padding:7px 0; border-bottom:1px solid #e0e0e0; }
+    .vl-lt { position:relative; height:70px; margin:6px 0 0; } .vl-lt .faixa { position:absolute; top:24px; height:22px; background:#d0e2ff; }
+    .vl-lt .mk { position:absolute; top:24px; width:3px; height:22px; margin-left:-1px; } .vl-lt .mk.d { background:#198038; } .vl-lt .mk.f { background:#da1e28; }
+    .vl-lt .eixo { position:absolute; left:0; right:0; top:46px; height:1px; background:#8d8d8d; }
+    .vl-lt .rt { position:absolute; top:4px; font-size:11px; color:#0043ce; white-space:nowrap; } .vl-lt .rt.dir { transform:translateX(-100%); }
+    .vl-aptodos { display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap; } .vl-aptodos select { width:240px; }
     .vl-bl { margin:0 0 14px; } .vl-bl .l { margin-bottom:6px; font-size:13px; }
     .vl-seg { display:inline-flex; } .vl-seg button { border:1px solid #8d8d8d; background:#fff; color:#161616; padding:7px 22px; font:inherit; font-size:13px; cursor:pointer; border-radius:0; margin:0 -1px 0 0; }
     .vl-seg button.on { background:#198038; border-color:#198038; color:#fff; } .vl-seg button.off { background:#da1e28; border-color:#da1e28; color:#fff; }
@@ -3961,6 +3966,7 @@
     pendencias: ["Aba em aberto", "Não inventariado", "Preenchimento incorreto", "Outro"],
     inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
+    toleranciaPermanenciaMin: 15,
     apontamentos: ["Sem apontamento", "Alarme sem contato no bloco", "Bloqueado pelo cliente", "Equipamento não existe no site", "Técnico informou que não externou", "Outro"],
     ordemAlarmes: [{ antes: "FALHA DE ENERGIA AC", depois: "BATERIA EM DESCARGA" }],
     rajada: { segundos: 3, minimo: 6 },
@@ -4026,6 +4032,44 @@
     return batimentoAlarmes(lerConfiguracaoAlarmes(al.config.texto), lerHistoricoAlarmes(al.hist.texto), al.apont || {}, REGRAS.validacao, { somenteClima: somenteClima });
   }
 
+  // Permanência x alarmes: cada alarme do histórico tem que surgir entre a entrada e a saída (com tolerância).
+  function analisePermanencia(reg) {
+    const al = reg.alarmes || {};
+    if (!al.hist || al.hist.vazio) return null;
+    const v = (estado.val.visitaHoras || {})[reg.id];
+    if (!v || !v.ent || !v.sai) return { semHorario: true };
+    const tol = REGRAS.validacao.toleranciaPermanenciaMin * 60000;
+    const evs = lerHistoricoAlarmes(al.hist.texto).eventos.filter(function (e) { return e.eqp != null; }).map(function (e) {
+      const antes = v.ent - e.eqp, depois = e.eqp - v.sai;
+      let pos = "dentro", min = 0;
+      if (antes > tol) { pos = "antes"; min = Math.round(antes / 60000); }
+      else if (depois > tol) { pos = "depois"; min = Math.round(depois / 60000); }
+      return { texto: e.texto, bloco: e.bloco, quando: e.eqp, pos: pos, min: min };
+    });
+    return { ent: v.ent, sai: v.sai, evs: evs, dentro: evs.filter(function (e) { return e.pos === "dentro"; }).length, fora: evs.filter(function (e) { return e.pos !== "dentro"; }) };
+  }
+  function hmDe(ms) { return new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
+  function duracaoDe(ms) { const m = Math.round(ms / 60000); return Math.floor(m / 60) + "h" + doisDigitos(m % 60); }
+  function desenharPermanencia(an) {
+    if (!an) return "";
+    if (an.semHorario) return '<div class="vl-alerta am"><b>Permanência:</b> a visita não tem entrada e saída registradas, então não dá para comparar com os alarmes.</div>';
+    let ini = an.ent, fim = an.sai;
+    an.evs.forEach(function (e) { if (e.quando < ini) ini = e.quando; if (e.quando > fim) fim = e.quando; });
+    ini -= 10 * 60000; fim += 10 * 60000;
+    const pc = function (ms) { return ((ms - ini) / (fim - ini) * 100).toFixed(2); };
+    let t = '<div class="vl-caixa"><h3>Permanência x alarmes</h3><div class="vl-cards">' +
+      '<div class="vl-c"><div class="r">Entrada no site</div><div class="v">' + hmDe(an.ent) + '</div></div><div class="vl-c"><div class="r">Saída do site</div><div class="v">' + hmDe(an.sai) + "</div></div>" +
+      '<div class="vl-c"><div class="r">Permanência</div><div class="v">' + duracaoDe(an.sai - an.ent) + '</div></div><div class="vl-c verde"><div class="r">Alarmes dentro</div><div class="v">' + an.dentro + "</div></div>" +
+      '<div class="vl-c ' + (an.fora.length ? "verm" : "verde") + '"><div class="r">Alarmes fora</div><div class="v">' + an.fora.length + "</div></div></div>";
+    t += '<div class="vl-lt"><div class="faixa" style="left:' + pc(an.ent) + "%;width:" + (pc(an.sai) - pc(an.ent)).toFixed(2) + '%"></div>';
+    an.evs.forEach(function (e) { t += '<div class="mk ' + (e.pos === "dentro" ? "d" : "f") + '" style="left:' + pc(e.quando) + '%" title="' + esc(e.texto + " · " + horaSegDe(e.quando)) + '"></div>'; });
+    t += '<div class="eixo"></div><div class="rt" style="left:' + pc(an.ent) + '%">Entrada ' + hmDe(an.ent) + '</div><div class="rt dir" style="left:' + pc(an.sai) + '%">Saída ' + hmDe(an.sai) + "</div></div>";
+    t += '<div class="vl-mu" style="font-size:11px;margin:4px 0 8px"><span class="vl-ok">■</span> Dentro da permanência &nbsp; <span class="vl-no">■</span> Fora (tolerância de ' + REGRAS.validacao.toleranciaPermanenciaMin + " min) &nbsp; <span style=\"color:#a6c8ff\">■</span> Tempo no site</div>";
+    if (an.fora.length) t += '<div class="vl-alerta"><b>Fora da permanência (' + an.fora.length + "):</b> " + an.fora.slice(0, 8).map(function (e) {
+      return esc(e.texto) + " às " + horaSegDe(e.quando) + " (" + e.min + " min " + (e.pos === "antes" ? "antes da entrada" : "depois da saída") + ")"; }).join(" · ") + (an.fora.length > 8 ? " · e outros " + (an.fora.length - 8) : "") + "</div>";
+    return t + "</div>";
+  }
+
   // Conferência do bloco: antes era só um visto (true); agora é Ok / Não ok (com motivo).
   function confBloco(al, c) {
     const v = (al || {})[c];
@@ -4048,6 +4092,8 @@
       const c = confBloco(reg.alarmes, x[0]);
       if (c.estado === "nao") p.push({ tipo: "Alarmes", texto: x[1] + " · não ok" + (c.motivo ? ": " + c.motivo : "") });
     });
+    const an = analisePermanencia(reg);
+    if (an && an.fora && an.fora.length) p.push({ tipo: "Alarmes", texto: an.fora.length + " alarme(s) fora da permanência: " + an.fora.slice(0, 3).map(function (e) { return e.texto + " às " + horaSegDe(e.quando); }).join(", ") + (an.fora.length > 3 ? " e outros" : "") });
     const b = batimentoDoRegistro(reg);
     if (b) {
       if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram" });
@@ -4289,6 +4335,11 @@
         if (r.length && r[0].config_texto) reg.alarmes = Object.assign({}, reg.alarmes, { config: { texto: r[0].config_texto, em: r[0].config_em, reaproveitada: true } });
       }
     } catch (e) { mostrarAviso("Não consegui carregar os equipamentos: " + e.message, "erro"); }
+    try {
+      estado.val.visitaHoras = estado.val.visitaHoras || {};
+      const vs = conferir(await banco.from("visitas").select("hora_entrada,hora_saida").eq("id", reg.visita_id).limit(1));
+      if (vs.length) estado.val.visitaHoras[reg.id] = { ent: vs[0].hora_entrada ? new Date(vs[0].hora_entrada).getTime() : null, sai: vs[0].hora_saida ? new Date(vs[0].hora_saida).getTime() : null };
+    } catch (e) { /* sem horário da visita: a análise de permanência não aparece */ }
     desenharSiteVal();
   }
 
@@ -4358,15 +4409,16 @@
   function slotAlarme(rot, num, desc, dado, tipo, aviso) {
     const cor = dado ? " ok" : "";
     let st = '<div class="st vl-mu">Ainda não colado</div>';
-    if (dado) st = '<div class="st vl-ok">✓ ' + (dado.reaproveitada ? "Configuração de " + dataBR(dataLocalDe(dado.em)).slice(0, 5) + " (reaproveitada)" : "Colado às " + horaDe(dado.em)) + "</div>";
-    return '<div class="vl-slot' + cor + '"><div class="n">' + num + "</div><h3>" + rot + '</h3><div class="d">' + desc + '</div><button class="bt' + (dado ? "" : " p") + '" data-sv="colar" data-t="' + tipo + '">' + (dado ? "Colar de novo" : "Colar " + (tipo === "config" ? "configuração" : "histórico")) + "</button>" + st + "</div>";
+    if (dado && dado.vazio) st = '<div class="st vl-ok">✓ Histórico vazio às ' + horaDe(dado.em) + "</div>";
+    else if (dado) st = '<div class="st vl-ok">✓ ' + (dado.reaproveitada ? "Configuração de " + dataBR(dataLocalDe(dado.em)).slice(0, 5) + " (reaproveitada)" : "Colado às " + horaDe(dado.em)) + "</div>";
+    return '<div class="vl-slot' + cor + '"><div class="n">' + num + "</div><h3>" + rot + '</h3><div class="d">' + desc + '</div><button class="bt' + (dado ? "" : " p") + '" data-sv="colar" data-t="' + tipo + '">' + (dado ? "Colar de novo" : "Colar " + (tipo === "config" ? "configuração" : "histórico")) + "</button>" + (tipo === "hist" ? '<button class="bt" data-sv="histvazio">Nenhum alarme externou</button>' : "") + st + "</div>";
   }
   function paginaAlarmes(reg) {
     const al = reg.alarmes || {};
     let t = '<div class="vl-slots">';
     let dc = "Copie no sistema do cliente a tela com os alarmes configurados do site.", dh = "Copie o que externou durante a visita.";
     if (al.config) { const c = lerConfiguracaoAlarmes(al.config.texto); dc = c.blocos.length + " blocos · " + c.total + " portas"; }
-    if (al.hist) { const h = lerHistoricoAlarmes(al.hist.texto); dh = h.eventos.length + " alarmes lidos"; }
+    if (al.hist) { const h = lerHistoricoAlarmes(al.hist.texto); dh = al.hist.vazio ? "Nenhum alarme externou" : h.eventos.length + " alarmes lidos"; }
     t += slotAlarme("Configuração do site", 1, dc, al.config, "config") + slotAlarme("Histórico de alarmes", 2, dh, al.hist, "hist") + "</div>";
     t += '<div class="vl-ck"><input type="checkbox" id="svSemConfig" data-sv="semconfig"' + (al.semConfig ? " checked" : "") + '><label for="svSemConfig" style="margin:0;font-size:13px;color:#161616">Site sem configuração de alarme para conferir</label></div>';
     const c = estado.val.colar;
@@ -4395,21 +4447,30 @@
       }
       b.ordem.forEach(function (o) { if (o.status !== "ok") t += '<div class="vl-alerta' + (o.status === "violada" ? "" : " am") + '"><b>' + (o.status === "violada" ? "Regra de ordem:" : "Ordem:") + "</b> " + esc(o.texto) + "</div>"; });
       b.rajadas.forEach(function (j) { t += '<div class="vl-alerta am"><b>Atenção:</b> ' + j.qtd + " alarmes externaram entre " + horaSegDe(j.de) + " e " + horaSegDe(j.ate) + ". Confira os bornes.</div>"; });
-      t += "<table><tr><th>Bloco</th><th>Alarme configurado</th><th>Severidade</th><th>Resultado</th><th>Hora no equipamento</th><th>Apontamento do técnico</th></tr>";
+      t += desenharPermanencia(analisePermanencia(reg));
+      if (falt.length) t += '<div class="vl-aptodos"><span>Apontamento do técnico para todos os alarmes que faltaram:</span><select id="svApontTodos">' + opcoesHtml(REGRAS.validacao.apontamentos, "", "Escolha...") + '</select><button class="bt" data-sv="apontTodos">Aplicar a todos</button></div>';
+      t += "<table><tr><th>Bloco</th><th>Alarme configurado</th><th>Severidade</th><th>Resultado</th><th>Hora no equipamento</th><th>Permanência</th><th>Apontamento do técnico</th></tr>";
+      const anP = analisePermanencia(reg);
+      const celP = function (i) {
+        if (!i.externou || !anP || anP.semHorario) return "";
+        const e = anP.evs.find(function (x) { return x.quando === i.quando; });
+        if (!e) return "";
+        return e.pos === "dentro" ? '<span class="vl-ok">Dentro</span>' : '<span class="vl-no">Fora · ' + e.min + " min " + (e.pos === "antes" ? "antes" : "depois") + "</span>";
+      };
       const blocos = [];
       b.itens.forEach(function (i) { if (blocos.indexOf(i.bloco) < 0) blocos.push(i.bloco); });
       blocos.forEach(function (bl) {
         const its = b.itens.filter(function (i) { return i.bloco === bl; });
-        t += '<tr><td class="grp" colspan="6">' + bl + " · " + its.filter(function (i) { return i.externou; }).length + " de " + its.length + " externaram</td></tr>";
+        t += '<tr><td class="grp" colspan="7">' + bl + " · " + its.filter(function (i) { return i.externou; }).length + " de " + its.length + " externaram</td></tr>";
         its.forEach(function (i) {
           t += "<tr><td>" + i.bloco + "</td><td>" + esc(i.texto) + "</td><td>" + esc(i.severidade) + "</td><td class=\"" + (i.externou ? "vl-ok" : (i.dispensado ? "vl-mu" : "vl-no")) + '">' +
-            (i.externou ? "Externou" : (i.dispensado ? "Dispensado" : "Faltou")) + "</td><td>" + horaSegDe(i.quando) + "</td><td>" +
+            (i.externou ? "Externou" : (i.dispensado ? "Dispensado" : "Faltou")) + "</td><td>" + horaSegDe(i.quando) + "</td><td>" + celP(i) + "</td><td>" +
             (i.externou ? "" : '<select data-sv="apont" data-k="' + esc(i.chave) + '">' + opcoesHtml(REGRAS.validacao.apontamentos, i.apontamento, "Sem apontamento") + "</select>") + "</td></tr>";
         });
       });
       if (b.isentos.length) {
         const nomes = b.isentos.slice(0, 2).map(function (x) { return x.texto; }).join(", ");
-        t += '<tr><td class="grp" colspan="6">' + b.isentos.length + " alarmes bloqueados pelo cliente (isentos)</td></tr><tr><td colspan=\"6\" class=\"vl-mu\">" + esc(nomes) + (b.isentos.length > 2 ? " e outros " + (b.isentos.length - 2) : "") + "</td></tr>";
+        t += '<tr><td class="grp" colspan="7">' + b.isentos.length + " alarmes bloqueados pelo cliente (isentos)</td></tr><tr><td colspan=\"7\" class=\"vl-mu\">" + esc(nomes) + (b.isentos.length > 2 ? " e outros " + (b.isentos.length - 2) : "") + "</td></tr>";
       }
       t += "</table>";
     }
@@ -4517,6 +4578,21 @@
         try { texto = await navigator.clipboard.readText(); } catch (err) { texto = ""; }
         if (texto && detectarTextoAlarme(texto)) { await receberTextoAlarme(texto, tipo); }
         else { estado.val.colar = { tipo: tipo }; desenharSiteVal(); const ta = $("svTexto"); if (ta) ta.focus(); }
+      } else if (a === "histvazio") {
+        const al = Object.assign({}, reg.alarmes || {});
+        al.hist = { texto: "", em: new Date().toISOString(), vazio: true };
+        await salvarVal(reg, { alarmes: al });
+        desenharSiteVal();
+      } else if (a === "apontTodos") {
+        const v = $("svApontTodos") ? $("svApontTodos").value : "";
+        const b = batimentoDoRegistro(reg);
+        if (v && v !== "Sem apontamento" && b) {
+          const al = Object.assign({}, reg.alarmes || {});
+          al.apont = Object.assign({}, al.apont || {});
+          b.itens.forEach(function (i) { if (!i.externou) al.apont[i.chave] = v; });
+          await salvarVal(reg, { alarmes: al });
+          desenharSiteVal();
+        }
       } else if (a === "usartexto") {
         const texto = $("svTexto").value;
         await receberTextoAlarme(texto, estado.val.colar ? estado.val.colar.tipo : null);
