@@ -4147,7 +4147,7 @@
     const a = palavrasDoTipo(tipoEquip), b = palavrasDoTipo(tipoWO);
     return a.some(function (x) { return b.indexOf(x) >= 0; });
   }
-  function chaveEquip(r) { return alNorm(r.tipo) + "|" + (r.tag ? alNorm(r.tag) : "SEG:" + alNorm(r.segmento)); }
+  function chaveEquip(r) { if (r._k) return r._k; return alNorm(r.tipo) + "|" + (r.tag ? alNorm(r.tag) : "SEG:" + alNorm(r.segmento)); }
   function ehNA(r) { return alNorm(r.situacao_prev) === "N/A"; }
   function ehClima(w) { return alNorm(w.tipo).indexOf("CLIMAT") >= 0; }
   function woDaLinha(r, wos) { return wos.find(function (w) { return tipoCasa(r.tipo, w.tipo); }) || null; }
@@ -4340,12 +4340,15 @@
     irParaTela("SiteVal");
     $("svCorpo").innerHTML = '<div class="vl-vazio">Carregando...</div>';
     try {
-      const todas = conferir(await banco.from("equipamentos_base").select("*").eq("site_chave", reg.site_chave).order("segmento").order("tag"));
+      const todas = conferir(await banco.from("equipamentos_base").select("*").eq("site_chave", reg.site_chave).order("segmento").order("tag").order("id"));
       const wos = reg.wos || [];
       let casam = todas.filter(function (r) { return wos.some(function (w) { return tipoCasa(r.tipo, w.tipo); }); });
       const semEquip = wos.filter(function (w) { return !todas.some(function (r) { return tipoCasa(r.tipo, w.tipo); }); }).map(function (w) { return tipoCurto(w.tipo); });
       if (!casam.length && todas.length) { casam = todas; estado.val.equipAviso = "Os tipos da planilha não casaram com as WOs; mostrando todos os equipamentos do site."; }
       else if (semEquip.length) estado.val.equipAviso = "Sem equipamentos na planilha para: " + semEquip.join(", ") + ".";
+      // Linhas com o mesmo equipamento (aba duplicada) ganham chaves próprias: cada uma é conferida separadamente.
+      const vistasK = {};
+      casam.forEach(function (r) { const base = alNorm(r.tipo) + "|" + (r.tag ? alNorm(r.tag) : "SEG:" + alNorm(r.segmento)); vistasK[base] = (vistasK[base] || 0) + 1; r._k = vistasK[base] > 1 ? base + "#" + vistasK[base] : base; });
       estado.val.equip = casam;
       if (!(reg.alarmes && reg.alarmes.config)) {
         const r = conferir(await banco.from("alarmes_site").select("*").eq("site_chave", reg.site_chave).limit(1));
