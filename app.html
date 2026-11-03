@@ -3168,9 +3168,14 @@
     try {
       await atualizarVisita(visita.id, campos);
       if (botao.dataset.acao === "cancelar" || botao.dataset.acao === "semexec") await cancelarValidacaoDaVisita(visita.id);
+      let enviouOffline = false;
+      if (botao.dataset.acao === "saida") {
+        try { enviouOffline = await enviarSemPedidoParaOffline(visita.id); }
+        catch (e) { mostrarAviso("Saída registrada, mas não consegui enviar o caso para a validação offline: " + e.message, "erro"); }
+      }
       const aberta = botao.closest("details");
       if (aberta) aberta.open = false;
-      mostrarAviso(botao.dataset.acao === "semexec" ? "Saída sem execução registrada." : "Registrado.");
+      mostrarAviso(botao.dataset.acao === "semexec" ? "Saída sem execução registrada." : enviouOffline ? "Saída registrada. Sem aba pedida: caso enviado para a Validação offline." : "Registrado.");
       atualizarCampo();
     } catch (err) {
       botao.disabled = false;
@@ -4676,7 +4681,7 @@
     diasRisco: 7,
     estados: ["Aberta", "Em tratativa", "Resolvida", "Não resolvida"],
     acoes: ["Contato com o técnico", "Contato com o cliente", "Correção feita no sistema", "Contestação enviada ao cliente", "Aguardando retorno", "Outro"],
-    origens: { offline: "Encaminhada", ressalva: "Com ressalva", devolvida: "Devolvida" }
+    origens: { offline: "Encaminhada", ressalva: "Com ressalva", devolvida: "Devolvida", sem_pedido: "Saiu sem pedir validação" }
   };
   estado.off = { casos: [], filtro: "abertas", setor: "", resp: "", sel: null, passo: false };
 
@@ -4694,7 +4699,7 @@
   }
   function textoIdade(c) { const d = idadeCaso(c); return d === 0 ? "hoje" : d === 1 ? "1 dia" : d + " dias"; }
 
-  async function sincronizarCasoOffline(reg, resultado, pend, motivo) {
+  async function sincronizarCasoOffline(reg, resultado, pend, motivo, origemCaso) {
     const agora = new Date().toISOString(), quem = estado.usuarioEmail;
     const existente = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", reg.id).limit(1))[0];
     if (resultado === "validada") {
@@ -4710,13 +4715,13 @@
       const ant = antigos.find(function (a) { return a.texto === p.texto; });
       return { id: String(i + 1), tipo: p.tipo, texto: p.texto, estado: ant && !existente.concluido_em ? ant.estado : "Aberta" };
     });
-    const entrada = { em: agora, por: quem, acao: resultado === "offline" ? "Encaminhada para a validação offline" : resultado === "ressalva" ? "Validada com ressalva" : "Devolvida ao técnico", texto: motivo || "" };
+    const entrada = { em: agora, por: quem, acao: origemCaso === "sem_pedido" ? "Saiu do site sem pedir a validação" : resultado === "offline" ? "Encaminhada para a validação offline" : resultado === "ressalva" ? "Validada com ressalva" : "Devolvida ao técnico", texto: motivo || "" };
     if (existente) {
-      conferir(await banco.from("casos_offline").update({ origem: resultado, motivo: motivo || null, pendencias: novos, concluido_em: null, atualizado_por: quem, atualizado_em: agora,
+      conferir(await banco.from("casos_offline").update({ origem: origemCaso || resultado, motivo: motivo || null, pendencias: novos, concluido_em: null, atualizado_por: quem, atualizado_em: agora,
         historico: (existente.historico || []).concat([entrada]) }).eq("id", existente.id));
     } else {
       conferir(await banco.from("casos_offline").insert({ validacao_id: reg.id, site: reg.site, setor: reg.setor, equipe: reg.equipe, wos: reg.wos || [],
-        origem: resultado, motivo: motivo || null, pendencias: novos, historico: [entrada], criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
+        origem: origemCaso || resultado, motivo: motivo || null, pendencias: novos, historico: [entrada], criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
     }
   }
 
@@ -4861,6 +4866,19 @@
   $("ofSetor").addEventListener("change", function () { estado.off.setor = $("ofSetor").value; desenharOffline(); });
   $("ofResp").addEventListener("change", function () { estado.off.resp = $("ofResp").value; desenharOffline(); });
   $("ofAtualizar").addEventListener("click", atualizarOffline);
+
+  // A equipe saiu do site e a aba nunca foi pedida: o caso vai direto para a validação offline.
+  async function enviarSemPedidoParaOffline(visitaId) {
+    const rs = conferir(await banco.from("validacoes").select("*").eq("visita_id", String(visitaId)).eq("situacao", "em_campo").limit(1));
+    if (!rs.length) return false;
+    const reg = rs[0], agora = new Date().toISOString(), motivo = "Técnico saiu do site sem solicitar a validação";
+    const pend = [{ tipo: "Saída sem pedido", texto: motivo }];
+    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: "offline", motivo: motivo, pendencias: pend,
+                 wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site, na: [] };
+    await salvarVal(reg, { historico: (reg.historico || []).concat([ev]), resultado: "offline", motivo: motivo, situacao: "encerrada", encerrada_em: agora });
+    await sincronizarCasoOffline(reg, "offline", pend, motivo, "sem_pedido");
+    return true;
+  }
 
   async function encerrarValidacao(resultado) {
     const reg = estado.val.atual, linhas = estado.val.equip;
