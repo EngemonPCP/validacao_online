@@ -1251,10 +1251,17 @@
     else if (!P.mes) { chave = "ano" + P.ano; filtro = function (q) { return q.like("mes", P.ano + "-%"); }; }
     else { chave = P.ano + "-" + doisDigitos(P.mes); filtro = function (q) { return q.eq("mes", chave); }; }
     estado.mesBase = chave;
+    let semColunaMes = false;
     for (let de = 0; ; de += passo) {
-      const dados = conferir(await filtro(banco.from("base_preventiva")
-        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em,equipe_engemon"))
-        .order("wo").range(de, de + passo - 1));
+      const consulta = banco.from("base_preventiva")
+        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em,equipe_engemon");
+      let resp = await (semColunaMes ? consulta : filtro(consulta)).order("wo").range(de, de + passo - 1);
+      if (resp.error && !semColunaMes && /\bmes\b/.test(resp.error.message)) {
+        // o SQL base_mes_sql.txt ainda não foi rodado: usa a base inteira, como antes
+        semColunaMes = true;
+        resp = await consulta.order("wo").range(de, de + passo - 1);
+      }
+      const dados = conferir(resp);
       for (const linha of dados) todas.push(linha);
       if (dados.length < passo) break;
     }
