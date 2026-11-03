@@ -4280,12 +4280,12 @@
     try {
       const fx = faixaDoPeriodo(), ini = somarDias(fx[0], -5), fim = somarDias(fx[1], 5), tudo = [];
       for (let de = 0; ; de += 1000) {
-        const d = conferir(await banco.from("visitas").select("id,equipe,situacao,motivo_nao_execucao,data_execucao,wos_visita(wo)").gte("data_execucao", ini).lte("data_execucao", fim).order("id").range(de, de + 999));
+        const d = conferir(await banco.from("visitas").select("*, wos_visita(*)").gte("data_execucao", ini).lte("data_execucao", fim).order("id").range(de, de + 999));
         for (const x of d) tudo.push(x);
         if (d.length < 1000) break;
       }
       estado.val.visitasPeriodo = tudo;
-    } catch (e) { estado.val.visitasPeriodo = null; }
+    } catch (e) { estado.val.visitasPeriodo = null; estado.val.visitasErro = String((e && e.message) || e); }
     desenharResumoVal();
   }
   function dadosResumoVal() {
@@ -4381,6 +4381,7 @@
     }).join("") + "</div>" : '<div class="vl-mu" style="padding:12px 16px">Nenhuma pendência neste dia.</div>') + "</div>" +
       '<div class="rv-card"><h3>Fila agora</h3><div class="rv-fila"><div><span>Aba pedida</span><b>' + d.fila.aba + "</b></div><div><span>Em análise</span><b>" + d.fila.ana + "</b></div><div><span>Em campo</span><b>" + d.fila.cam + "</b></div></div></div></div>";
     const MV = { semvisita: ["Sem visita registrada", ""], visita: ["Visita sem validação", "a"], semexec: ["Saiu sem executar", "v"], antes: ["Antes da validação", "z"] };
+    if (!d.semVal) t += '<div class="rv-sec">Sem validação</div><div class="rv-card"><div class="vl-mu" style="padding:12px 16px">Não foi possível carregar as visitas: ' + esc(estado.val.visitasErro || "") + "</div></div>";
     if (d.semVal) {
       const f = estado.val.semValFiltro || "todas";
       const cont = function (k) { return d.semVal.filter(function (x) { return x.motivo === k; }).length; };
