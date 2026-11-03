@@ -4046,7 +4046,22 @@
       else if (depois > tol) { pos = "depois"; min = Math.round(depois / 60000); }
       return { texto: e.texto, bloco: e.bloco, quando: e.eqp, pos: pos, min: min };
     });
-    return { ent: v.ent, sai: v.sai, evs: evs, dentro: evs.filter(function (e) { return e.pos === "dentro"; }).length, fora: evs.filter(function (e) { return e.pos !== "dentro"; }) };
+    // Quais eventos do histórico não são "alarme a externar" (por isso o total pode ser maior que "Externaram")
+    const b = batimentoDoRegistro(reg);
+    const usados = {};
+    if (b) b.itens.forEach(function (i) { if (i.externou) usados[i.quando + "|" + alNorm(i.texto)] = (usados[i.quando + "|" + alNorm(i.texto)] || 0) + 1; });
+    const extras = [];
+    evs.forEach(function (e) {
+      const k = e.quando + "|" + alNorm(e.texto);
+      if (usados[k] > 0) { usados[k]--; return; }
+      const t = alNorm(e.texto);
+      let motivo = "não está na configuração do site";
+      if (b && b.isentos.some(function (x) { return alNorm(x.texto) === t; })) motivo = "alarme bloqueado pelo cliente";
+      else if (b && b.foraEscopo.some(function (x) { return alNorm(x.texto) === t; })) motivo = "fora do escopo desta preventiva";
+      else if (b && b.itens.some(function (x) { return alNorm(x.texto) === t; })) motivo = "repetição de um alarme já contado";
+      extras.push({ e: e, motivo: motivo });
+    });
+    return { ent: v.ent, sai: v.sai, evs: evs, extras: extras, dentro: evs.filter(function (e) { return e.pos === "dentro"; }).length, fora: evs.filter(function (e) { return e.pos !== "dentro"; }) };
   }
   function hmDe(ms) { return new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
   function duracaoDe(ms) { const m = Math.round(ms / 60000); return Math.floor(m / 60) + "h" + doisDigitos(m % 60); }
@@ -4059,12 +4074,14 @@
     const pc = function (ms) { return ((ms - ini) / (fim - ini) * 100).toFixed(2); };
     let t = '<div class="vl-caixa"><h3>Permanência x alarmes</h3><div class="vl-cards">' +
       '<div class="vl-c"><div class="r">Entrada no site</div><div class="v">' + hmDe(an.ent) + '</div></div><div class="vl-c"><div class="r">Saída do site</div><div class="v">' + hmDe(an.sai) + "</div></div>" +
-      '<div class="vl-c"><div class="r">Permanência</div><div class="v">' + duracaoDe(an.sai - an.ent) + '</div></div><div class="vl-c verde"><div class="r">Alarmes dentro</div><div class="v">' + an.dentro + "</div></div>" +
-      '<div class="vl-c ' + (an.fora.length ? "verm" : "verde") + '"><div class="r">Alarmes fora</div><div class="v">' + an.fora.length + "</div></div></div>";
+      '<div class="vl-c"><div class="r">Permanência</div><div class="v">' + duracaoDe(an.sai - an.ent) + '</div></div><div class="vl-c verde"><div class="r">Eventos dentro</div><div class="v">' + an.dentro + "</div></div>" +
+      '<div class="vl-c ' + (an.fora.length ? "verm" : "verde") + '"><div class="r">Eventos fora</div><div class="v">' + an.fora.length + "</div></div></div>";
     t += '<div class="vl-lt"><div class="faixa" style="left:' + pc(an.ent) + "%;width:" + (pc(an.sai) - pc(an.ent)).toFixed(2) + '%"></div>';
     an.evs.forEach(function (e) { t += '<div class="mk ' + (e.pos === "dentro" ? "d" : "f") + '" style="left:' + pc(e.quando) + '%" title="' + esc(e.texto + " · " + horaSegDe(e.quando)) + '"></div>'; });
     t += '<div class="eixo"></div><div class="rt" style="left:' + pc(an.ent) + '%">Entrada ' + hmDe(an.ent) + '</div><div class="rt dir" style="left:' + pc(an.sai) + '%">Saída ' + hmDe(an.sai) + "</div></div>";
     t += '<div class="vl-mu" style="font-size:11px;margin:4px 0 8px"><span class="vl-ok">■</span> Dentro da permanência &nbsp; <span class="vl-no">■</span> Fora (tolerância de ' + REGRAS.validacao.toleranciaPermanenciaMin + " min) &nbsp; <span style=\"color:#a6c8ff\">■</span> Tempo no site</div>";
+    if (an.extras.length) t += '<div class="vl-alerta am" style="border-left-color:#0f62fe;background:#edf5ff"><b>' + an.evs.length + " eventos no histórico, " + (an.evs.length - an.extras.length) + " deles são alarmes a externar.</b> Fora dessa conta (" + an.extras.length + "): " +
+      an.extras.slice(0, 6).map(function (x) { return esc(x.e.texto) + " às " + horaSegDe(x.e.quando) + " (" + x.motivo + ")"; }).join(" · ") + (an.extras.length > 6 ? " · e outros " + (an.extras.length - 6) : "") + "</div>";
     if (an.fora.length) t += '<div class="vl-alerta"><b>Fora da permanência (' + an.fora.length + "):</b> " + an.fora.slice(0, 8).map(function (e) {
       return esc(e.texto) + " às " + horaSegDe(e.quando) + " (" + e.min + " min " + (e.pos === "antes" ? "antes da entrada" : "depois da saída") + ")"; }).join(" · ") + (an.fora.length > 8 ? " · e outros " + (an.fora.length - 8) : "") + "</div>";
     return t + "</div>";
