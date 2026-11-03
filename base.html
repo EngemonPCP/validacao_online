@@ -45,6 +45,7 @@
   <div class="caixa oculto" id="caixaArquivo">
     <h2>2. Escolher o arquivo</h2>
     <div class="pequeno" id="ultimaAtualizacao"></div>
+    <div style="margin:8px 0"><label for="mesCarga" style="margin-right:8px">Mês desta carga</label><input id="mesCarga" type="month"></div>
     <input id="arquivo" type="file" accept=".xlsx,.xlsm">
     <select id="seletorAba" class="oculto"></select>
     <div id="msgArquivo"></div>
@@ -106,11 +107,12 @@
       dataFim:           "data fim - consolidado"
     };
     // Sem estas colunas a base não pode ser lida.
-    const COLUNAS_OBRIGATORIAS = ["wo", "site", "equipeEngemon", "statusFinal", "dataFim"];
+    const COLUNAS_OBRIGATORIAS = ["wo", "siteInfratel", "equipeEngemon", "statusFinal", "dataFim"];   // "clr_sdr_site/helix" não é mais necessária
 
     // ==== FUNCOES PURAS (so calculam, nao mexem na tela) ========================
 
     // Tira acento, deixa minúsculo e remove espaços repetidos.
+    function MES_DA_CARGA() { const e = document.getElementById("mesCarga"); return (e && e.value) || (new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0")); }
     function limpar(texto) {
       return String(texto == null ? "" : texto)
         .normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -154,7 +156,7 @@
 
     // Lê a matriz da planilha e devolve as linhas prontas para gravar.
     function montarLinhas(matriz) {
-      const resultado = { linhas: [], total: 0, foraDoSetor: 0, semWO: 0, duplicadas: 0, erro: null, faltando: [] };
+      const resultado = { linhas: [], total: 0, foraDoSetor: 0, semWO: 0, duplicadas: 0, erro: null, faltando: [], diag: null };
 
       const posCabecalho = acharCabecalho(matriz);
       if (posCabecalho < 0) {
@@ -183,22 +185,27 @@
       }
 
       const porWO = {};
+      const exemplos = [];
+      let comTexto = 0;
       for (let i = posCabecalho + 1; i < matriz.length; i++) {
         const linha = matriz[i];
-        const wo = texto(celula(linha, "wo"));
-        if (!wo || !/^WO\d+/i.test(wo)) { resultado.semWO++; continue; }
+        const bruto = texto(celula(linha, "wo"));
+        if (bruto) { comTexto++; if (exemplos.length < 3) exemplos.push(bruto); }
+        const wo = bruto ? bruto.replace(/\s+/g, "") : null;
+        if (!wo || !/^(WO|ABRIR)\d+/i.test(wo)) { resultado.semWO++; continue; }
         resultado.total++;
 
         // Todas as preventivas entram; só contamos as que vieram sem setor reconhecido.
         if (!SETORES.some(function (x) { return limpar(x) === limpar(celula(linha, "equipeEngemon")); })) resultado.foraDoSetor++;
 
         // Cada coluna do banco guarda EXATAMENTE a coluna de mesmo nome da planilha (sem misturar).
-        const siteHelix = texto(celula(linha, "site"));
+        const siteHelix = texto(celula(linha, "site")) || texto(celula(linha, "siteInfratel"));
         if (!siteHelix) { resultado.semWO++; continue; }
 
         if (porWO[wo.toUpperCase()]) resultado.duplicadas++;
         porWO[wo.toUpperCase()] = {
           wo: wo.toUpperCase(),
+          mes: MES_DA_CARGA(),
           clr_sdr_site_helix: siteHelix,
           programado_infratel: texto(celula(linha, "siteInfratel")),
           tipo: texto(celula(linha, "tipo")),
@@ -210,6 +217,7 @@
         };
       }
       resultado.linhas = Object.keys(porWO).map(function (k) { return porWO[k]; });
+      resultado.diag = { cabecalho: posCabecalho + 1, linhasAbaixo: matriz.length - posCabecalho - 1, colunaWO: pos.wo + 1, comTexto: comTexto, exemplos: exemplos };
       return resultado;
     }
     // ---- LISTA DE SITES: mesma regra do Power Query (uma sigla por linha) ----------
@@ -338,6 +346,89 @@
     if (typeof document !== "undefined") {
       const banco = supabase.createClient(ENDERECO, CHAVE);
       let linhasParaGravar = [];
+
+      // ---- chave reserva: SITE | TIPO | MÊS (a WO pode mudar; a chave não) ----------
+      function normChave(t) { return String(t == null ? "" : t).replace(/\s+/g, " ").trim().toUpperCase(); }
+      function chaveBase(l) { return normChave(l.programado_infratel || l.clr_sdr_site_helix) + "|" + normChave(l.tipo) + "|" + l.mes; }
+      // Dá a cada linha a sua chave; se o mesmo site tiver 2 WOs do mesmo tipo no mês, a 2ª ganha "|2" etc. (pela ordem da WO).
+      function atribuirChaves(linhas) {
+        const grupos = {};
+        linhas.slice().sort(function (a, b) { return a.wo < b.wo ? -1 : (a.wo > b.wo ? 1 : 0); }).forEach(function (l) {
+          const k = chaveBase(l); (grupos[k] = grupos[k] || []).push(l);
+        });
+        Object.keys(grupos).forEach(function (k) { grupos[k].forEach(function (l, i) { l.chave = i ? k + "|" + (i + 1) : k; }); });
+      }
+
+      // Troca o código provisório (ex.: ABRIR12) pela WO real em tudo que já foi registrado, ligando pela chave.
+      async function trocarCodigosProvisorios(novas, mes) {
+        const antigas = [];
+        for (let de = 0; ; de += 1000) {
+          const r = await banco.from("base_preventiva").select("wo,programado_infratel,clr_sdr_site_helix,tipo,mes").eq("mes", mes).order("wo").range(de, de + 999);
+          if (r.error) throw new Error(r.error.message);
+          r.data.forEach(function (x) { antigas.push(x); });
+          if (r.data.length < 1000) break;
+        }
+        const codigosAntigos = {}; antigas.forEach(function (x) { codigosAntigos[x.wo] = true; });
+        const codigosNovos = {}; novas.forEach(function (x) { codigosNovos[x.wo] = true; });
+        const sobrando = antigas.filter(function (x) { return !codigosNovos[x.wo]; });           // estão no banco e não vieram na planilha
+        const chegando = novas.filter(function (x) { return !codigosAntigos[x.wo]; });           // vieram na planilha e ainda não estão no banco
+        const porChave = function (lista) { const g = {}; lista.forEach(function (x) { const k = chaveBase(Object.assign({}, x, { mes: mes })); (g[k] = g[k] || []).push(x); }); return g; };
+        const gS = porChave(sobrando), gC = porChave(chegando);
+        const pares = {}, orfas = [];
+        Object.keys(gS).forEach(function (k) {
+          if (gS[k].length === 1 && gC[k] && gC[k].length === 1) pares[gS[k][0].wo] = gC[k][0].wo; else gS[k].forEach(function (x) { orfas.push(x.wo); });
+        });
+        const velhos = Object.keys(pares);
+        const resultado = { trocas: 0, semPar: 0, visitas: 0, validacoes: 0 };
+        if (!velhos.length && !orfas.length) return resultado;
+        // só mexe no que está de fato em uso
+        const usados = {};
+        const todosVelhos = velhos.concat(orfas);
+        for (let i = 0; i < todosVelhos.length; i += 150) {
+          const parte = todosVelhos.slice(i, i + 150);
+          for (const tabela of ["wos_visita", "expurgos", "divergencias_tratativa"]) {
+            const r = await banco.from(tabela).select("wo").in("wo", parte);
+            if (!r.error) r.data.forEach(function (x) { usados[x.wo] = true; });
+          }
+        }
+        const trocaveis = velhos.filter(function (v) { return usados[v]; });
+        for (const velho of trocaveis) {
+          for (const tabela of ["wos_visita", "expurgos", "divergencias_tratativa"]) {
+            const r = await banco.from(tabela).update({ wo: pares[velho] }).eq("wo", velho);
+            if (r.error) throw new Error(tabela + ": " + r.error.message);
+          }
+          resultado.trocas++;
+        }
+        // WOs guardadas dentro das validações e dos casos offline
+        const mapa = pares;
+        const trocarLista = function (lista) { let mudou = false; const nova = (lista || []).map(function (w) { if (w && mapa[w.wo] && usados[w.wo]) { mudou = true; return Object.assign({}, w, { wo: mapa[w.wo] }); } return w; }); return [mudou, nova]; };
+        const val = await banco.from("validacoes").select("id,wos,historico").gte("data", mes + "-01").lte("data", mes + "-31");
+        if (!val.error) {
+          for (const v of val.data) {
+            const [mudou, wos] = trocarLista(v.wos);
+            let histMudou = false;
+            const hist = (v.historico || []).map(function (e) {
+              if (!e || !e.wo_ids) return e;
+              const ids = e.wo_ids.map(function (id) { if (mapa[id] && usados[id]) { histMudou = true; return mapa[id]; } return id; });
+              return Object.assign({}, e, { wo_ids: ids });
+            });
+            if (mudou || histMudou) {
+              const u = await banco.from("validacoes").update({ wos: wos, historico: hist }).eq("id", v.id);
+              if (u.error) throw new Error("validacoes: " + u.error.message);
+              resultado.validacoes++;
+            }
+          }
+        }
+        const cas = await banco.from("casos_offline").select("id,wos");
+        if (!cas.error) {
+          for (const c of cas.data) {
+            const [mudou, wos] = trocarLista(c.wos);
+            if (mudou) await banco.from("casos_offline").update({ wos: wos }).eq("id", c.id);
+          }
+        }
+        resultado.semPar = orfas.filter(function (w) { return usados[w]; }).length;
+        return resultado;
+      }
       let pastaDeTrabalho = null;
 
       const $ = function (id) { return document.getElementById(id); };
@@ -362,11 +453,11 @@
 
       async function mostrarUltimaAtualizacao() {
         const r = await banco.from("base_preventiva")
-          .select("atualizado_em").order("atualizado_em", { ascending: false }).limit(1);
+          .select("atualizado_em").eq("mes", MES_DA_CARGA()).order("atualizado_em", { ascending: false }).limit(1);
         if (r.error) { $("ultimaAtualizacao").textContent = "Não consegui ler a última atualização: " + r.error.message; return; }
         $("ultimaAtualizacao").textContent = r.data.length
-          ? "Última atualização da base: " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
-          : "A base ainda está vazia.";
+          ? "Última atualização da base de " + MES_DA_CARGA() + ": " + new Date(r.data[0].atualizado_em).toLocaleString("pt-BR")
+          : "A base de " + MES_DA_CARGA() + " ainda está vazia.";
       }
 
       $("arquivo").addEventListener("change", async function (evento) {
@@ -397,6 +488,8 @@
       });
 
       $("seletorAba").addEventListener("change", processarAba);
+      $("mesCarga").value = new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0");
+      $("mesCarga").addEventListener("change", function () { mostrarUltimaAtualizacao(); if (pastaDeTrabalho) processarAba(); });
 
       function processarAba() {
         const nomeAba = $("seletorAba").value;
@@ -419,11 +512,13 @@
 
         $("resumo").innerHTML =
           "<p>WOs lidas na planilha: <b>" + r.total + "</b><br>" +
+          "Mês desta carga: <b>" + MES_DA_CARGA() + "</b><br>" +
           "Todas as WOs (vão para o banco): <b>" + r.linhas.length + "</b><br>" +
           "Sem setor reconhecido (Móvel, Volante ou Residencial): " + r.foraDoSetor + "<br>" +
           "Por status: " + (textoStatus || "-") + "</p>" +
           (r.duplicadas ? '<p class="aviso">Havia ' + r.duplicadas + " WO repetida(s); ficou a última.</p>" : "") +
-          (r.linhas.length === 0 ? '<p class="erro">Nenhuma WO encontrada.</p>' : "");
+          (r.linhas.length === 0 ? '<p class="erro">Nenhuma WO encontrada.</p><p class="aviso">Cabeçalho na linha ' + r.diag.cabecalho + " · coluna WO é a " + r.diag.colunaWO + " · linhas abaixo do cabeçalho: " + r.diag.linhasAbaixo +
+            " · linhas com algo na coluna WO: " + r.diag.comTexto + (r.diag.exemplos.length ? " · exemplos: " + r.diag.exemplos.join(" | ") : "") + ".</p>" : "");
 
         const amostra = r.linhas.slice(0, 5);
         $("tabelaPrevia").innerHTML =
@@ -438,7 +533,16 @@
 
       $("botaoGravar").addEventListener("click", async function () {
         $("botaoGravar").disabled = true;
+        const mesGravado = MES_DA_CARGA();
         const carimbo = new Date().toISOString();
+        atribuirChaves(linhasParaGravar);
+        let trocas = null;
+        try { $("msgGravar").textContent = "Conferindo WOs provisórias..."; trocas = await trocarCodigosProvisorios(linhasParaGravar, mesGravado); }
+        catch (e) {
+          $("msgGravar").innerHTML = '<span class="erro">Não consegui trocar os códigos provisórios: ' + e.message + " (a base anterior foi mantida)</span>";
+          $("botaoGravar").disabled = false;
+          return;
+        }
         const lote = 500;
         let gravadas = 0;
 
@@ -447,7 +551,7 @@
           const parte = linhasParaGravar.slice(i, i + lote).map(function (l) {
             return Object.assign({}, l, { atualizado_em: carimbo });
           });
-          const r = await banco.from("base_preventiva").upsert(parte, { onConflict: "wo" });
+          const r = await banco.from("base_preventiva").upsert(parte, { onConflict: "wo,mes" });
           if (r.error) {
             $("msgGravar").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message +
               " (a base anterior foi mantida)</span>";
@@ -459,12 +563,14 @@
         }
 
         // 2) remove as WOs antigas que não vieram nesta planilha
-        const limpeza = await banco.from("base_preventiva").delete().lt("atualizado_em", carimbo);
+        const limpeza = await banco.from("base_preventiva").delete().eq("mes", mesGravado).lt("atualizado_em", carimbo);
         if (limpeza.error) {
           $("msgGravar").innerHTML = '<span class="aviso">Gravei ' + gravadas +
             " WOs, mas não consegui remover as antigas: " + limpeza.error.message + "</span>";
         } else {
-          $("msgGravar").innerHTML = '<span class="ok">Pronto: ' + gravadas + " WOs gravadas.</span>";
+          $("msgGravar").innerHTML = '<span class="ok">Pronto: ' + gravadas + " WOs gravadas.</span>" +
+            (trocas && trocas.trocas ? '<br><span class="ok">Códigos provisórios trocados pela WO real em ' + trocas.trocas + " WO(s) já usadas (" + trocas.validacoes + " validação(ões) atualizada(s)).</span>" : "") +
+            (trocas && trocas.semPar ? '<br><span class="aviso">' + trocas.semPar + " WO(s) já registrada(s) com código provisório não tiveram par (mesmo site e tipo) na planilha nova. Confira essas visitas.</span>" : "");
         }
         mostrarUltimaAtualizacao();
         $("botaoGravar").disabled = false;
