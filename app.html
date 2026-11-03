@@ -508,6 +508,14 @@
     #botaoMenu i { display:block; width:20px; height:2px; background:#fff; }
     #barraTopo b { font-weight:600; font-size:14px; }
     #barraTopo .esp { flex:1; }
+    #barraTopo .per { display:flex; align-items:center; gap:6px; margin-right:10px; }
+    #barraTopo .per label { font-size:12px; color:#c6c6c6; margin-right:2px; }
+    #barraTopo .per select { background:#262f3f; color:#fff; border:0; border-bottom:1px solid #8d9bb5; border-radius:0; padding:6px 8px; font:inherit; font-size:12px; width:auto; margin:0; }
+    #barraTopo .per select.dif { outline:2px solid #0f62fe; outline-offset:-2px; }
+    #faixaPeriodo { display:flex; justify-content:space-between; align-items:center; gap:12px; background:#fcf4d6; border-left:3px solid #f1c21b; padding:9px 14px; margin:0 0 12px; font-size:13px; }
+    #faixaPeriodo button { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:5px 12px; font:inherit; font-size:12px; cursor:pointer; }
+    .nt-per { display:inline-block; background:#e8f0ff; color:#0043ce; padding:2px 8px; font-size:11px; font-weight:400; margin-left:10px; vertical-align:middle; }
+    @media print { #barraTopo, #faixaPeriodo { display:none; } }
     #barraTopo span { font-size:12px; color:#c6c6c6; }
     aside { position:fixed; left:0; top:0; height:100vh; width:300px; transform:translateX(-102%); transition:transform .18s; z-index:50; padding-top:0; box-shadow:4px 0 16px rgba(0,0,0,.35); }
     aside.aberta { transform:none; }
@@ -618,6 +626,7 @@
     <button id="botaoMenu" aria-label="Abrir menu"><i></i><i></i><i></i></button>
     <b>Controle de Preventivas</b>
     <div class="esp"></div>
+    <div class="per"><label for="perMes">Período</label><select id="perMes"></select><select id="perAno"></select></div>
     <span id="nomeUsuarioTopo"></span>
   </header>
   <div id="cortina" class="oculto"></div>
@@ -656,6 +665,7 @@
   </aside>
 
   <main>
+    <div id="faixaPeriodo" class="oculto"><span id="faixaPeriodoTexto"></span><button type="button" id="faixaPeriodoVoltar"></button></div>
     <!-- ENTRAR -->
     <section id="telaLogin" class="login-tela">
       <div class="lg-meio">
@@ -1222,12 +1232,28 @@
     return resposta.data;
   }
 
-  async function carregarBase(todos) {      // o banco devolve no máximo 1000 por vez
+  function mesDe(dia) { return String(dia || hoje()).slice(0, 7); }
+  // Meses que uma janela de dias para trás (a partir de hoje) atravessa, ex.: ["2026-10", "2026-11"].
+  function mesesDaJanela(dias) {
+    const lista = [];
+    for (let i = Math.max(0, dias); i >= 0; i -= 20) { const m = mesDe(somarDias(hoje(), -i)); if (lista.indexOf(m) < 0) lista.push(m); }
+    const hojeM = mesDe(hoje()); if (lista.indexOf(hojeM) < 0) lista.push(hojeM);
+    return lista;
+  }
+  // A base é separada por mês. Sem "dia" nem "meses", vale o Período escolhido no topo (mês ou ano inteiro).
+  async function carregarBase(todos, dia, meses) {      // o banco devolve no máximo 1000 por vez
     const todas = [];
     const passo = 1000;
+    const P = estado.periodo;
+    let filtro, chave;
+    if (meses && meses.length) { filtro = function (q) { return q.in("mes", meses); }; chave = "janela"; }
+    else if (dia) { chave = mesDe(dia); filtro = function (q) { return q.eq("mes", chave); }; }
+    else if (!P.mes) { chave = "ano" + P.ano; filtro = function (q) { return q.like("mes", P.ano + "-%"); }; }
+    else { chave = P.ano + "-" + doisDigitos(P.mes); filtro = function (q) { return q.eq("mes", chave); }; }
+    estado.mesBase = chave;
     for (let de = 0; ; de += passo) {
-      const dados = conferir(await banco.from("base_preventiva")
-        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em,equipe_engemon")
+      const dados = conferir(await filtro(banco.from("base_preventiva")
+        .select("wo,clr_sdr_site_helix,programado_infratel,site_busca,tipo,status_final,data_fim,atualizado_em,equipe_engemon"))
         .order("wo").range(de, de + passo - 1));
       for (const linha of dados) todas.push(linha);
       if (dados.length < passo) break;
@@ -1389,6 +1415,7 @@
     $("telaLogin").classList.add("oculto");
     $("topo").classList.remove("oculto");
     $("barraTopo").classList.remove("oculto");
+    desenharSeletoresPeriodo(); carregarContagensPeriodo(estado.periodo.ano);
     try {
       const resultados = await Promise.all([carregarBase(), carregarEquipes()]);
       estado.base = resultados[0];
@@ -1477,6 +1504,80 @@
     b.addEventListener("click", function () { irParaTela(b.dataset.tela, b.dataset.grupo || "", b.dataset.setor || ""); });
   });
 
+  // ==== PERÍODO (mês e ano), no topo de todas as telas =========================
+  const NOMES_MES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  estado.periodo = { ano: Number(hoje().slice(0, 4)), mes: Number(hoje().slice(5, 7)) };   // mes 0 = ano inteiro
+  estado.contMes = {};
+  function periodoEhAtual() { const h = hoje(); return estado.periodo.ano === Number(h.slice(0, 4)) && estado.periodo.mes === Number(h.slice(5, 7)); }
+  function nomePeriodo() { const P = estado.periodo; return P.mes ? NOMES_MES[P.mes - 1] + " / " + P.ano : "Ano inteiro de " + P.ano; }
+  // [primeiro dia, último dia] do período, em AAAA-MM-DD
+  function faixaDoPeriodo() {
+    const P = estado.periodo;
+    if (!P.mes) return [P.ano + "-01-01", P.ano + "-12-31"];
+    return [P.ano + "-" + doisDigitos(P.mes) + "-01", P.ano + "-" + doisDigitos(P.mes) + "-" + doisDigitos(new Date(P.ano, P.mes, 0).getDate())];
+  }
+  function diaPadraoDoPeriodo() { return periodoEhAtual() || !estado.periodo.mes ? hoje() : faixaDoPeriodo()[1]; }
+  function desenharSeletoresPeriodo() {
+    const P = estado.periodo, anoAtual = Number(hoje().slice(0, 4)), anos = [];
+    for (let a = 2026; a <= Math.max(anoAtual, P.ano); a++) anos.push(a);
+    $("perAno").innerHTML = anos.map(function (a) { return "<option" + (a === P.ano ? " selected" : "") + ">" + a + "</option>"; }).join("");
+    const c = estado.contMes[P.ano] || {};
+    let total = 0, temTotal = false;
+    const meses = NOMES_MES.map(function (n, i) {
+      const q = c[P.ano + "-" + doisDigitos(i + 1)];
+      if (typeof q === "number") { total += q; temTotal = true; }
+      const rot = typeof q === "number" ? (q > 0 ? " · " + q.toLocaleString("pt-BR") + " WOs" : " · sem base") : "";
+      return '<option value="' + (i + 1) + '"' + (P.mes === i + 1 ? " selected" : "") + ">" + n + rot + "</option>";
+    });
+    meses.push('<option value="0"' + (P.mes === 0 ? " selected" : "") + ">Ano inteiro" + (temTotal ? " · " + total.toLocaleString("pt-BR") + " WOs" : "") + "</option>");
+    $("perMes").innerHTML = meses.join("");
+  }
+  async function carregarContagensPeriodo(ano) {
+    const res = {};
+    await Promise.all(NOMES_MES.map(async function (n, i) {
+      const k = ano + "-" + doisDigitos(i + 1);
+      try {
+        const r = await banco.from("base_preventiva").select("wo", { count: "exact", head: true }).eq("mes", k);
+        if (!r.error && typeof r.count === "number") res[k] = r.count;
+      } catch (e) { /* sem contagem: o mês aparece só com o nome */ }
+    }));
+    estado.contMes[ano] = res;
+    desenharSeletoresPeriodo();
+  }
+  function atualizarFaixaPeriodo() {
+    const dif = !periodoEhAtual();
+    $("faixaPeriodo").classList.toggle("oculto", !dif);
+    if (dif) {
+      const mesAtual = NOMES_MES[Number(hoje().slice(5, 7)) - 1].toLowerCase();
+      $("faixaPeriodoTexto").innerHTML = "Você está vendo <b>" + (estado.periodo.mes ? esc(nomePeriodo().toLowerCase().replace(" / ", "/")) : "o ano inteiro de " + estado.periodo.ano) + "</b>. O mês atual é " + mesAtual + ".";
+      $("faixaPeriodoVoltar").textContent = "Voltar para " + mesAtual;
+    }
+    document.querySelectorAll(".nt-per").forEach(function (e) { e.remove(); });
+    if (dif) {
+      const h1 = document.querySelector(".tela:not(.oculto) h1");
+      if (h1) { const sp = document.createElement("span"); sp.className = "nt-per"; sp.textContent = nomePeriodo(); h1.appendChild(sp); }
+    }
+    $("perMes").classList.toggle("dif", dif); $("perAno").classList.toggle("dif", dif);
+  }
+  function aoMudarPeriodo() {
+    const novoAno = Number($("perAno").value), anoMudou = novoAno !== estado.periodo.ano;
+    estado.periodo = { ano: novoAno, mes: Number($("perMes").value) };
+    desenharSeletoresPeriodo();
+    if (anoMudou && !estado.contMes[novoAno]) carregarContagensPeriodo(novoAno);
+    const d = diaPadraoDoPeriodo();
+    $("campoData").value = d;
+    if ($("rdData")) $("rdData").value = d;
+    atualizarFaixaPeriodo();
+    const t = estado.telaAtual;
+    if (t && t !== "SiteVal") irParaTela(t, estado.grupoAtual, estado.setor);
+  }
+  $("perMes").addEventListener("change", aoMudarPeriodo);
+  $("perAno").addEventListener("change", aoMudarPeriodo);
+  $("faixaPeriodoVoltar").addEventListener("click", function () {
+    estado.periodo = { ano: Number(hoje().slice(0, 4)), mes: Number(hoje().slice(5, 7)) };
+    desenharSeletoresPeriodo(); aoMudarPeriodo();
+  });
+
   function definirSubmenu(id, aberto) {
     const alvo = $("submenu" + id);
     if (!alvo) return;
@@ -1519,6 +1620,8 @@
     if (rotulo && h1) h1.textContent = rotulo + " · " + (NOME_SETOR[setor] || "");
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("tela" + nome).classList.remove("oculto");
+    estado.telaAtual = nome;
+    atualizarFaixaPeriodo();
     clearInterval(estado.pollId);
     fecharMenu();
     window.scrollTo(0, 0);
@@ -1544,7 +1647,12 @@
       estado.pollId = setInterval(atualizarConferencia, 120000);
     }
     if (nome === "Registrar") {
-      if (estado.baseTodas) { estado.base = estado.baseTodas.filter(function (l) { return casaSetor(setorDe(l), setor); }); prepararBase(); }
+      (async function () {
+        const d = $("campoData").value || hoje();
+        try { if (mesDe(d) !== estado.mesBase) await carregarBase(true, d); }
+        catch (e) { mostrarAviso("Não consegui carregar a base do mês: " + e.message, "erro"); }
+        if (estado.baseTodas) { estado.base = estado.baseTodas.filter(function (l) { return casaSetor(setorDe(l), setor); }); prepararBase(); }
+      })();
       atualizarEscalaRegistrar();
     }
     if (nome === "Divergencias") atualizarDivergencias();
@@ -1575,7 +1683,7 @@
       const dias = Number($("periodoConf").value);
       const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
       await carregarExpurgos();
-      const resultados = await Promise.all([carregarBase(), carregarParaConferencia(inicio.toISOString())]);
+      const resultados = await Promise.all([carregarBase(false, null, mesesDaJanela(dias)), carregarParaConferencia(inicio.toISOString())]);
       estado.base = resultados[0];
       prepararBase();
       montarLinhasConferencia(resultados[1]);
@@ -1850,7 +1958,8 @@
         const wos = ligadasPorVisita[v.id] || [];
         return wos.length ? wos.some(function (w) { return casaSetor((estado.setorDaWO || {})[w], estado.setor); }) : !!sitesDoSetor[limparSite(v.site)];
       };
-      const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado && doSetor(v); });
+      const faixaP = faixaDoPeriodo();
+      const visitas = r[1].filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado && doSetor(v) && v.data_execucao >= faixaP[0] && v.data_execucao <= faixaP[1]; });
       const irmas = function (k) { return outrasSiglasDoEndereco(k).map(function (x) { return limparSite(x.sigla); }); };
       // Divergência é análise só do MOP: a EPS (e MOP + EPS) fica de fora.
       const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !estado.expurgadas[l.wo]; });
@@ -2103,7 +2212,7 @@
 
   async function atualizarEPS() {
     try {
-      const resultados = await Promise.all([carregarBase(true), carregarRelatorios()]);   // base de todos os setores: o relatório é ligado à WO em qualquer setor
+      const resultados = await Promise.all([carregarBase(true, null, mesesDaJanela(REGRAS.eps.diasHistorico)), carregarRelatorios()]);   // base de todos os setores: o relatório é ligado à WO em qualquer setor
       estado.base = resultados[0];
       prepararBase();
       prepararRelatoriosEPS(resultados[1]);
@@ -3154,7 +3263,7 @@
       if (!$("rdData").value) $("rdData").value = paraAAAAMMDD(new Date());
       const dia = $("rdData").value;
       await carregarExpurgos();
-      const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(true), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia), carregarAtividadesDoDia(dia)]);
+      const r = await Promise.all([carregarVisitasDoDia(dia), carregarBase(true, dia), carregarWosLigadas(), carregarEquipes(), carregarEscalaDoDia(dia), carregarAtividadesDoDia(dia)]);
       Object.keys(estado.expurgadas).forEach(function (wo) { r[2][wo] = true; });   // WO expurgada não é divergência
       estado.rd = { dia: dia, visitas: r[0], base: r[1], ligadas: r[2], equipes: r[3], escala: r[4], atividades: r[5] };
       desenharResumoDia();
@@ -3589,7 +3698,17 @@
       mostrarAviso("Não consegui carregar as equipes do dia: " + e.message, "erro");
     }
   }
-  $("campoData").addEventListener("change", function () { atualizarBlocos(); atualizarEscalaRegistrar(); });
+  $("campoData").addEventListener("change", async function () {
+    const d = $("campoData").value || hoje();
+    if (mesDe(d) !== estado.mesBase) {
+      try {
+        await carregarBase(true, d);
+        estado.base = estado.baseTodas.filter(function (l) { return casaSetor(setorDe(l), estado.setor); });
+        prepararBase();
+      } catch (e) { mostrarAviso("Não consegui carregar a base do mês: " + e.message, "erro"); }
+    }
+    atualizarBlocos(); atualizarEscalaRegistrar();
+  });
 
   // Lista de equipes do formulário: primeiro as já registradas no dia, depois as demais.
   function atualizarOpcoesEquipe() {
