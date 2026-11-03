@@ -191,7 +191,7 @@
     #tabelaEPS tr.linha-falta td:first-child { box-shadow:inset 3px 0 0 #c58a1b; }
   
     /* ---- RESUMO DIA (estilo corporativo, cantos retos) ---- */
-    main:has(#telaResumoDia:not(.oculto)) { max-width:1060px; }
+    main:has(#telaResumoDia:not(.oculto)) { max-width:none; }
     #telaResumoDia { font-size:13px; color:#161616; }
     #telaResumoDia .rd-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaResumoDia .rd-titulo { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
@@ -250,7 +250,32 @@
     #telaResumoDia .rd-leg { display:flex; flex-wrap:wrap; gap:4px 12px; font-weight:400; font-size:10px; padding:4px 8px; align-items:center; flex-grow:1; }
     #telaResumoDia .rd-leg span { white-space:nowrap; }
     #telaResumoDia .rd-leg i { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:middle; border:1px solid #8d8d8d; }
-    #telaResumoDia { --rd-min:1100px; }
+    #telaResumoDia { --rd-min:900px; max-width:var(--rd-min); }
+    #telaResumoDia { font-size:12px; }
+    #telaResumoDia .rd-campos { gap:8px; flex-wrap:nowrap; margin:8px 0 8px; }
+    #telaResumoDia .rd-campo { flex:1 1 0; min-width:0; }
+    #telaResumoDia .rd-campo .r { font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #telaResumoDia .rd-campo .v { padding:2px 8px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #telaResumoDia .rd-campo .v small { font-size:10.5px; }
+    #telaResumoDia .rd-l { min-height:26px; }
+    #telaResumoDia .rd-eq { width:200px; padding:2px 8px; }
+    #telaResumoDia .rd-resp { width:56px; padding:2px 6px; }
+    #telaResumoDia .rd-prev { width:36px; }
+    #telaResumoDia .rd-real { width:48px; }
+    #telaResumoDia .rd-sites { flex:none; width:calc(var(--n,3) * 180px); grid-template-columns:repeat(var(--n,3),180px); }
+    #telaResumoDia .rd-site { flex-direction:row; align-items:center; gap:7px; padding:2px 8px; line-height:1.2; white-space:nowrap; overflow:hidden; }
+    #telaResumoDia .rd-site .a { font-size:12px; flex:none; max-width:100%; }
+    #telaResumoDia .rd-site .b { font-size:10.5px; overflow:hidden; text-overflow:ellipsis; }
+    #telaResumoDia .rd-ativc { padding:2px 8px; }
+    #telaResumoDia .rd-ativc .x { display:flex; align-items:center; gap:7px; white-space:nowrap; overflow:hidden; }
+    #telaResumoDia .rd-ativc b { display:inline; font-size:12px; } #telaResumoDia .rd-ativc span { font-size:10.5px; }
+    #telaResumoDia .rd-cab > div { padding-top:5px; padding-bottom:5px; }
+    #telaResumoDia .rd-seqt { padding:5px 0; }
+    #telaResumoDia .rd-cab2 > div { padding-top:1px; padding-bottom:1px; }
+    #telaResumoDia .rd-grupo { padding:3px 10px; font-size:10px; }
+    #telaResumoDia .rd-total { min-height:26px; }
+    #telaResumoDia .rd-leg { font-size:9px; padding:2px 8px; }
+    #telaResumoDia .rd-leg i { width:9px; height:9px; margin-right:4px; }
     #telaResumoDia .rd-outra { flex:1; display:flex; align-items:center; padding:7px 12px; background:#e0e0e0; color:#393939; border-left:1px solid #c6c6c6; }
     #telaResumoDia .rd-outra b { margin-right:8px; }
     /* ---- REGISTRAR (estilo IBM: cantos retos, campos com linha inferior) ---- */
@@ -3409,7 +3434,7 @@
       const diaTodo = !a.inicio && !a.fim;
       const per = a.inicio ? hm(a.inicio) + (a.fim ? "–" + hm(a.fim) : "…") : (a.fim ? "Até " + hm(a.fim) : "Dia todo");
       return '<div class="rd-site rd-ativc' + (diaTodo ? " rd-larga" : "") + '" title="' + esc(a.observacao || "") + '"><div class="x"><b>' + esc(a.atividade) + "</b><span>" +
-        esc(per) + (diaTodo && a.observacao ? " · " + esc(a.observacao) : "") + "</span></div></div>";
+        esc(per) + "" + "</span></div></div>";
     };
     let maxSites = cfg.minSites;
     lista.forEach(function (e) { const n = itensDaEquipe(e).length; if (n > maxSites) maxSites = n; });
@@ -3456,9 +3481,9 @@
     if (!linhasHtml) {
       linhasHtml = '<div class="rd-grupo">Nenhuma equipe registrada para este dia. Registre as equipes na tela Registrar.</div>';
     }
-    $("rdTabela").style.setProperty("--rd-min", (200 + 84 + 44 + 56 + maxSites * 130) + "px");
-    $("telaResumoDia").style.setProperty("--rd-min", (200 + 84 + 44 + 56 + maxSites * 130) + "px");
-    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe responsável</div><div class="rd-prev">Prev.</div><div class="rd-sites" style="--n:' + maxSites + '"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
+    $("rdTabela").style.setProperty("--rd-min", (200 + 56 + 36 + 48 + maxSites * 180) + "px");
+    $("telaResumoDia").style.setProperty("--rd-min", Math.max(900, 200 + 56 + 36 + 48 + maxSites * 180 + 2) + "px");
+    let cab = '<div class="rd-l rd-cab"><div class="rd-eq">Técnicos preventiva</div><div class="rd-resp">Equipe</div><div class="rd-prev">Prev.</div><div class="rd-sites" style="--n:' + maxSites + '"><div class="rd-seqt">Sequência do dia (em ordem de horário)</div></div><div class="rd-real">Realiz.</div></div>' +
       '<div class="rd-l rd-cab rd-cab2"><div class="rd-eq"></div><div class="rd-resp"></div><div class="rd-prev"></div><div class="rd-sites" style="--n:' + maxSites + '">';
     for (let i = 1; i <= maxSites; i++) cab += '<div class="rd-site">' + i + "º</div>";
     cab += '</div><div class="rd-real"></div></div>';
@@ -3478,12 +3503,12 @@
     const campo = function (rot, valor, cls) { return '<div class="rd-campo ' + (cls || "") + '"><div class="r">' + esc(rot) + '</div><div class="v">' + valor + "</div></div>"; };
     const detalhe = Object.keys(contagem).map(function (k) { return contagem[k] + " " + k.toLowerCase(); }).join(" · ");
     $("rdCampos").innerHTML =
-      campo("Equipes de preventiva", lista.length + " <small>" + esc(detalhe) + "</small>") +
-      campo("MOP · executadas na base", mopExec + " <small>de " + mop.length + "</small>") +
-      campo("EPS · executadas na base", epsExec + " <small>de " + eps.length + "</small>") +
-      campo("WOs previstas no dia", totalPrev) +
-      campo("WOs realizadas no dia", totalReal + " <small>· " + pct + "%</small>", "verde") +
-      campo("Divergências abertas", diverg, diverg ? "verm" : "");
+      campo("Equipes", lista.length + " <small>" + esc(detalhe) + "</small>") +
+      campo("MOP · executadas", mopExec + " <small>de " + mop.length + "</small>") +
+      campo("EPS · executadas", epsExec + " <small>de " + eps.length + "</small>") +
+      campo("WOs previstas", totalPrev) +
+      campo("WOs realizadas", totalReal + " <small>· " + pct + "%</small>", "verde") +
+      campo("Divergências", diverg, diverg ? "verm" : "");
     $("rdSub").textContent = "Dia " + dia.split("-").reverse().join("/") + " · posição de " + new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) +
       " · divergências = WOs MOP executadas (" + execSemVisita + ") ou em andamento (" + andamentoSemVisita + ") sem visita ligada";
   }
