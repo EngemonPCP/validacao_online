@@ -1341,10 +1341,12 @@
     conferir(await banco.from("visitas").update(campos).eq("id", id));
   }
 
-  async function carregarParaConferencia(desdeIso) {
-    return conferir(await banco.from("visitas").select("*, wos_visita(*)")
+  async function carregarParaConferencia(desdeIso, ateIso) {
+    let q = banco.from("visitas").select("*, wos_visita(*)")
       .eq("situacao", REGRAS.situacaoSaiu).in("atividade", REGRAS.atividadesComPreventiva)
-      .gte("hora_saida", desdeIso).order("hora_saida", { ascending: false }));
+      .gte("hora_saida", desdeIso);
+    if (ateIso) q = q.lt("hora_saida", ateIso);
+    return conferir(await q.order("hora_saida", { ascending: false }));
   }
 
   async function marcarCobrado(idWoVisita, quem) {
@@ -1523,6 +1525,11 @@
     if (!P.mes) return [P.ano + "-01-01", P.ano + "-12-31"];
     return [P.ano + "-" + doisDigitos(P.mes) + "-01", P.ano + "-" + doisDigitos(P.mes) + "-" + doisDigitos(new Date(P.ano, P.mes, 0).getDate())];
   }
+  function mesesDoPeriodo() {
+    const P = estado.periodo;
+    if (P.mes) return [P.ano + "-" + doisDigitos(P.mes)];
+    const l = []; for (let m = 1; m <= 12; m++) l.push(P.ano + "-" + doisDigitos(m)); return l;
+  }
   function diaPadraoDoPeriodo() { return periodoEhAtual() || !estado.periodo.mes ? hoje() : faixaDoPeriodo()[1]; }
   function desenharSeletoresPeriodo() {
     const P = estado.periodo, anoAtual = Number(hoje().slice(0, 4)), anos = [];
@@ -1576,6 +1583,8 @@
     const d = diaPadraoDoPeriodo();
     $("campoData").value = d;
     if ($("rdData")) $("rdData").value = d;
+    if ($("rvData")) $("rvData").value = d;
+    estado.mesEPS = ""; estado.ex.mes = null;
     atualizarFaixaPeriodo();
     const t = estado.telaAtual;
     if (t && t !== "SiteVal") irParaTela(t, estado.grupoAtual, estado.setor);
@@ -1691,8 +1700,15 @@
     try {
       const dias = Number($("periodoConf").value);
       const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
+      let ateIso = null, meses = mesesDaJanela(dias), desdeIso = inicio.toISOString();
+      if (!periodoEhAtual()) {
+        const fx = faixaDoPeriodo();
+        desdeIso = new Date(fx[0] + "T00:00:00").toISOString();
+        ateIso = new Date(somarDias(fx[1], 1) + "T00:00:00").toISOString();
+        meses = mesesDoPeriodo();
+      }
       await carregarExpurgos();
-      const resultados = await Promise.all([carregarBase(false, null, mesesDaJanela(dias)), carregarParaConferencia(inicio.toISOString())]);
+      const resultados = await Promise.all([carregarBase(false, null, meses), carregarParaConferencia(desdeIso, ateIso)]);
       estado.base = resultados[0];
       prepararBase();
       montarLinhasConferencia(resultados[1]);
@@ -2221,7 +2237,7 @@
 
   async function atualizarEPS() {
     try {
-      const resultados = await Promise.all([carregarBase(true, null, mesesDaJanela(REGRAS.eps.diasHistorico)), carregarRelatorios()]);   // base de todos os setores: o relatório é ligado à WO em qualquer setor
+      const resultados = await Promise.all([carregarBase(true, null, mesesDoPeriodo()), carregarRelatorios()]);   // base de todos os setores: o relatório é ligado à WO em qualquer setor
       estado.base = resultados[0];
       prepararBase();
       prepararRelatoriosEPS(resultados[1]);
@@ -2252,10 +2268,11 @@
       estado.relatoriosEPS.push(r);
     });
     // Opções de mês (mês atual sempre aparece) e de empresa
-    const mesAtual = new Date().getFullYear() + "-" + doisDigitos(new Date().getMonth() + 1);
+    const doPeriodo = mesesDoPeriodo();
+    const mesAtual = estado.periodo.mes ? doPeriodo[0] : (doPeriodo.indexOf(mesDe(hoje())) >= 0 ? mesDe(hoje()) : doPeriodo[doPeriodo.length - 1]);
     const meses = {};
     meses[mesAtual] = true;
-    estado.relatoriosEPS.forEach(function (r) { meses[r.competencia] = true; });
+    estado.relatoriosEPS.forEach(function (r) { if (doPeriodo.indexOf(r.competencia) >= 0) meses[r.competencia] = true; });
     const listaMeses = Object.keys(meses).sort().reverse();
     if (!estado.mesEPS || !meses[estado.mesEPS]) estado.mesEPS = mesAtual;
     $("mesEPS").innerHTML = listaMeses.map(function (m) {
@@ -3140,17 +3157,17 @@
   }
   function desenharExpurgos() {
     const mesAtual = paraAAAAMMDD(new Date()).slice(0, 7);
-    if (estado.ex.mes === null) estado.ex.mes = mesAtual;
+    if (estado.ex.mes === null) estado.ex.mes = estado.periodo.mes ? mesesDoPeriodo()[0] : "";
     const todos = estado.expurgos.slice().sort(function (a, b) {
       return String(b.data_visita || "").localeCompare(String(a.data_visita || "")) || String(a.site).localeCompare(String(b.site));
     });
-    const meses = {}; meses[mesAtual] = true;
-    todos.forEach(function (x) { if (x.data_visita) meses[String(x.data_visita).slice(0, 7)] = true; });
-    $("exMes").innerHTML = '<option value="">Todos os meses</option>' + Object.keys(meses).sort().reverse().map(function (m) {
+    const meses = {}; if (estado.periodo.mes) meses[mesesDoPeriodo()[0]] = true;
+    todos.forEach(function (x) { const m = String(x.data_visita || "").slice(0, 7); if (m && m.slice(0, 4) === String(estado.periodo.ano) && (!estado.periodo.mes || m === mesesDoPeriodo()[0])) meses[m] = true; });
+    $("exMes").innerHTML = '<option value="">' + (estado.periodo.mes ? "Todos" : "Todos os meses") + '</option>' + Object.keys(meses).sort().reverse().map(function (m) {
       return '<option value="' + m + '"' + (m === estado.ex.mes ? " selected" : "") + ">" + m.slice(5) + "/" + m.slice(0, 4) + "</option>";
     }).join("");
     $("exMes").value = estado.ex.mes;
-    const doMes = todos.filter(function (x) { return !estado.ex.mes || String(x.data_visita || "").slice(0, 7) === estado.ex.mes; });
+    const doMes = todos.filter(function (x) { const m = String(x.data_visita || "").slice(0, 7); return estado.ex.mes ? m === estado.ex.mes : mesesDoPeriodo().indexOf(m) >= 0; });
     const motivos = REGRAS.expurgo.motivos;
     const conta = function (m) { return doMes.filter(function (x) { return x.motivo === m; }).length; };
     $("exCampos").innerHTML = '<div class="ib-campo"><div class="r">Expurgadas no período</div><div class="v">' + doMes.length + "</div></div>" +
@@ -3939,12 +3956,12 @@
   function doSetorVal(v) { const s = estado.val.setor; return !s || casaSetor(String(v.setor || "").trim().toUpperCase(), s); }
 
   async function carregarValidacoes() {
-    const d0 = somarDias(hoje(), -45);
-    const desde = d0 > REGRAS.validacao.inicio ? d0 : REGRAS.validacao.inicio;
-    const todas = [];
+    const fx = faixaDoPeriodo();
+    const desde = fx[0] > REGRAS.validacao.inicio ? fx[0] : REGRAS.validacao.inicio;
+    const todas = [], vistos = {};
     for (let de = 0; ; de += 1000) {
-      const d = conferir(await banco.from("validacoes").select("*").gte("data", desde).order("id").range(de, de + 999));
-      for (const x of d) todas.push(x);
+      const d = conferir(await banco.from("validacoes").select("*").gte("data", desde).lte("data", fx[1]).order("id").range(de, de + 999));
+      for (const x of d) { todas.push(x); vistos[x.id] = true; }
       if (d.length < 1000) break;
     }
     return todas;
@@ -4552,7 +4569,11 @@
         for (const x of d) todos.push(x);
         if (d.length < 1000) break;
       }
-      estado.off.casos = todos;
+      const fx = faixaDoPeriodo();
+      estado.off.casos = todos.filter(function (c) {
+        const d = dataLocalDe(c.criado_em || (c.historico && c.historico[0] && c.historico[0].em) || new Date().toISOString());
+        return d >= fx[0] && d <= fx[1];
+      });
     } catch (e) { $("ofCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar: ' + esc(e.message) + " (o SQL validacao_offline_sql.txt já foi rodado?)</div>"; return; }
     desenharOffline();
   }
