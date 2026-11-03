@@ -609,6 +609,24 @@
     .vl-funil .b .r { font-size:11px; color:#525252; } .vl-funil .b .v { font-size:26px; font-weight:600; margin-top:2px; } .vl-funil .b small { display:block; font-size:11px; color:#525252; }
     .vl-funil .b.am { border-top-color:#f1c21b; } .vl-funil .b.rd { border-top-color:#da1e28; } .vl-funil .b.gr { border-top-color:#198038; }
     .vl-funil .ar { width:22px; display:flex; align-items:center; justify-content:center; color:#8d8d8d; font-size:18px; }
+    .rv-sec { font-size:12px; font-weight:600; letter-spacing:.32px; text-transform:uppercase; color:#525252; margin:20px 0 8px; }
+    .rv-tiles { display:grid; grid-template-columns:repeat(6, 1fr); gap:1px; background:#e0e0e0; border:1px solid #e0e0e0; }
+    .rv-t { background:#fff; padding:14px 16px; min-height:96px; position:relative; }
+    .rv-t i { position:absolute; left:0; top:0; bottom:0; width:4px; }
+    .rv-t .l { font-size:12px; color:#525252; } .rv-t .v { font-size:32px; font-weight:300; line-height:1.15; margin-top:6px; } .rv-t .s { font-size:12px; color:#6f6f6f; margin-top:2px; min-height:15px; }
+    .rv-prog { background:#fff; border:1px solid #e0e0e0; padding:14px 16px; margin-top:8px; }
+    .rv-prog .r { display:flex; align-items:center; gap:12px; margin:7px 0; font-size:12px; } .rv-prog .r span { width:150px; color:#525252; }
+    .rv-prog .bar { flex:1; background:#f4f4f4; height:10px; } .rv-prog .bar b { display:block; height:10px; } .rv-prog .r em { width:150px; font-style:normal; text-align:right; font-variant-numeric:tabular-nums; }
+    .rv-chips { display:flex; flex-wrap:wrap; gap:1px; background:#e0e0e0; border-bottom:1px solid #e0e0e0; } .rv-chips button { background:#fff; color:#161616; border:0; border-radius:0; padding:10px 16px; font:inherit; font-size:13px; cursor:pointer; } .rv-chips button.ativo { background:#161616; color:#fff; }
+    .rv-tg { display:inline-block; padding:1px 8px; font-size:12px; border-radius:12px; background:#e0e0e0; } .rv-tg.a { background:#fddc69; color:#483700; } .rv-tg.v { background:#ffd7d9; color:#750e13; } .rv-tg.z { background:#d0e2ff; color:#002d9c; }
+    .rv-par { display:grid; grid-template-columns:1fr 420px; gap:16px; }
+    .rv-card { background:#fff; border:1px solid #e0e0e0; } .rv-card h3 { margin:0; padding:12px 16px; font-size:14px; font-weight:600; border-bottom:1px solid #e0e0e0; }
+    .rv-pl { padding:8px 16px 14px; display:grid; grid-template-columns:1fr 1fr; column-gap:40px; }
+    .rv-pl .r { display:grid; grid-template-columns:90px 1fr 28px; align-items:center; gap:10px; margin:10px 0; font-size:13px; } .rv-pl .bar { background:#f4f4f4; height:8px; } .rv-pl .bar b { display:block; height:8px; background:#0f62fe; } .rv-pl .r em { font-style:normal; text-align:right; font-variant-numeric:tabular-nums; }
+    .rv-fila { display:grid; grid-template-columns:repeat(3, 1fr); } .rv-fila > div { padding:10px 16px; border-right:1px solid #e0e0e0; } .rv-fila > div:last-child { border:0; } .rv-fila span { color:#525252; font-size:12px; display:block; } .rv-fila b { font-size:24px; font-weight:300; }
+    .rv-tab table { width:100%; border-collapse:collapse; } .rv-tab th { background:#e0e0e0; text-align:left; padding:0 16px; height:32px; font-size:12px; font-weight:600; } .rv-tab td { padding:0 16px; height:32px; border-bottom:1px solid #e0e0e0; font-size:13px; }
+    .rv-tab tr:nth-child(even) td { background:#f9f9f9; } .rv-tab .n { text-align:right; font-variant-numeric:tabular-nums; } .rv-tab { overflow-x:auto; }
+    @media (max-width:1100px) { .rv-tiles { grid-template-columns:repeat(3, 1fr); } .rv-par { grid-template-columns:1fr; } .rv-pl { grid-template-columns:1fr; } }
     .vl-2c { display:flex; gap:24px; flex-wrap:wrap; } .vl-2c > div { flex:1 1 420px; }
     .vl h3 { font-size:13px; margin:8px 0 6px; font-weight:600; }
     .vl-bar { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:12px; } .vl-bar .n { width:170px; } .vl-bar i { display:block; height:12px; background:#0f62fe; } .vl-bar b { width:30px; }
@@ -4253,6 +4271,21 @@
     $("rvSub").textContent = "Validação ativa a partir de " + dataBR(REGRAS.validacao.inicio) + ".";
     try { estado.val.lista = await carregarValidacoes(); }
     catch (e) { $("rvCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar: ' + esc(e.message) + " (o SQL da validação já foi rodado?)</div>"; return; }
+    try { await carregarExpurgos(); estado.val.baseMes = await carregarBase(true, null, mesesDoPeriodo()); } catch (e) { estado.val.baseMes = []; }
+    try {
+      const fx = faixaDoPeriodo();
+      const cs = conferir(await banco.from("casos_offline").select("*").order("id").limit(2000));
+      estado.val.casosMes = cs.filter(function (c) { const dd = dataLocalDe(c.criado_em || new Date().toISOString()); return dd >= fx[0] && dd <= fx[1]; });
+    } catch (e) { estado.val.casosMes = []; }
+    try {
+      const fx = faixaDoPeriodo(), ini = somarDias(fx[0], -5), fim = somarDias(fx[1], 5), tudo = [];
+      for (let de = 0; ; de += 1000) {
+        const d = conferir(await banco.from("visitas").select("id,equipe,situacao,motivo_nao_execucao,data_execucao,wos_visita(wo)").gte("data_execucao", ini).lte("data_execucao", fim).order("id").range(de, de + 999));
+        for (const x of d) tudo.push(x);
+        if (d.length < 1000) break;
+      }
+      estado.val.visitasPeriodo = tudo;
+    } catch (e) { estado.val.visitasPeriodo = null; }
     desenharResumoVal();
   }
   function dadosResumoVal() {
@@ -4271,36 +4304,101 @@
     ev.forEach(function (e) { (e.pendencias || []).forEach(function (p) { d.tipos[p.tipo] = (d.tipos[p.tipo] || 0) + 1; }); });
     d.equipes = {};
     ev.forEach(function (e) {
-      const q = d.equipes[e.equipe] = d.equipes[e.equipe] || { exec: 0, com: 0, dev: 0 };
+      const q = d.equipes[e.equipe] = d.equipes[e.equipe] || { exec: 0, com: 0, dev: 0, res: 0, off: 0 };
       q.exec += e.wosFinais;
       if (e.resultado !== "validada") q.com += e.wosFinais;
       if (e.resultado === "devolvida") q.dev += e.wosFinais;
+      if (e.resultado === "ressalva") q.res += e.wosFinais;
+      if (e.resultado === "offline") q.off += e.wosFinais;
     });
     d.fila = { aba: lista.filter(function (v) { return v.situacao === "aba_pedida"; }).length, ana: lista.filter(function (v) { return v.situacao === "em_analise"; }).length,
                cam: lista.filter(function (v) { return v.situacao === "em_campo"; }).length };
+    // Acumulado do período (mês ou ano) escolhido no topo
+    const setorSel = setor, fx = faixaDoPeriodo();
+    const ac = { exec: 0, sem: 0, res: 0, dev: 0, off: 0 };
+    for (let dia = fx[0]; dia <= fx[1]; dia = somarDias(dia, 1)) {
+      eventosFinaisDoDia(lista, dia).forEach(function (e) {
+        ac.exec += e.wosFinais;
+        if (e.resultado === "validada") ac.sem += e.wosFinais;
+        else if (e.resultado === "ressalva") ac.res += e.wosFinais;
+        else if (e.resultado === "devolvida") ac.dev += e.wosFinais;
+        else if (e.resultado === "offline") ac.off += e.wosFinais;
+      });
+    }
+    d.ac = ac;
+    // Executadas na base que não passaram pela validação
+    const fxp = faixaDoPeriodo(), comVal = {};
+    estado.val.lista.forEach(function (v) { if (v.situacao !== "cancelada") (v.wos || []).forEach(function (w) { comVal[w.wo] = true; }); });
+    const porWoVis = {};
+    (estado.val.visitasPeriodo || []).forEach(function (v) { (v.wos_visita || []).forEach(function (w) { (porWoVis[w.wo] = porWoVis[w.wo] || []).push(v); }); });
+    d.semVal = null;
+    if (estado.val.visitasPeriodo) {
+      d.semVal = [];
+      (estado.val.baseMes || []).forEach(function (l) {
+        if (grupoDaPreventiva(l.tipo) !== "MOP" || !ehExecutadaBase(l) || (estado.expurgadas || {})[l.wo] || comVal[l.wo]) return;
+        if (!l.data_fim || l.data_fim < fxp[0] || l.data_fim > fxp[1]) return;
+        if (setorSel && !casaSetor(setorDe(l), setorSel)) return;
+        const vis = (porWoVis[l.wo] || []).filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; });
+        let motivo;
+        if (l.data_fim < REGRAS.validacao.inicio) motivo = "antes";
+        else if (vis.some(function (v) { return v.motivo_nao_execucao; })) motivo = "semexec";
+        else if (vis.some(function (v) { return v.data_execucao && v.data_execucao < REGRAS.validacao.inicio; })) motivo = "antes";
+        else if (vis.length) motivo = "visita";
+        else motivo = "semvisita";
+        d.semVal.push({ l: l, motivo: motivo, equipe: vis.length ? vis[0].equipe : (l.equipe_engemon || "") });
+      });
+      d.semVal.sort(function (a, b) { return String(b.l.data_fim).localeCompare(String(a.l.data_fim)) || String(a.l.chaveSite || a.l.programado_infratel).localeCompare(String(b.l.chaveSite || b.l.programado_infratel)); });
+    }
+    const base = (estado.val.baseMes || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !(estado.expurgadas || {})[l.wo] && (!setorSel || casaSetor(setorDe(l), setorSel)); });
+    d.mopTotal = base.length; d.mopExec = base.filter(ehExecutadaBase).length;
+    d.offAbertos = (estado.val.casosMes || []).filter(function (c) { return !c.concluido_em && (!setorSel || casaSetor(String(c.setor || "").trim().toUpperCase(), setorSel)); }).length;
     return d;
   }
   function desenharResumoVal() {
     const d = dadosResumoVal();
     $("rvTitulo").textContent = "Resumo da validação · " + dataBR(d.dia).slice(0, 5);
     const pc = d.exec ? Math.round(d.com * 100 / d.exec) : 0;
-    let t = '<div class="vl-funil">' +
-      '<div class="b"><div class="r">WOs executadas</div><div class="v">' + d.exec + "</div><small>passaram pela validação</small></div><div class=\"ar\">›</div>" +
-      '<div class="b gr"><div class="r">Validadas sem pendência</div><div class="v">' + d.sem + "</div></div><div class=\"ar\"></div>" +
-      '<div class="b am"><div class="r">Com pendência</div><div class="v">' + d.com + "</div><small>" + pc + "% das executadas</small></div><div class=\"ar\">›</div>" +
-      '<div class="b rd"><div class="r">Devolvidas ao técnico</div><div class="v">' + d.dev + "</div></div><div class=\"ar\"></div>" +
-      '<div class="b am"><div class="r">Validadas com ressalva</div><div class="v">' + d.res + "</div></div><div class=\"ar\"></div>" +
-      '<div class="b"><div class="r">Para validação offline</div><div class="v">' + d.off + "</div></div></div>";
-    t += '<div class="sub">Na fila agora: ' + d.fila.aba + " com aba pedida · " + d.fila.ana + " em análise · " + d.fila.cam + " em campo</div>";
+    const A = d.ac, validadas = A.sem + A.res;
+    const pcMop = function (n) { return d.mopTotal ? Math.round(n * 100 / d.mopTotal) : 0; };
+    const fmt = function (n) { return Number(n).toLocaleString("pt-BR"); };
+    const tile = function (cor, rot, val, sub) { return '<div class="rv-t"><i style="background:' + cor + '"></i><div class="l">' + esc(rot) + '</div><div class="v">' + val + '</div><div class="s">' + (sub || "") + "</div></div>"; };
+    const nomeP = estado.periodo.mes ? NOMES_MES[estado.periodo.mes - 1] + "/" + estado.periodo.ano : "ano " + estado.periodo.ano;
+    let t = '<div class="rv-sec">Acumulado · ' + esc(nomeP) + '</div><div class="rv-tiles">' +
+      tile("#0f62fe", "Preventivas MOP", fmt(d.mopTotal), "Base do período") +
+      tile("#0f62fe", "Executadas na base", fmt(d.mopExec), pcMop(d.mopExec) + "% do MOP") +
+      tile("#198038", "Validadas", fmt(validadas), pcMop(validadas) + "% do MOP") +
+      tile("#f1c21b", "Com ressalva", fmt(A.res)) + tile("#da1e28", "Devolvidas", fmt(A.dev)) + tile("#8d8d8d", "Offline em aberto", fmt(d.offAbertos)) + "</div>";
+    const linhaProg = function (rot, n, cor) { return '<div class="r"><span>' + rot + '</span><div class="bar"><b style="width:' + pcMop(n) + "%;background:" + cor + '"></b></div><em>' + fmt(n) + " de " + fmt(d.mopTotal) + " · " + pcMop(n) + "%</em></div>"; };
+    t += '<div class="rv-prog">' + linhaProg("Executadas na base", d.mopExec, "#0f62fe") + linhaProg("Validadas", validadas, "#198038") + "</div>";
+    t += '<div class="rv-sec">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + '</div><div class="rv-tiles">' +
+      tile("#0f62fe", "WOs executadas", d.exec, "Passaram pela validação") + tile("#198038", "Validadas sem pendência", d.sem) +
+      tile("#f1c21b", "Com pendência", d.com, pc + "% das executadas") + tile("#da1e28", "Devolvidas ao técnico", d.dev) +
+      tile("#f1c21b", "Validadas com ressalva", d.res) + tile("#8d8d8d", "Para validação offline", d.off) + "</div>";
     const tk = Object.keys(d.tipos).sort(function (a, b) { return d.tipos[b] - d.tipos[a]; });
     const mx = tk.length ? d.tipos[tk[0]] : 1;
-    t += '<div class="vl-2c"><div><h3>Pendências por tipo</h3>' + (tk.length ? tk.map(function (k) {
-      return '<div class="vl-bar"><span class="n">' + esc(k) + '</span><i style="width:' + Math.max(6, Math.round(d.tipos[k] * 220 / mx)) + 'px"></i><b>' + d.tipos[k] + "</b></div>";
-    }).join("") : '<div class="vl-mu">Nenhuma pendência neste dia.</div>') + "</div>";
+    t += '<div class="rv-sec">Pendências e fila</div><div class="rv-par"><div class="rv-card"><h3>Pendências por tipo</h3>' + (tk.length ? '<div class="rv-pl">' + tk.map(function (k) {
+      return '<div class="r"><span>' + esc(k) + '</span><div class="bar"><b style="width:' + Math.max(4, Math.round(d.tipos[k] * 100 / mx)) + '%"></b></div><em>' + d.tipos[k] + "</em></div>";
+    }).join("") + "</div>" : '<div class="vl-mu" style="padding:12px 16px">Nenhuma pendência neste dia.</div>') + "</div>" +
+      '<div class="rv-card"><h3>Fila agora</h3><div class="rv-fila"><div><span>Aba pedida</span><b>' + d.fila.aba + "</b></div><div><span>Em análise</span><b>" + d.fila.ana + "</b></div><div><span>Em campo</span><b>" + d.fila.cam + "</b></div></div></div></div>";
+    const MV = { semvisita: ["Sem visita registrada", ""], visita: ["Visita sem validação", "a"], semexec: ["Saiu sem executar", "v"], antes: ["Antes da validação", "z"] };
+    if (d.semVal) {
+      const f = estado.val.semValFiltro || "todas";
+      const cont = function (k) { return d.semVal.filter(function (x) { return x.motivo === k; }).length; };
+      const chip = function (k, rot, n) { return '<button data-rvf="' + k + '"' + (f === k ? ' class="ativo"' : "") + ">" + rot + " · " + n + "</button>"; };
+      const vis = d.semVal.filter(function (x) { return f === "todas" || x.motivo === f; });
+      t += '<div class="rv-sec">Sem validação · executadas na base sem passar pela validação</div><div class="rv-card rv-tab"><div class="rv-chips">' +
+        chip("todas", "Todas", d.semVal.length) + chip("semvisita", "Sem visita registrada", cont("semvisita")) + chip("visita", "Visita sem validação", cont("visita")) +
+        chip("semexec", "Saiu sem executar", cont("semexec")) + chip("antes", "Antes da validação", cont("antes")) + "</div>" +
+        (vis.length ? '<table><tr><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Data fim</th><th>Motivo provável</th></tr>' + vis.slice(0, 300).map(function (x) {
+          return "<tr><td><b>" + esc(x.l.programado_infratel || x.l.clr_sdr_site_helix || "") + "</b></td><td>" + esc(x.l.wo) + "</td><td>" + esc(tipoCurto(x.l.tipo)) + "</td><td>" + esc(x.equipe || "—") + "</td><td>" + dataBR(x.l.data_fim).slice(0, 5) +
+            '</td><td><span class="rv-tg ' + MV[x.motivo][1] + '">' + MV[x.motivo][0] + "</span></td></tr>";
+        }).join("") + "</table>" + (vis.length > 300 ? '<div class="vl-mu" style="padding:8px 16px">Mostrando 300 de ' + vis.length + ".</div>" : "") : '<div class="vl-mu" style="padding:12px 16px">Nenhuma WO nesta lista.</div>') + "</div>";
+    }
     const eqs = Object.keys(d.equipes).sort();
-    t += "<div><h3>Por equipe</h3>" + (eqs.length ? "<table><tr><th>Equipe</th><th>Executadas</th><th>Com pendência</th><th>Devolvidas</th></tr>" + eqs.map(function (k) {
-      return "<tr><td>" + esc(k) + "</td><td>" + d.equipes[k].exec + "</td><td>" + d.equipes[k].com + "</td><td>" + d.equipes[k].dev + "</td></tr>";
-    }).join("") + "</table>" : '<div class="vl-mu">Sem validações neste dia.</div>') + "</div></div>";
+    t += '<div class="rv-sec">Por equipe</div><div class="rv-card rv-tab"><h3>' + eqs.length + " equipe(s)</h3>" + (eqs.length ? '<table><tr><th>Equipe</th><th class="n">Executadas</th><th class="n">Com pendência</th><th class="n">Devolvidas</th><th class="n">Ressalva</th><th class="n">Offline</th><th class="n">% pendência</th></tr>' + eqs.map(function (k) {
+      const q = d.equipes[k], pp = q.exec ? Math.round(q.com * 100 / q.exec) : 0;
+      return "<tr><td>" + esc(k) + '</td><td class="n">' + q.exec + '</td><td class="n">' + q.com + '</td><td class="n">' + q.dev + '</td><td class="n">' + q.res + '</td><td class="n">' + q.off + '</td><td class="n">' + pp + "%</td></tr>";
+    }).join("") + "</table>" : '<div class="vl-mu" style="padding:12px 16px">Sem validações neste dia.</div>') + "</div>";
     // O que o coordenador precisa tratar: resultado final de cada site com pendência.
     const tratar = d.ev.filter(function (e) { return e.resultado !== "validada"; });
     t += '<h3 style="margin-top:16px">Pendências de Tratativa</h3>';
@@ -4329,6 +4427,10 @@
       " (" + d.dev + " devolvidas ao técnico · " + d.res + " com ressalva · " + d.off + " para validação offline)" +
       (tk.length ? "\nPendências: " + tk.map(function (k) { return k + " " + d.tipos[k]; }).join(" · ") : "");
   }
+  $("rvCorpo").addEventListener("click", function (e) {
+    const b = e.target.closest("[data-rvf]");
+    if (b) { estado.val.semValFiltro = b.dataset.rvf; desenharResumoVal(); }
+  });
   $("rvSetor").addEventListener("change", desenharResumoVal);
   $("rvData").addEventListener("change", desenharResumoVal);
   $("rvAtualizar").addEventListener("click", atualizarResumoVal);
