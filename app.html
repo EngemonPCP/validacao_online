@@ -4225,21 +4225,25 @@
     lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
     const encHoje = lista.filter(function (v) { return v.situacao === "encerrada" && v.encerrada_em && dataLocalDe(v.encerrada_em) === h; }).length;
     const devHoje = eventosFinaisDoDia(lista, h).filter(function (e) { return e.resultado === "devolvida"; }).length;
-    const f = estado.val.filtro;
-    let mostrar = lista.filter(function (v) { return f === "todas" || v.situacao === f; });
+    const f = estado.val.filtro, q = String(estado.val.busca || "").trim().toUpperCase();
+    const listaB = q ? lista.filter(function (v) { return String(v.site || "").toUpperCase().indexOf(q) >= 0; }) : lista;
+    const nB = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
+    listaB.forEach(function (v) { if (nB[v.situacao] !== undefined) nB[v.situacao]++; });
+    let mostrar = listaB.filter(function (v) { return f === "todas" || v.situacao === f; });
     mostrar.sort(function (a, b) {
       if (f === "aba_pedida") return String(a.aba_pedida_em).localeCompare(String(b.aba_pedida_em));
       return String(b.criado_em).localeCompare(String(a.criado_em));
     });
     mostrar = mostrar.slice(0, 300);
-    const chips = [["aba_pedida", "Aba pedida", n.aba_pedida], ["em_analise", "Em análise", n.em_analise], ["em_campo", "Em campo", n.em_campo],
-                   ["encerrada", "Encerradas", n.encerrada], ["todas", "Todas", lista.length]];
+    const chips = [["aba_pedida", "Aba pedida", nB.aba_pedida], ["em_analise", "Em análise", nB.em_analise], ["em_campo", "Em campo", nB.em_campo],
+                   ["encerrada", "Encerradas", nB.encerrada], ["todas", "Todas", listaB.length]];
     let t = '<div class="vl-cards">' +
       '<div class="vl-c"><div class="r">Em campo</div><div class="v">' + n.em_campo + "</div></div>" +
       '<div class="vl-c amar"><div class="r">Aba pedida</div><div class="v">' + n.aba_pedida + "</div></div>" +
       '<div class="vl-c"><div class="r">Em análise</div><div class="v">' + n.em_analise + "</div></div>" +
       '<div class="vl-c verde"><div class="r">Encerradas hoje</div><div class="v">' + encHoje + "</div></div>" +
       '<div class="vl-c verm"><div class="r">Devolvidas ao técnico hoje</div><div class="v">' + devHoje + "</div></div></div>";
+    t += '<input id="flBusca" class="of-busca" type="search" placeholder="Pesquisar site" value="' + esc(estado.val.busca || "") + '">';
     t += '<div class="vl-chips" id="flChips">' + chips.map(function (c) {
       return '<button data-f="' + c[0] + '"' + (c[0] === f ? ' class="ativo"' : "") + ">" + c[1] + " · " + c[2] + "</button>";
     }).join("") + "</div>";
@@ -4263,6 +4267,11 @@
     }
     $("flCorpo").innerHTML = t;
   }
+  $("flCorpo").addEventListener("input", function (e) {
+    if (e.target.id !== "flBusca") return;
+    estado.val.busca = e.target.value; desenharFila();
+    const b = $("flBusca"); if (b) { b.focus(); const n = b.value.length; b.setSelectionRange(n, n); }
+  });
   $("flCorpo").addEventListener("click", async function (e) {
     const chip = e.target.closest("#flChips button");
     if (chip) { estado.val.filtro = chip.dataset.f; desenharFila(); return; }
