@@ -661,7 +661,7 @@
     .vl-of { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
     .of-voltar { color:#0f62fe; cursor:pointer; font-size:13px; margin-bottom:10px; } .of-voltar:hover { text-decoration:underline; }
     .of-cab { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:16px; } .of-cab h1 { margin:0; }
-    .of-duas { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
+    .of-caso { max-width:1000px; margin:0 auto; } .of-duas-x { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
     .of-tit { font-size:12px; font-weight:600; color:#525252; text-transform:uppercase; letter-spacing:.3px; margin-bottom:8px; }
     .of-box { background:#fff; } .of-it { padding:12px 16px; border-bottom:1px solid #e0e0e0; } .of-box textarea { width:100%; }
     .of-tl { margin-top:18px; border-left:2px solid #e0e0e0; padding-left:14px; margin-left:4px; font-size:13px; } .of-tl > div { margin-bottom:14px; color:#525252; } .of-tl > div.m { color:#161616; } .of-tl p { background:#f4f4f4; padding:8px 12px; margin:4px 0 0; white-space:pre-wrap; }
@@ -4915,19 +4915,20 @@
       '<select data-of="resp"><option value="">Sem responsável</option>' + lista.map(function (n) { return '<option value="' + esc(n) + '"' + (c.responsavel === n ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("") + "</select>" +
       (c.responsavel !== me && !conc ? '<button class="bt peq" data-of="assumir">Assumir</button>' : "") +
       (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : '<button class="bt p" data-of="concluir"' + (todasFechadas ? "" : " disabled") + ">Concluir caso</button>") + "</div></div>";
-    t += '<div class="of-duas"><div><div class="of-tit">Pendências · ' + abertas + " em aberto</div><div class=\"of-box\">";
-    if (c.motivo) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Observação geral · ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
+    const auto = pend.map(function (p) { return p.texto; }).join(" · "), repetido = function (x) { return !x || String(x).trim() === auto || String(x).trim() === String(c.motivo || "").trim() && String(c.motivo || "").trim() === auto; };
+    t += '<div><div><div class="of-tit">Pendências · ' + abertas + " em aberto</div><div class=\"of-box\">";
+    if (!repetido(c.motivo)) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Observação geral · ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
     t += pend.map(function (p) {
       return '<div class="of-it vl-it" data-p="' + esc(p.id) + '"><span><b>' + esc(p.texto) + '</b> <span class="vl-mu">· ' + esc(p.tipo) + "</span>" + (p.obs ? '<div class="of-cm"><small>Observação da validadora</small>' + esc(p.obs) + "</div>" : "") + '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
         REGRAS.offline.estados.map(function (s) { return "<option" + (s === p.estado ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select></div>";
     }).join("") + "</div></div>";
-    t += '<div><div class="of-tit">Andamento</div><div class="of-box" style="padding:16px">' +
-      (conc ? "" : '<textarea id="ofAnd" placeholder="Escreva o que foi feito neste caso…" style="height:96px"></textarea><div style="margin-top:8px"><button class="bt p" data-of="andamento">Registrar andamento</button></div>') +
+    t += '<div style="margin-top:24px"><div class="of-tit">Andamento</div><div class="of-box" style="padding:16px">' +
+      (conc ? "" : '<textarea id="ofAnd" placeholder="Escreva o que foi feito neste caso…" style="height:200px"></textarea><div style="margin-top:8px"><button class="bt p" data-of="andamento">Registrar andamento</button></div>') +
       '<div class="of-tl">' + h.slice().reverse().map(function (e) {
-        const manual = e.acao === "Andamento" || e.texto;
+        const manual = e.acao === "Andamento" || (e.texto && !repetido(e.texto));
         return '<div class="' + (manual ? "m" : "") + '"><b>' + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b>" +
           (e.acao !== "Andamento" ? " · " + esc(e.acao) + (e.itens && e.itens.length ? " · " + esc(e.itens.join(", ")) : "") + (e.situacao ? " → " + esc(e.situacao) : "") : "") +
-          (e.texto ? "<p>" + esc(e.texto) + "</p>" : "") + "</div>";
+          (e.texto && !repetido(e.texto) ? "<p>" + esc(e.texto) + "</p>" : "") + "</div>";
       }).join("") + "</div></div></div></div>";
     return t;
   }
