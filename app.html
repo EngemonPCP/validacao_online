@@ -663,6 +663,7 @@
 .vl-ex td { background:#fafafa; padding:0 16px 14px !important; } .vl-cxs { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .vl-cx label { display:block; font-size:12px; color:#525252; margin-bottom:4px; } .vl-cx textarea { width:100%; min-height:56px; }
     textarea.auto { resize:none; overflow:hidden; min-height:0; line-height:1.5; }
     .vl-cx textarea { min-height:0 !important; }
+    .of-cm.of-tr { border-left-color:#198038; background:#defbe6; }
     .of-voltar { color:#0f62fe; cursor:pointer; font-size:13px; margin-bottom:10px; } .of-voltar:hover { text-decoration:underline; }
     .of-cab { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:16px; } .of-cab h1 { margin:0; }
     .of-caso { max-width:1000px; margin:0 auto; } .of-duas-x { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
@@ -4504,7 +4505,7 @@
       "<div><span>Em análise</span>" + (reg.analista ? esc(reg.analista.split("@")[0]) + ", desde " + horaDe(reg.analise_em) : "—") + "</div></div>" +
       '<div class="vl-pg">' +
       '<button data-sv="pg" data-p="equip" class="' + (pg === "equip" ? "ativo" : "") + '">Equipamentos e fotos<small>' + (linhas.length ? feitos + " de " + reaisCab.length + " conferidos" + (nNA ? " · " + nNA + " não existem no site" : "") : "sem equipamentos na planilha") + "</small></button>" +
-      '<button data-sv="pg" data-p="alarmes" class="' + (pg === "alarmes" ? "ativo" : "") + '">Alarmes<small>' + partes + " de 2 colados</small></button>" +
+      '<button data-sv="pg" data-p="alarmes" class="' + (pg === "alarmes" ? "ativo" : "") + '">Alarmes<small>' + partes + " de 2 colados" + (function () { const bb = batimentoDoRegistro(reg); if (!bb) return ""; const nn = bb.itens.filter(function (i) { return !i.externou; }).length; return " · " + nn + (nn === 1 ? " não externou" : " não externaram"); })() + "</small></button>" +
       '<button data-sv="pg" data-p="enc" class="' + (pg === "enc" ? "ativo" : "") + '">Encerrar<small>resumo do que foi conferido</small></button></div>';
   }
 
@@ -4959,8 +4960,8 @@
   function painelCaso(c, nomes) {
     const me = nomeDoEmail(estado.usuarioEmail), pend = c.pendencias || [];
     const conc = !!c.concluido_em;
-    const todasFechadas = pend.every(function (p) { return p.estado === "Resolvida" || p.estado === "Não resolvida"; });
-    const lista = nomes.slice(); if (lista.indexOf(me) < 0) lista.push(me); lista.sort();
+    const todasFechadas = pend.every(function (p) { return (p.estado === "Resolvida" || p.estado === "Não resolvida") && p.resposta && p.resposta.texto; });
+    const O = estado.off, lista = nomes.slice(); if (lista.indexOf(me) < 0) lista.push(me); lista.sort();
     const h = c.historico || [], abertas = pend.filter(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa"; }).length;
     let t = '<div class="of-voltar" data-of="voltar">← Voltar para a lista</div><div class="of-cab"><div><h1>' + esc(c.site) + " · " + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + '</h1><div class="sub">' +
       (c.equipe ? "Equipe " + esc(c.equipe) + " · " : "") + esc(REGRAS.offline.origens[c.origem] || c.origem) + " em " + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (h[0] ? " por " + esc(nomeDoEmail(h[0].por)) : "") + "</div></div><div class=\"vl-ferr\">" +
@@ -4984,9 +4985,13 @@
       const vistos = {};
       return '<div class="of-it"><div style="font-weight:600;margin-bottom:6px">' + esc(g.nome) + "</div>" + g.itens.map(function (p) {
         const mostra = p.obs && !vistos[p.obs]; if (p.obs) vistos[p.obs] = 1;
-        return '<div class="vl-it" data-p="' + esc(p.id) + '" style="border:0;padding:4px 0"><span><span class="vl-tag ' + (p.tipo === "Foto" ? "v2" : "v5") + '">' + esc(p.tipo) + "</span> " + esc(p.sub.charAt(0).toUpperCase() + p.sub.slice(1)) +
-          (mostra ? '<div class="of-cm"><small>Comentário da validadora</small>' + esc(p.obs) + "</div>" : "") + '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
-          REGRAS.offline.estados.map(function (s) { return "<option" + (s === p.estado ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select></div>";
+        const tr = O.trat && O.trat.id === p.id ? O.trat : null, valor = tr ? tr.valor : p.estado;
+        return '<div class="vl-it" data-p="' + esc(p.id) + '" style="border:0;padding:4px 0"><span style="flex:1"><span class="vl-tag ' + (p.tipo === "Foto" ? "v2" : "v5") + '">' + esc(p.tipo) + "</span> " + esc(p.sub.charAt(0).toUpperCase() + p.sub.slice(1)) +
+          (mostra ? '<div class="of-cm"><small>Comentário da validadora</small>' + esc(p.obs) + "</div>" : "") +
+          (p.resposta && !tr ? '<div class="of-cm of-tr"><small>Tratativa · ' + esc(nomeDoEmail(p.resposta.por)) + " · " + dataBR(dataLocalDe(p.resposta.em)).slice(0, 5) + " " + horaDe(p.resposta.em) + "</small>" + esc(p.resposta.texto) + "</div>" : "") +
+          (tr ? '<div style="margin-top:8px"><textarea id="ofTrat" class="auto" rows="2" placeholder="O que foi feito nesta pendência…" style="width:100%"></textarea><div style="margin-top:8px"><button class="bt p" data-of="salvartrat">Salvar tratativa</button> <button class="bt" data-of="canceltrat">Cancelar</button></div></div>' : "") +
+          '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
+          REGRAS.offline.estados.map(function (s) { return "<option" + (s === valor ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select></div>";
       }).join("") + "</div>";
     }).join("") + "</div></div>";
     t += '<div style="margin-top:24px"><div class="of-tit">Andamento</div><div class="of-box" style="padding:16px">' +
@@ -5010,11 +5015,20 @@
     const c = casoSel(); if (!c) return;
     const a = el.dataset.of, agora = new Date().toISOString(), quem = estado.usuarioEmail;
     try {
-      if (a === "voltar") { estado.off.aberto = false; estado.off.sel = null; }
+      if (a === "voltar") { estado.off.aberto = false; estado.off.sel = null; estado.off.trat = null; }
       else if (a === "andamento") {
         const tx = ($("ofAnd").value || "").trim();
         if (!tx) { mostrarAviso("Escreva o andamento.", "erro"); return; }
         await salvarCaso(c, { historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Andamento", texto: tx }]) });
+      }
+      else if (a === "canceltrat") { estado.off.trat = null; }
+      else if (a === "salvartrat") {
+        const tx = ($("ofTrat").value || "").trim(), tt = estado.off.trat;
+        if (!tx) { mostrarAviso("Escreva o que foi feito nesta pendência.", "erro"); return; }
+        const alvo = (c.pendencias || []).find(function (p) { return p.id === tt.id; });
+        const pe = (c.pendencias || []).map(function (p) { return p.id === tt.id ? Object.assign({}, p, { estado: tt.valor, resposta: { texto: tx, por: quem, em: agora } }) : p; });
+        await salvarCaso(c, { pendencias: pe, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Tratativa", itens: [alvo ? alvo.texto : ""], situacao: tt.valor, texto: tx }]) });
+        estado.off.trat = null;
       }
       else if (a === "assumir") { await salvarCaso(c, { responsavel: nomeDoEmail(quem), historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Responsável: " + nomeDoEmail(quem) }]) }); }
       else if (a === "passo") { estado.off.passo = true; }
@@ -5042,6 +5056,8 @@
         await salvarCaso(c, { responsavel: el.value || null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Responsável: " + (el.value || "sem responsável") }]) });
       } else if (el.dataset.of === "estado") {
         const id = el.closest(".vl-it").dataset.p;
+        if (el.value === "Resolvida" || el.value === "Não resolvida") { estado.off.trat = { id: id, valor: el.value }; desenharOffline(); const ta = $("ofTrat"); if (ta) ta.focus(); return; }
+        estado.off.trat = null;
         const alvo = (c.pendencias || []).find(function (p) { return p.id === id; });
         const pe = (c.pendencias || []).map(function (p) { return p.id === id ? Object.assign({}, p, { estado: el.value }) : p; });
         await salvarCaso(c, { pendencias: pe, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Situação alterada", itens: [alvo ? alvo.texto : ""], situacao: el.value }]) });
