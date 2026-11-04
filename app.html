@@ -664,6 +664,7 @@
     textarea.auto { resize:none; overflow:hidden; min-height:0; line-height:1.5; }
     .vl-cx textarea { min-height:0 !important; }
     .of-cm.of-tr { border-left-color:#198038; background:#defbe6; }
+    .of-lista { columns:2; column-gap:24px; margin:6px 0 0 18px; padding:0; font-size:13px; color:#393939; } .of-lista li { margin:2px 0; }
     .of-voltar { color:#0f62fe; cursor:pointer; font-size:13px; margin-bottom:10px; } .of-voltar:hover { text-decoration:underline; }
     .of-cab { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:16px; } .of-cab h1 { margin:0; }
     .of-caso { max-width:1000px; margin:0 auto; } .of-duas-x { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
@@ -4139,20 +4140,21 @@
     const eq = reg.equipamentos || {};
     Object.keys(eq).forEach(function (k) {
       const e = eq[k];
-      if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e) });
-      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e) });
+      if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e), por: e.obs_pend_por || estado.usuarioEmail });
+      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e), por: e.obs_foto_por || estado.usuarioEmail });
     });
     const inv = reg.inventario || {};
     REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
     [["bornes", "Bornes sem “gatinho”"], ["fotos", "Fotos das abas de alarme"]].forEach(function (x) {
       const c = confBloco(reg.alarmes, x[0]);
-      if (c.estado === "nao") p.push({ tipo: "Alarmes", texto: x[1] + " · não ok" + (c.motivo ? ": " + c.motivo : ""), obs: (c.motivo || "").trim() });
+      if (c.estado === "nao") p.push({ tipo: "Alarmes", texto: x[1] + " · não ok" + (c.motivo ? ": " + c.motivo : ""), obs: (c.motivo || "").trim(), por: estado.usuarioEmail });
     });
     const an = analisePermanencia(reg);
     if (an && an.fora && an.fora.length) p.push({ tipo: "Alarmes", texto: an.fora.length + " alarme(s) fora da permanência: " + an.fora.slice(0, 3).map(function (e) { return e.texto + " às " + horaSegDe(e.quando); }).join(", ") + (an.fora.length > 3 ? " e outros" : "") });
     const b = batimentoDoRegistro(reg);
     if (b) {
-      if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram" });
+      const naoExt = b.itens.filter(function (i) { return !i.externou; });
+      if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram", lista: naoExt.map(function (i) { return (i.bloco ? i.bloco + " · " : "") + i.texto + (i.dispensado ? " — apontamento: " + i.apontamento : ""); }) });
       b.ordem.forEach(function (o) { if (o.status === "violada") p.push({ tipo: "Alarmes", texto: o.texto }); });
     }
     return p;
@@ -4776,7 +4778,7 @@
         }
         if (!fotoComProblema(x)) delete x.obs_foto;
         if (!x.pend || DUPS.indexOf(x.pend) >= 0) delete x.obs_pend;
-        if (campo === "obs_foto" || campo === "obs_pend") { delete x.obs; if (campo === "obs_foto" && x.obs_pend == null && x.pend) x.obs_pend = ""; }
+        if (campo === "obs_foto" || campo === "obs_pend") { x[campo + "_por"] = estado.usuarioEmail; delete x.obs; if (campo === "obs_foto" && x.obs_pend == null && x.pend) x.obs_pend = ""; }
         if (!x.fotos && !x.pend && !x.obs) delete eq[k]; else eq[k] = x;
         await salvarVal(reg, { equipamentos: eq });
         desenharSiteVal();
@@ -4843,7 +4845,7 @@
     const antigos = existente ? existente.pendencias || [] : [];
     const novos = itens.map(function (p, i) {
       const ant = antigos.find(function (a) { return a.texto === p.texto; });
-      return { id: String(i + 1), tipo: p.tipo, texto: p.texto, obs: p.obs || (ant && ant.obs) || "", estado: ant && !existente.concluido_em ? ant.estado : "Aberta" };
+      return { id: String(i + 1), tipo: p.tipo, texto: p.texto, obs: p.obs || (ant && ant.obs) || "", por: p.por || (ant && ant.por) || "", lista: p.lista || (ant && ant.lista) || null, resposta: ant && ant.resposta ? ant.resposta : undefined, estado: ant && !existente.concluido_em ? ant.estado : "Aberta" };
     });
     const entrada = { em: agora, por: quem, acao: origemCaso === "sem_pedido" ? "Saiu do site sem pedir a validação" : resultado === "offline" ? "Encaminhada para a validação offline" : resultado === "ressalva" ? "Validada com ressalva" : "Devolvida ao técnico", texto: motivo || "" };
     if (existente) {
@@ -4970,10 +4972,14 @@
       (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : '<button class="bt p" data-of="concluir"' + (todasFechadas ? "" : " disabled") + ">Concluir caso</button>") + "</div></div>";
     const auto = pend.map(function (p) { return p.texto; }).join(" · "), repetido = function (x) { return !x || String(x).trim() === auto || String(x).trim() === String(c.motivo || "").trim() && String(c.motivo || "").trim() === auto; };
     t += '<div><div><div class="of-tit">Pendências · ' + abertas + " em aberto</div><div class=\"of-box\">";
-    if (!repetido(c.motivo)) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Observação geral · ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
+    if (!repetido(c.motivo)) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Comentário inserido na validação online por: ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
     const usados = {}, grupos = [], idx = {};
     pend.forEach(function (p0) {
       const p = Object.assign({}, p0, { obs: obsDaPendencia(c, p0, usados) });
+      if (!p.lista && /alarme\(s\) não externaram/.test(p.texto)) {
+        const vv = (estado.off.vals || {})[c.id];
+        try { const bb = vv && batimentoDoRegistro({ alarmes: vv.alarmes, wos: c.wos || [] }); if (bb) p.lista = bb.itens.filter(function (i) { return !i.externou; }).map(function (i) { return (i.bloco ? i.bloco + " · " : "") + i.texto + (i.dispensado ? " — apontamento: " + i.apontamento : ""); }); } catch (e) { /* sem lista */ }
+      }
       let nome = p.eq;
       if (!nome && ["Foto", "Outros", "Aba em aberto", "Aba duplicada", "Inventário"].indexOf(p.tipo) >= 0 && String(p.texto).indexOf(" · ") > 0) nome = String(p.texto).split(" · ")[0];
       const gk = nome || p.tipo;
@@ -4987,7 +4993,8 @@
         const mostra = p.obs && !vistos[p.obs]; if (p.obs) vistos[p.obs] = 1;
         const tr = O.trat && O.trat.id === p.id ? O.trat : null, valor = tr ? tr.valor : p.estado;
         return '<div class="vl-it" data-p="' + esc(p.id) + '" style="border:0;padding:4px 0"><span style="flex:1"><span class="vl-tag ' + (p.tipo === "Foto" ? "v2" : "v5") + '">' + esc(p.tipo) + "</span> " + esc(p.sub.charAt(0).toUpperCase() + p.sub.slice(1)) +
-          (mostra ? '<div class="of-cm"><small>Comentário da validadora</small>' + esc(p.obs) + "</div>" : "") +
+          (mostra ? '<div class="of-cm"><small>Comentário inserido na validação online por: ' + esc(nomeDoEmail(p.por || (h[0] && h[0].por) || "")) + "</small>" + esc(p.obs) + "</div>" : "") +
+          (p.lista && p.lista.length ? '<ul class="of-lista">' + p.lista.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
           (p.resposta && !tr ? '<div class="of-cm of-tr"><small>Tratativa · ' + esc(nomeDoEmail(p.resposta.por)) + " · " + dataBR(dataLocalDe(p.resposta.em)).slice(0, 5) + " " + horaDe(p.resposta.em) + "</small>" + esc(p.resposta.texto) + "</div>" : "") +
           (tr ? '<div style="margin-top:8px"><textarea id="ofTrat" class="auto" rows="2" placeholder="O que foi feito nesta pendência…" style="width:100%"></textarea><div style="margin-top:8px"><button class="bt p" data-of="salvartrat">Salvar tratativa</button> <button class="bt" data-of="canceltrat">Cancelar</button></div></div>' : "") +
           '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
