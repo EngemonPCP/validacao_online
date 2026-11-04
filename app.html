@@ -3888,20 +3888,27 @@
     return { blocos: blocos, consulta: consulta, total: total };
   }
 
-  // Histórico: ID, Sigla, Tecnologia, Severidade, Alarme, Data Inicial, Data Final, Data Equipamento, ID Alarme, Reaberturas (com ou sem cabeçalho).
+  // Histórico, dois formatos (com ou sem cabeçalho):
+  //  completo: ID, Sigla, Tecnologia, Severidade, Alarme, Data Inicial, Data Final, Data Equipamento, ID Alarme, Reaberturas
+  //  enxuto:   ID, Tecnologia, Problema, Data Inicial, Data Final, Idade
   function lerHistoricoAlarmes(texto) {
-    let pos = { sigla: 1, sev: 3, alarme: 4, ini: 5, fim: 6, eqp: 7 };
+    const posCompleto = { sigla: 1, sev: 3, alarme: 4, ini: 5, fim: 6, eqp: 7 };
+    const posEnxuto = { sigla: 1, sev: -1, alarme: 2, ini: 3, fim: 4, eqp: -1 };
+    let pos = posCompleto, comCabecalho = false;
     const eventos = [];
     String(texto || "").split(/\r?\n/).forEach(function (linha) {
       if (!linha.trim()) return;
       const c = alCelulas(linha);
       const nomes = c.map(alNorm);
-      if (nomes.indexOf("ALARME") >= 0 && (nomes.indexOf("DATA INICIAL") >= 0 || nomes.indexOf("SEVERIDADE") >= 0)) {
-        pos = { sigla: nomes.indexOf("SIGLA"), sev: nomes.indexOf("SEVERIDADE"), alarme: nomes.indexOf("ALARME"),
+      const iAlarme = nomes.indexOf("ALARME") >= 0 ? nomes.indexOf("ALARME") : nomes.indexOf("PROBLEMA");
+      if (iAlarme >= 0 && (nomes.indexOf("DATA INICIAL") >= 0 || nomes.indexOf("SEVERIDADE") >= 0)) {
+        pos = { sigla: nomes.indexOf("SIGLA") >= 0 ? nomes.indexOf("SIGLA") : nomes.indexOf("TECNOLOGIA"), sev: nomes.indexOf("SEVERIDADE"), alarme: iAlarme,
                 ini: nomes.indexOf("DATA INICIAL"), fim: nomes.indexOf("DATA FINAL"), eqp: nomes.indexOf("DATA EQUIPAMENTO") };
+        comCabecalho = true;
         return;
       }
       if (!c.some(function (x) { return alDataHora(x) !== null; })) return;
+      if (!comCabecalho) pos = c.findIndex(function (x) { return alDataHora(x) !== null; }) <= 3 ? posEnxuto : posCompleto;
       const g = function (i) { return i >= 0 && i < c.length ? c[i] : ""; };
       const ini = alDataHora(g(pos.ini)), eqp = alDataHora(g(pos.eqp));
       const texto2 = g(pos.alarme);
