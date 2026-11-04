@@ -660,6 +660,9 @@
     .vl-colar textarea { min-height:120px; font-family:Consolas,monospace; font-size:12px; }
     .vl-of { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
     .of-busca { background:#f4f4f4; border:0; border-bottom:1px solid #8d8d8d; border-radius:0; padding:10px 12px; font:inherit; font-size:14px; width:280px; margin-bottom:12px; display:block; }
+.vl-ex td { background:#fafafa; padding:0 16px 14px !important; } .vl-cxs { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .vl-cx label { display:block; font-size:12px; color:#525252; margin-bottom:4px; } .vl-cx textarea { width:100%; min-height:56px; }
+    textarea.auto { resize:none; overflow:hidden; min-height:0; line-height:1.5; }
+    .vl-cx textarea { min-height:0 !important; }
     .of-voltar { color:#0f62fe; cursor:pointer; font-size:13px; margin-bottom:10px; } .of-voltar:hover { text-decoration:underline; }
     .of-cab { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:16px; } .of-cab h1 { margin:0; }
     .of-caso { max-width:1000px; margin:0 auto; } .of-duas-x { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
@@ -4126,13 +4129,17 @@
     return { estado: "", motivo: "" };
   }
   // Tudo o que, até agora, impede a WO de ser validada limpa.
+  const DUPS = ["Aba duplicada", "Inventário duplicado"];
+  function fotoComProblema(e) { return !!(e && e.fotos && e.fotos !== "Ok" && DUPS.indexOf(e.fotos) < 0 && DUPS.indexOf(e.pend) < 0); }
+  function obsFotoDe(e) { return String((e && (e.obs_foto != null ? e.obs_foto : e.obs)) || "").trim(); }
+  function obsPendDe(e) { return String((e && (e.obs_pend != null ? e.obs_pend : e.obs)) || "").trim(); }
   function pendenciasDe(reg) {
     const p = [];
     const eq = reg.equipamentos || {};
     Object.keys(eq).forEach(function (k) {
       const e = eq[k];
-      if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend, obs: (e.obs || "").trim() });
-      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), obs: (e.obs || "").trim() });
+      if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e) });
+      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e) });
     });
     const inv = reg.inventario || {};
     REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
@@ -4155,6 +4162,9 @@
     const eq = reg.equipamentos || {};
     const sem = linhasEquip.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !(e && (e.fotos || e.pend)); }).length;
     if (sem > 0) f.push("Equipamentos e fotos: faltam conferir " + sem);
+    let semCom = 0;
+    linhasEquip.forEach(function (r) { if (ehNA(r)) return; const e = eq[chaveEquip(r)]; if (!e) return; if (fotoComProblema(e) && !obsFotoDe(e)) semCom++; if (e.pend && DUPS.indexOf(e.pend) < 0 && !obsPendDe(e)) semCom++; });
+    if (semCom > 0) f.push("Equipamentos: faltam " + semCom + " comentário(s) de foto ou pendência");
     if ((reg.wos || []).some(ehClima)) {
       REGRAS.validacao.inventarioCritico.forEach(function (i) { if (!(reg.inventario || {})[i]) f.push("Inventário crítico: " + i); });
     }
@@ -4516,18 +4526,23 @@
         (reais.length ? '<button class="bt peq' + (ok ? " p" : "") + '" data-sv="grupo" data-w="' + esc(c.w.wo) + '">Conferir tudo desta WO' + (ok ? " ✓" : "") + "</button>" : "") + "</div>";
       if (!c.rows.length) t += '<div class="fw">Sem equipamentos na planilha para esta WO.</div>';
       else {
-        t += '<table><tr><th style="width:120px">Segmento</th><th style="width:220px">Equipamento</th><th>Planilha</th><th>Preench.</th><th style="width:230px">Fotos</th><th style="width:200px">Pendência</th><th>Observação</th></tr>';
+        t += '<table><tr><th style="width:120px">Segmento</th><th style="width:220px">Equipamento</th><th>Planilha</th><th>Preench.</th><th style="width:230px">Fotos</th><th style="width:200px">Pendência</th></tr>';
         c.rows.forEach(function (r) {
           const k = chaveEquip(r), e = eq[k] || {}, q = r.qtd_realizadas;
           if (ehNA(r)) {
-            t += '<tr class="na"><td class="seg">' + esc(r.segmento || "—") + "</td><td>Não existe no site</td><td>N/A</td><td>—</td><td>Não se aplica</td><td>—</td><td></td></tr>";
+            t += '<tr class="na"><td class="seg">' + esc(r.segmento || "—") + "</td><td>Não existe no site</td><td>N/A</td><td>—</td><td>Não se aplica</td><td>—</td></tr>";
             return;
           }
           t += '<tr data-k="' + esc(k) + '" data-tag="' + esc(r.tag || r.segmento || "") + '" data-seg="' + esc(r.segmento || "") + '"><td class="seg">' + esc(r.segmento || "—") + "</td><td>" + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td>" +
             '<td class="' + (q > 1 ? "vl-no" : "") + '">' + (q == null ? "—" : q + "×") + "</td>" +
             '<td><select data-sv="eq" data-c="fotos" class="' + (e.fotos === "Ok" ? "fok" : "") + '">' + opcoesHtml(REGRAS.validacao.fotos, e.fotos) + "</select></td>" +
             '<td><select data-sv="eq" data-c="pend">' + opcoesHtml(REGRAS.validacao.pendencias, e.pend) + "</select></td>" +
-            '<td><input type="text" data-sv="eq" data-c="obs" value="' + esc(e.obs || "") + '" style="width:100%"></td></tr>';
+            "</tr>";
+          const cf = fotoComProblema(e), cp = !!e.pend && DUPS.indexOf(e.pend) < 0;
+          if (cf || cp) {
+            const caixa = function (rot, campo, val) { return '<div class="vl-cx"><label>' + rot + ' <b style="color:#da1e28">(obrigatório)</b></label><textarea class="auto" rows="2" data-sv="eq" data-c="' + campo + '">' + esc(val) + "</textarea></div>"; };
+            t += '<tr class="vl-ex" data-k="' + esc(k) + '" data-tag="' + esc(r.tag || r.segmento || "") + '" data-seg="' + esc(r.segmento || "") + '"><td colspan="6"><div class="vl-cxs">' + (cf ? caixa("Comentário da foto", "obs_foto", obsFotoDe(e)) : "") + (cp ? caixa("Comentário da pendência", "obs_pend", obsPendDe(e)) : "") + "</div></td></tr>";
+          }
         });
         t += "</table>";
       }
@@ -4758,6 +4773,9 @@
           if (DUP.indexOf(el.value) >= 0) x[outro] = el.value;
           else if (DUP.indexOf(antigo) >= 0 && x[outro] === antigo) x[outro] = "";
         }
+        if (!fotoComProblema(x)) delete x.obs_foto;
+        if (!x.pend || DUPS.indexOf(x.pend) >= 0) delete x.obs_pend;
+        if (campo === "obs_foto" || campo === "obs_pend") { delete x.obs; if (campo === "obs_foto" && x.obs_pend == null && x.pend) x.obs_pend = ""; }
         if (!x.fotos && !x.pend && !x.obs) delete eq[k]; else eq[k] = x;
         await salvarVal(reg, { equipamentos: eq });
         desenharSiteVal();
@@ -4925,12 +4943,13 @@
     const eq = v.equipamentos || {};
     const ks = Object.keys(eq);
     for (let i = 0; i < ks.length; i++) {
-      const e = eq[ks[i]], tag = e.tag || ks[i], o = (e.obs || "").trim();
+      const e = eq[ks[i]], tag = e.tag || ks[i];
+      let o = "";
+      if (e.pend && p.texto === tag + " · " + e.pend) o = obsPendDe(e);
+      else if (e.fotos && p.texto === tag + " · foto " + String(e.fotos).toLowerCase()) o = obsFotoDe(e);
+      else continue;
       if (!o) continue;
-      const cand = [];
-      if (e.pend) cand.push(tag + " · " + e.pend);
-      if (e.fotos) cand.push(tag + " · foto " + String(e.fotos).toLowerCase());
-      if (cand.indexOf(p.texto) >= 0 && !usados[p.texto + "|" + ks[i]]) { usados[p.texto + "|" + ks[i]] = 1; return o; }
+      if (!usados[p.texto + "|" + ks[i]]) { usados[p.texto + "|" + ks[i]] = 1; return o; }
     }
     const al = v.alarmes || {};
     if (/^Bornes sem/.test(p.texto)) return String(confBloco(al, "bornes").motivo || "").trim();
@@ -4951,14 +4970,27 @@
     const auto = pend.map(function (p) { return p.texto; }).join(" · "), repetido = function (x) { return !x || String(x).trim() === auto || String(x).trim() === String(c.motivo || "").trim() && String(c.motivo || "").trim() === auto; };
     t += '<div><div><div class="of-tit">Pendências · ' + abertas + " em aberto</div><div class=\"of-box\">";
     if (!repetido(c.motivo)) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Observação geral · ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
-    const usados = {};
-    t += pend.map(function (p) {
-      p = Object.assign({}, p, { obs: obsDaPendencia(c, p, usados) });
-      return '<div class="of-it vl-it" data-p="' + esc(p.id) + '"><span><b>' + esc(p.texto) + '</b> <span class="vl-mu">· ' + esc(p.tipo) + "</span>" + (p.obs ? '<div class="of-cm"><small>Observação da validadora</small>' + esc(p.obs) + "</div>" : "") + '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
-        REGRAS.offline.estados.map(function (s) { return "<option" + (s === p.estado ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select></div>";
+    const usados = {}, grupos = [], idx = {};
+    pend.forEach(function (p0) {
+      const p = Object.assign({}, p0, { obs: obsDaPendencia(c, p0, usados) });
+      let nome = p.eq;
+      if (!nome && ["Foto", "Outros", "Aba em aberto", "Aba duplicada", "Inventário"].indexOf(p.tipo) >= 0 && String(p.texto).indexOf(" · ") > 0) nome = String(p.texto).split(" · ")[0];
+      const gk = nome || p.tipo;
+      if (idx[gk] === undefined) { idx[gk] = grupos.length; grupos.push({ nome: nome || p.tipo, alarme: !nome, itens: [] }); }
+      p.sub = nome ? String(p.texto).slice(String(p.texto).indexOf(" · ") + 3) : p.texto;
+      grupos[idx[gk]].itens.push(p);
+    });
+    t += grupos.map(function (g) {
+      const vistos = {};
+      return '<div class="of-it"><div style="font-weight:600;margin-bottom:6px">' + esc(g.nome) + "</div>" + g.itens.map(function (p) {
+        const mostra = p.obs && !vistos[p.obs]; if (p.obs) vistos[p.obs] = 1;
+        return '<div class="vl-it" data-p="' + esc(p.id) + '" style="border:0;padding:4px 0"><span><span class="vl-tag ' + (p.tipo === "Foto" ? "v2" : "v5") + '">' + esc(p.tipo) + "</span> " + esc(p.sub.charAt(0).toUpperCase() + p.sub.slice(1)) +
+          (mostra ? '<div class="of-cm"><small>Comentário da validadora</small>' + esc(p.obs) + "</div>" : "") + '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
+          REGRAS.offline.estados.map(function (s) { return "<option" + (s === p.estado ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select></div>";
+      }).join("") + "</div>";
     }).join("") + "</div></div>";
     t += '<div style="margin-top:24px"><div class="of-tit">Andamento</div><div class="of-box" style="padding:16px">' +
-      (conc ? "" : '<textarea id="ofAnd" placeholder="Escreva o que foi feito neste caso…" style="height:200px"></textarea><div style="margin-top:8px"><button class="bt p" data-of="andamento">Registrar andamento</button></div>') +
+      (conc ? "" : '<textarea id="ofAnd" class="auto" rows="2" placeholder="Escreva o que foi feito neste caso…"></textarea><div style="margin-top:8px"><button class="bt p" data-of="andamento">Registrar andamento</button></div>') +
       '<div class="of-tl">' + h.slice().reverse().map(function (e) {
         const manual = e.acao === "Andamento" || (e.texto && !repetido(e.texto));
         return '<div class="' + (manual ? "m" : "") + '"><b>' + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b>" +
@@ -5021,6 +5053,9 @@
     if (e.target.id !== "ofBusca") return;
     estado.off.busca = e.target.value; estado.off.focoBusca = true; desenharOffline();
   });
+  function autoCresce(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; }
+  document.addEventListener("input", function (e) { if (e.target.matches && e.target.matches("textarea.auto")) autoCresce(e.target); });
+  new MutationObserver(function () { document.querySelectorAll("textarea.auto").forEach(autoCresce); }).observe(document.body, { childList: true, subtree: true });
   $("ofSetor").addEventListener("change", function () { estado.off.setor = $("ofSetor").value; desenharOffline(); });
   $("ofResp").addEventListener("change", function () { estado.off.resp = $("ofResp").value; desenharOffline(); });
   $("ofAtualizar").addEventListener("click", atualizarOffline);
