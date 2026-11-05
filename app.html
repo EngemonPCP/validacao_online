@@ -618,6 +618,8 @@
     .rv-total { display:flex; justify-content:flex-end; margin-bottom:6px; } .rv-total .l { font-size:12px; color:#525252; text-align:right; } .rv-total .v { font-size:40px; font-weight:300; line-height:1.1; text-align:right; }
     .rv-abas { display:flex; border-bottom:1px solid #e0e0e0; margin-bottom:16px; } .rv-abas button { background:none; border:0; border-bottom:3px solid transparent; border-radius:0; padding:12px 24px; font:inherit; color:#525252; cursor:pointer; } .rv-abas button.ativo { border-bottom-color:#0f62fe; color:#161616; font-weight:600; }
     .rv-bl { background:#fff; border:1px solid #e0e0e0; margin-bottom:16px; } .rv-hd { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-bottom:1px solid #e0e0e0; font-weight:600; } .rv-hd span { font-weight:400; color:#525252; font-size:12px; }
+    .rv-fi { display:flex; flex-wrap:wrap; gap:40px; padding:14px 20px; } .rv-fi small { display:block; color:#525252; font-size:12px; margin-bottom:3px; } .rv-cm { background:#f4f4f4; border-left:3px solid #8d8d8d; padding:10px 14px; margin:12px 20px 16px; } .rv-cm small { display:block; color:#525252; font-size:12px; margin-bottom:3px; }
+    .rv-tab tr.rv-cl { cursor:pointer; } .rv-tab tr.rv-cl:hover td { background:#e5f0ff; }
     .rv-lk { color:#0f62fe; font-size:12px; cursor:pointer; font-weight:400; text-decoration:none; } .rv-lk:hover { text-decoration:underline; }
     .rv-m { display:grid; } .rv-m5 { grid-template-columns:repeat(5, 1fr); } .rv-m4 { grid-template-columns:repeat(4, 1fr); } .rv-m3 { grid-template-columns:repeat(3, 1fr); } .rv-m > div { padding:14px 20px; border-left:1px solid #e0e0e0; } .rv-m > div:first-child { border-left:0; }
     .rv-m .l, .rv-ef .l { font-size:12px; color:#525252; } .rv-m .v { font-size:26px; font-weight:300; margin:2px 0; } .rv-m .v.neg { color:#a2191f; } .rv-m .n { font-size:12px; color:#525252; }
@@ -1729,6 +1731,7 @@
     fecharMenu();
     window.scrollTo(0, 0);
     if (nome === "ResumoVal") {
+      estado.val.rvLista = null;
       atualizarResumoVal();
       estado.pollId = setInterval(atualizarResumoVal, 120000);
     }
@@ -4194,6 +4197,17 @@
     }
     return p;
   }
+  // Rascunho do Encerrar (resultado escolhido e motivo): fica salvo na própria validação, para quem abrir depois ver o mesmo.
+  function rascunhoDe(reg) {
+    const r = (reg && reg.alarmes && reg.alarmes._rascunho) || null;
+    if (!r || (reg.encerrada_em && String(r.em || "") <= String(reg.encerrada_em))) return null;   // rascunho antigo, de antes do último encerramento
+    return r;
+  }
+  async function salvarRascunho(reg) {
+    if (estado.val.encerrando) return;
+    const r = { resultado: estado.val.resSelDe === reg.id ? estado.val.resSel || null : null, motivo: estado.val.motivo != null ? estado.val.motivo : null, em: new Date().toISOString() };
+    await salvarVal(reg, { alarmes: Object.assign({}, reg.alarmes || {}, { _rascunho: r }) });
+  }
   // Comentário obrigatório que ficou em branco (impede qualquer resultado, não só "Validada").
   function faltasDeComentario(faltas) { return faltas.filter(function (f) { return /comentário|informe por que/.test(f); }); }
   // Etapas que ainda não foram feitas (impedem "Validada").
@@ -4253,9 +4267,9 @@
     const evs = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia && (!soAnalisados || eventoAnalisado(e)); }).sort(function (a, b) { return String(a.em).localeCompare(String(b.em)); });
     const dono = {};
     evs.forEach(function (e) { (e.wo_ids || (e.reg.wos || []).map(function (w) { return w.wo; })).forEach(function (id) { dono[id] = e; }); });
-    const cont = new Map();
-    Object.keys(dono).forEach(function (id) { cont.set(dono[id], (cont.get(dono[id]) || 0) + 1); });
-    return Array.from(cont.entries()).map(function (x) { return Object.assign({}, x[0], { wosFinais: x[1] }); });
+    const cont = new Map(), idsDe = new Map();
+    Object.keys(dono).forEach(function (id) { cont.set(dono[id], (cont.get(dono[id]) || 0) + 1); idsDe.set(dono[id], (idsDe.get(dono[id]) || []).concat(id)); });
+    return Array.from(cont.entries()).map(function (x) { return Object.assign({}, x[0], { wosFinais: x[1], idsFinais: idsDe.get(x[0]) }); });
   }
   const SIT_VAL = { em_campo: ["Em campo", "v5"], aba_pedida: ["Aba pedida", "v3"], em_analise: ["Em análise", "v4"], encerrada: ["Encerrada", "v1"] };
   function eventosDe(lista) {
@@ -4426,8 +4440,11 @@
     d.campo = Object.keys(campo).length;
     Object.keys(campo).forEach(function (wo) { tipoAc(tipoCurto(baseMapa[wo].tipo)).camp++; });
     const usados = new Set();
+    d.listaPeriodo = []; d.listaDia = [];
+    ev.forEach(function (e) { (e.idsFinais || []).forEach(function (id) { d.listaDia.push({ wo: id, e: e }); }); });
     Object.keys(ult).forEach(function (wo) {
       if (estado.val.visitasPeriodo && !campo[wo]) return;
+      d.listaPeriodo.push({ wo: wo, e: ult[wo] });
       const e = ult[wo], w = (e.reg.wos || []).find(function (x) { return x.wo === wo; }), tp = tipoAc(w ? tipoCurto(w.tipo) : "Outros");
       ac.exec++; analisadas[wo] = true; tp.ana++;
       if (e.resultado === "validada") { ac.sem++; tp.sem++; } else { tp.pend++; if (e.resultado === "ressalva") ac.res++; else if (e.resultado === "devolvida") ac.dev++; else if (e.resultado === "offline") ac.off++; }
@@ -4472,16 +4489,52 @@
     }
     return d;
   }
+  // Lista das validações que formam um número do Resumo (mesma fonte do indicador) e a ficha de cada uma.
+  function htmlListaVal(d) {
+    const L = estado.val.rvLista, fmt = function (n) { return Number(n).toLocaleString("pt-BR"); };
+    const nomeP = estado.periodo.mes ? NOMES_MES[estado.periodo.mes - 1] + "/" + estado.periodo.ano : "ano " + estado.periodo.ano;
+    const rotEscopo = L.escopo === "dia" ? "Dia " + dataBR(d.dia).slice(0, 5) : esc(nomeP);
+    const rows = (L.escopo === "dia" ? d.listaDia : d.listaPeriodo).slice().sort(function (a, b) { return String(b.e.em).localeCompare(String(a.e.em)); });
+    const ROT = { validada: "Sem ressalva", ressalva: "Com ressalva", devolvida: "Devolvidas", offline: "Offline", todas: "Todas" };
+    const cont = function (k) { return rows.filter(function (x) { return k === "todas" || x.e.resultado === k; }).length; };
+    const voltar = '<a class="rv-lk" data-vl="resumo">← Voltar para o resumo</a>';
+    if (L.aberta) {
+      const x = rows.find(function (r) { return r.e.reg.id + "|" + r.wo === L.aberta; });
+      if (x) {
+        const e = x.e, reg = e.reg, eq = reg.equipamentos || {}, al = reg.alarmes || {}, b = batimentoDoRegistro(reg);
+        const linhas = Object.keys(eq).filter(function (k) { return eq[k] && (eq[k].fotos || eq[k].pend); }).map(function (k) {
+          const q = eq[k], pt = k.split("|"), nome = q.tag || String(pt[1] || k).replace(/^SEG:/, ""), com = [obsFotoDe(q), obsPendDe(q)].filter(Boolean).join(" · ");
+          return "<tr><td>" + esc(pt[0] || "") + "</td><td><b>" + esc(nome) + "</b></td><td>" + esc(q.fotos || "—") + "</td><td>" + esc(q.pend || "—") + "</td><td>" + esc(com || "—") + "</td></tr>";
+        }).join("");
+        const conf = function (c, rot) { const v = confBloco(al, c); return rot + ": <b>" + (v.estado === "ok" ? "Ok" : v.estado === "nao" ? "Não ok" + (v.motivo ? " (" + esc(v.motivo) + ")" : "") : "—") + "</b>"; };
+        return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar.replace("resumo", "lista").replace("o resumo", "a lista") + "</span><span>" + rotEscopo + "</span></div>" +
+          '<div style="padding:16px 20px 0"><h3 style="margin:0 0 4px;font-size:20px;font-weight:400">' + esc(reg.site) + " · " + esc(reg.equipe || "") + "</h3></div>" +
+          '<div class="rv-fi"><div><small>WOs</small>' + esc((reg.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" · ")) + "</div><div><small>" + esc(REGRAS.validacao.resultados[e.resultado] || e.resultado) + "</small>" + dataBR(dataLocalDe(e.em)).slice(0, 5) + " " + horaDe(e.em) + " por " + esc(nomeDoEmail(e.por)) + "</div><div><small>Aba pedida</small>" + (reg.aba_pedida_em ? horaDe(reg.aba_pedida_em) : "—") + "</div></div>" +
+          '<div class="rv-tab"><table><tr><th>Tipo</th><th>Equipamento</th><th>Foto</th><th>Pendência</th><th>Comentário</th></tr>' + (linhas || '<tr><td colspan="5">Nenhum equipamento conferido.</td></tr>') + "</table></div>" +
+          '<div class="rv-fi"><div><small>Alarmes</small>' + (b ? fmt(b.resumo.externaram) + " de " + fmt(b.resumo.paraExternar) + " externaram" + (b.resumo.faltaram ? " · " + fmt(b.resumo.faltaram) + " faltaram" : "") : "sem configuração conferida") + "</div><div><small>Bornes</small>" + conf("bornes", "").replace(": ", "") + "</div><div><small>Fotos das abas de alarme</small>" + conf("fotos", "").replace(": ", "") + "</div></div>" +
+          (e.motivo ? '<div class="rv-cm"><small>Comentário na validação · ' + esc(nomeDoEmail(e.por)) + "</small>" + esc(e.motivo) + "</div>" : "") + "</div>";
+      }
+      L.aberta = null;
+    }
+    const vis = rows.filter(function (x) { return L.filtro === "todas" || x.e.resultado === L.filtro; });
+    return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>" + rotEscopo + " · em WOs</span></div>" +
+      '<div class="rv-chips">' + Object.keys(ROT).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + ROT[k] + " · " + cont(k) + "</button>"; }).join("") + "</div>" +
+      (vis.length ? '<div class="rv-tab"><table><tr><th>Quando</th><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Validadora</th><th>Conferido</th><th>Resultado</th><th>Comentário</th></tr>' + vis.slice(0, 300).map(function (x) {
+        const e = x.e, reg = e.reg, eq = reg.equipamentos || {}, nEq = Object.keys(eq).filter(function (k) { return eq[k] && (eq[k].fotos || eq[k].pend); }).length, b = batimentoDoRegistro(reg), w = (reg.wos || []).find(function (y) { return y.wo === x.wo; });
+        return '<tr class="rv-cl" data-vl="abrir" data-id="' + esc(reg.id + "|" + x.wo) + '"><td>' + dataBR(dataLocalDe(e.em)).slice(0, 5) + " " + horaDe(e.em) + "</td><td><b>" + esc(reg.site) + "</b></td><td>" + esc(x.wo) + "</td><td>" + esc(w ? tipoCurto(w.tipo) : "—") + "</td><td>" + esc(reg.equipe || "—") + "</td><td>" + esc(nomeDoEmail(e.por)) + "</td><td>" + nEq + " equip." + (b ? " · alarmes " + b.resumo.externaram + "/" + b.resumo.paraExternar : "") + "</td><td>" + esc(REGRAS.validacao.resultados[e.resultado] || e.resultado) + "</td><td>" + esc(e.motivo || "—") + "</td></tr>";
+      }).join("") + "</table></div>" + (vis.length > 300 ? '<div class="vl-mu" style="padding:8px 20px">Mostrando 300 de ' + vis.length + ".</div>" : "") : '<div class="vl-mu" style="padding:12px 20px">Nenhuma validação nesta lista.</div>') + "</div>";
+  }
   function desenharResumoVal() {
     const d = dadosResumoVal(), A = d.ac, aba = estado.val.rvAba || "exec";
     $("rvTitulo").textContent = "Resumo da validação · " + dataBR(d.dia).slice(0, 5);
+    if (estado.val.rvLista) { $("rvCorpo").innerHTML = htmlListaVal(d); estado.val.textoResumo = textoResumoVal(d); return; }
     const fmt = function (n) { return Number(n).toLocaleString("pt-BR"); };
     const pctDe = function (n, tot, c) { return tot ? (Math.round(n * 1000 / tot) / 10).toLocaleString("pt-BR", { maximumFractionDigits: c === undefined ? 1 : c }) + "%" : "—"; };
     const nomeP = estado.periodo.mes ? NOMES_MES[estado.periodo.mes - 1] + "/" + estado.periodo.ano : "ano " + estado.periodo.ano;
     const lk = function (rot, go, extra) { return '<a class="rv-lk" data-go="' + go + '"' + (extra ? ' data-f="' + extra + '"' : "") + ">" + rot + " →</a>"; };
     const pendTot = A.res + A.dev + A.off;
     const maxBarra = Math.max(d.mopExec, d.campo, A.exec, A.sem, pendTot, 1);
-    const itens = [["Total executadas", d.mopExec, ""], ["Total executadas em campo", d.campo, ""], ["Total analisadas", A.exec, ""], ["Preventivas validadas sem ressalva", A.sem, ""], ["WOs com pendências", pendTot, "verm"]];
+    const itens = [["Total executadas", d.mopExec, ""], ["Total executadas em campo", d.campo, ""], ["Total analisadas", A.exec, ""], ["Preventivas validadas sem ressalva" + (A.sem ? " " + lk("ver lista", "vlista", "periodo:validada") : ""), A.sem, ""], ["WOs com pendências", pendTot, "verm"]];
     const barras = '<div class="rv-bl"><div class="rv-hd">Indicadores <span>' + esc(nomeP) + " · MOP · barras na mesma escala</span></div><div style=\"padding:6px 0\">" + itens.map(function (x) {
       return '<div class="rv-bx"><span>' + x[0] + '</span><div class="t"><div class="' + x[2] + '" style="width:' + Math.round(x[1] * 1000 / maxBarra) / 10 + '%"></div></div><span class="v">' + fmt(x[1]) + " de " + fmt(d.mopTotal) + " · " + pctDe(x[1], d.mopTotal) + "</span></div>";
     }).join("") + "</div></div>";
@@ -4507,11 +4560,11 @@
       t += '<div class="rv-bl"><div class="rv-hd">' + esc(nomeP) + ' · acumulado <span>MOP · em WOs · base do período ' + fmt(d.mopTotal) + '</span></div><div class="rv-m rv-m5">' +
         nm(d.mopExec, "Total executadas", d.dv && d.dv.exec ? fmt(d.dv.exec) + " sem visita registrada " + lk("ver", "dv", "exec_sem_visita") : "") +
         nm(d.campo, "Executadas em campo", d.campoSem ? fmt(d.campoSem) + " sem análise " + lk("ver", "semval") + (d.dv && d.dv.vis ? "<br>" + fmt(d.dv.vis) + " com a base ainda pendente " + lk("ver", "dv", "visita_sem_exec_base") : "") : "") +
-        nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo") + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas") +
+        nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo") + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
         nm(pendTot, "Com pendências", fmt(A.dev) + " devolvidas · " + fmt(d.offAbertos) + " casos offline " + lk("ver", "Offline"), true) + "</div></div>";
       t += barras;
       t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m4">' +
-        nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
+        nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva", d.sem ? lk("ver lista", "vlista", "dia:validada") : "") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
         nm(d.filaOff, "Para validação offline", (d.filaOffSem ? fmt(d.filaOffSem) + " sem análise online<br>" : "") + lk("ver", "Offline")) + "</div></div>";
       const tk = Object.keys(d.tipos).sort(function (x, y) { return d.tipos[y] - d.tipos[x]; }), mx = tk.length ? d.tipos[tk[0]] : 1;
       t += '<div class="rv-2 rv-2b"><div class="rv-bl"><div class="rv-hd">Pendências por tipo · ' + (d.dia === hoje() ? "hoje" : "no dia") + '</div>' + (tk.length ? '<div style="padding:6px 0">' + tk.map(function (k) {
@@ -4571,9 +4624,20 @@
   $("rvCorpo").addEventListener("click", function (e) {
     const ab = e.target.closest("[data-rvaba]");
     if (ab) { estado.val.rvAba = ab.dataset.rvaba; desenharResumoVal(); return; }
+    const vl = e.target.closest("[data-vl]");
+    if (vl) {
+      const L = estado.val.rvLista, a = vl.dataset.vl;
+      if (a === "resumo") estado.val.rvLista = null;
+      else if (L && a === "lista") L.aberta = null;
+      else if (L && a === "filtro") L.filtro = vl.dataset.f;
+      else if (L && a === "abrir") L.aberta = vl.dataset.id;
+      desenharResumoVal(); window.scrollTo(0, 0);
+      return;
+    }
     const go = e.target.closest("[data-go]");
     if (go) {
       const alvo = go.dataset.go;
+      if (alvo === "vlista") { const pf = String(go.dataset.f || "periodo:validada").split(":"); estado.val.rvLista = { escopo: pf[0], filtro: pf[1], aberta: null }; desenharResumoVal(); window.scrollTo(0, 0); return; }
       if (alvo === "semval") { estado.val.rvAba = "oper"; estado.val.semValFiltro = "todas"; desenharResumoVal(); const el = $("rvSemVal"); if (el) el.scrollIntoView({ behavior: "smooth" }); }
       else if (alvo === "dv") {
         estado.dv.filtro = go.dataset.f || "todas";
@@ -4600,6 +4664,7 @@
     const reg = estado.val.lista.find(function (v) { return String(v.id) === String(id); });
     if (!reg) return;
     estado.val.atual = reg; estado.val.pagina = "equip"; estado.val.colar = null; estado.val.pendente = null; estado.val.equip = []; estado.val.equipAviso = "";
+    { const rs = rascunhoDe(reg); estado.val.resSel = rs ? rs.resultado : null; estado.val.resSelDe = rs && rs.resultado ? reg.id : null; estado.val.motivo = rs && rs.motivo != null ? rs.motivo : null; }
     irParaTela("SiteVal");
     $("svCorpo").innerHTML = '<div class="vl-vazio">Carregando...</div>';
     try {
@@ -4846,7 +4911,7 @@
     if (!el) return;
     const reg = estado.val.atual, a = el.dataset.sv;
     if (a === "voltar") { if (estado.val.voltarOffline) { estado.val.voltarOffline = false; estado.off.vals = {}; irParaTela("Offline"); } else irParaTela("FilaVal"); return; }
-    if (a === "pg") { estado.val.pagina = el.dataset.p; estado.val.motivo = null; desenharSiteVal(); return; }
+    if (a === "pg") { estado.val.pagina = el.dataset.p; if (estado.val.motivo == null && rascunhoDe(reg) && rascunhoDe(reg).motivo != null) estado.val.motivo = rascunhoDe(reg).motivo; desenharSiteVal(); return; }
     if (!reg) return;
     try {
       if (a === "bl") {
@@ -4901,7 +4966,7 @@
       else if (a === "guardardetectado") {
         const p = estado.val.pendente; estado.val.pendente = null;
         await guardarAlarme(p.detectado, p.texto); desenharSiteVal();
-      } else if (a === "res") { estado.val.resSel = el.dataset.r; estado.val.resSelDe = reg.id; desenharSiteVal(); }
+      } else if (a === "res") { estado.val.resSel = el.dataset.r; estado.val.resSelDe = reg.id; await salvarRascunho(reg); desenharSiteVal(); }
       else if (a === "encerrar") { if (estado.val.resSel && estado.val.resSelDe === reg.id) await encerrarValidacao(estado.val.resSel); }
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
   });
@@ -4954,6 +5019,7 @@
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
   });
   $("svCorpo").addEventListener("input", function (e) { if (e.target.id === "svMotivo") estado.val.motivo = e.target.value; });
+  $("svCorpo").addEventListener("change", function (e) { if (e.target.id === "svMotivo" && estado.val.atual) salvarRascunho(estado.val.atual).catch(function (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }); });
 
   // ==== VALIDAÇÃO OFFLINE ========================================================
   REGRAS.offline = {
@@ -5273,6 +5339,10 @@
 
   async function encerrarValidacao(resultado) {
     const reg = estado.val.atual, linhas = estado.val.equip;
+    estado.val.encerrando = true;
+    try { await encerrarValidacao2(resultado, reg, linhas); } finally { estado.val.encerrando = false; }
+  }
+  async function encerrarValidacao2(resultado, reg, linhas) {
     const motivo = ($("svMotivo").value || "").trim();
     if (resultado !== "validada" && !motivo) { mostrarAviso("Informe o motivo.", "erro"); return; }
     const semCom = faltasDeComentario(faltasDe(reg, linhas));
@@ -5283,7 +5353,8 @@
     const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, motivo: motivo || null, pendencias: pend, completa: faltou.length === 0,
                  wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site,
                  na: linhas.filter(ehNA).map(function (r) { return r.segmento || "—"; }) };
-    const campos = { historico: (reg.historico || []).concat([ev]), resultado: resultado, motivo: motivo || null };
+    const alSemRascunho = Object.assign({}, reg.alarmes || {}); delete alSemRascunho._rascunho;
+    const campos = { historico: (reg.historico || []).concat([ev]), resultado: resultado, motivo: motivo || null, alarmes: alSemRascunho };
     if (resultado === "devolvida") { Object.assign(campos, { situacao: "em_campo", aba_pedida_em: null, analista: null, analise_em: null, encerrada_em: null }); }
     else { Object.assign(campos, { situacao: "encerrada", encerrada_em: agora }); }
     await salvarVal(reg, campos);
