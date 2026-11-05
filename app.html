@@ -3966,8 +3966,8 @@
     let vazios = 0;
     config.blocos.forEach(function (b) {
       b.alarmes.forEach(function (a) {
+        if (a.bloqueado) { isentos.push({ bloco: b.bloco, texto: a.texto || "Porta " + a.porta + " (sem texto)", severidade: a.severidade }); return; }
         if (!a.texto) { vazios++; return; }
-        if (a.bloqueado) { isentos.push({ bloco: b.bloco, texto: a.texto, severidade: a.severidade }); return; }
         const k = alNorm(a.texto);
         const lista = pool[k] || [];
         let achou = -1;
