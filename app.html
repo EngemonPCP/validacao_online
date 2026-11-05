@@ -4023,7 +4023,7 @@
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
     toleranciaPermanenciaMin: 15,
     metaCobertura: 95,
-    apontamentos: ["Sem apontamento", "Alarme sem contato no bloco", "Bloqueado pelo cliente", "Equipamento não existe no site", "Técnico informou que não externou", "Outro"],
+    apontamentos: ["Alarme sem contato no bloco", "Bloqueado pelo cliente", "Equipamento não existe no site", "Técnico informou que não externou", "Outro"],
     ordemAlarmes: [{ antes: "FALHA DE ENERGIA AC", depois: "BATERIA EM DESCARGA" }],
     rajada: { segundos: 3, minimo: 6 },
     // Preventiva só de climatização: só estes alarmes são cobrados (pedaço do texto, sem acento, em maiúsculas). Energia cobra todos.
@@ -4216,9 +4216,24 @@
   function ehClima(w) { return alNorm(w.tipo).indexOf("CLIMAT") >= 0; }
   function woDaLinha(r, wos) { return wos.find(function (w) { return tipoCasa(r.tipo, w.tipo); }) || null; }
 
+  // Análise de verdade: a validadora preencheu todas as abas (Equipamentos e fotos, Alarmes) antes de dar o resultado.
+  // Quem só encaminha para a validação offline sem preencher nada não conta como análise.
+  function marcasDe(reg) {
+    const eq = reg.equipamentos || {}, al = reg.alarmes || {};
+    return Object.keys(eq).some(function (k) { return eq[k] && (eq[k].fotos || eq[k].pend); }) || (reg.grupos_ok || []).length > 0 ||
+      !!al.config || !!al.hist || !!al.semConfig || confBloco(al, "bornes").estado !== "" || confBloco(al, "fotos").estado !== "";
+  }
+  function eventoAnalisado(e) {
+    if (e.completa === true) return true;
+    if (e.completa === false) return false;
+    // Encerramentos antigos, sem o registro: validada e ressalva só eram liberadas com tudo preenchido
+    if (e.resultado === "validada" || e.resultado === "ressalva") return true;
+    if (e.motivo === "Técnico saiu do site sem solicitar a validação") return false;
+    return marcasDe(e.reg || {});
+  }
   // Cada WO conta uma vez por dia: o último resultado do dia se sobrepõe aos anteriores.
-  function eventosFinaisDoDia(lista, dia) {
-    const evs = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia; }).sort(function (a, b) { return String(a.em).localeCompare(String(b.em)); });
+  function eventosFinaisDoDia(lista, dia, soAnalisados) {
+    const evs = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia && (!soAnalisados || eventoAnalisado(e)); }).sort(function (a, b) { return String(a.em).localeCompare(String(b.em)); });
     const dono = {};
     evs.forEach(function (e) { (e.wo_ids || (e.reg.wos || []).map(function (w) { return w.wo; })).forEach(function (id) { dono[id] = e; }); });
     const cont = new Map();
@@ -4345,9 +4360,12 @@
   function dadosResumoVal() {
     const dia = $("rvData").value || hoje(), setor = $("rvSetor").value;
     const lista = estado.val.lista.filter(function (v) { return !setor || casaSetor(String(v.setor || "").trim().toUpperCase(), setor); });
-    const ev = eventosFinaisDoDia(lista, dia);
+    const ev = eventosFinaisDoDia(lista, dia, true), evTodos = eventosFinaisDoDia(lista, dia);
     const soma = function (fn) { return ev.filter(fn).reduce(function (s, e) { return s + e.wosFinais; }, 0); };
-    const d = { dia: dia, ev: ev, lista: lista,
+    const somaTodos = function (fn) { return evTodos.filter(fn).reduce(function (s, e) { return s + e.wosFinais; }, 0); };
+    const d = { dia: dia, ev: ev, evTodos: evTodos, lista: lista,
+      filaOff: somaTodos(function (e) { return e.resultado === "offline"; }),
+      filaOffSem: somaTodos(function (e) { return e.resultado === "offline" && !eventoAnalisado(e); }),
       exec: soma(function () { return true; }),
       sem: soma(function (e) { return e.resultado === "validada"; }),
       dev: soma(function (e) { return e.resultado === "devolvida"; }),
@@ -4355,9 +4373,9 @@
       off: soma(function (e) { return e.resultado === "offline"; }) };
     d.com = d.dev + d.res + d.off;
     d.tipos = {};
-    ev.forEach(function (e) { (e.pendencias || []).forEach(function (p) { d.tipos[p.tipo] = (d.tipos[p.tipo] || 0) + 1; }); });
+    evTodos.forEach(function (e) { (e.pendencias || []).forEach(function (p) { d.tipos[p.tipo] = (d.tipos[p.tipo] || 0) + 1; }); });
     d.equipes = {};
-    ev.forEach(function (e) {
+    evTodos.forEach(function (e) {
       const q = d.equipes[e.equipe] = d.equipes[e.equipe] || { exec: 0, com: 0, dev: 0, res: 0, off: 0 };
       q.exec += e.wosFinais;
       if (e.resultado !== "validada") q.com += e.wosFinais;
@@ -4367,23 +4385,17 @@
     });
     d.fila = { aba: lista.filter(function (v) { return v.situacao === "aba_pedida"; }).length, ana: lista.filter(function (v) { return v.situacao === "em_analise"; }).length,
                cam: lista.filter(function (v) { return v.situacao === "em_campo"; }).length };
-    // Acumulado do período (mês ou ano) escolhido no topo, contado por WO (mesmo dono final de cada WO por dia)
+    // Acumulado do período (mês ou ano) escolhido no topo. Cada WO conta uma vez, com o último resultado em que a validadora preencheu todas as abas.
     const setorSel = setor, fx = faixaDoPeriodo();
     const ac = { exec: 0, sem: 0, res: 0, dev: 0, off: 0 }, analisadas = {}, porTipo = {}, tiposP = {};
     const tipoAc = function (t) { return porTipo[t] = porTipo[t] || { camp: 0, ana: 0, sem: 0, pend: 0 }; };
-    for (let dia2 = fx[0]; dia2 <= fx[1]; dia2 = somarDias(dia2, 1)) {
-      const evs = eventosDe(lista).filter(function (e) { return dataLocalDe(e.em) === dia2; }).sort(function (x, y) { return String(x.em).localeCompare(String(y.em)); });
-      const dono = {};
-      evs.forEach(function (e) { (e.wo_ids || (e.reg.wos || []).map(function (w) { return w.wo; })).forEach(function (id) { dono[id] = e; }); });
-      const usados = new Set();
-      Object.keys(dono).forEach(function (wo) {
-        const e = dono[wo], w = (e.reg.wos || []).find(function (x) { return x.wo === wo; }), tp = tipoAc(w ? tipoCurto(w.tipo) : "Outros");
-        ac.exec++; analisadas[wo] = true; tp.ana++;
-        if (e.resultado === "validada") { ac.sem++; tp.sem++; } else { tp.pend++; if (e.resultado === "ressalva") ac.res++; else if (e.resultado === "devolvida") ac.dev++; else if (e.resultado === "offline") ac.off++; }
-        if (!usados.has(e)) { usados.add(e); (e.pendencias || []).forEach(function (pp) { tiposP[pp.tipo] = (tiposP[pp.tipo] || 0) + 1; }); }
+    const ult = {}, offSem = {};
+    eventosDe(lista).filter(function (e) { const dd = dataLocalDe(e.em); return dd >= fx[0] && dd <= fx[1]; })
+      .sort(function (x, y) { return String(x.em).localeCompare(String(y.em)); })
+      .forEach(function (e) {
+        const ok = eventoAnalisado(e);
+        (e.wo_ids || (e.reg.wos || []).map(function (w) { return w.wo; })).forEach(function (id) { if (ok) ult[id] = e; else if (e.resultado === "offline") offSem[id] = true; });
       });
-    }
-    d.ac = ac; d.tiposP = tiposP; d.porTipo = porTipo;
     const base = (estado.val.baseMes || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !(estado.expurgadas || {})[l.wo] && (!setorSel || casaSetor(setorDe(l), setorSel)); });
     const baseMapa = {}; base.forEach(function (l) { baseMapa[l.wo] = l; });
     d.mopTotal = base.length; d.mopExec = base.filter(ehExecutadaBase).length;
@@ -4396,7 +4408,19 @@
     });
     d.campo = Object.keys(campo).length;
     Object.keys(campo).forEach(function (wo) { tipoAc(tipoCurto(baseMapa[wo].tipo)).camp++; });
-    d.campoSem = Object.keys(campo).filter(function (wo) { return !analisadas[wo]; }).length;
+    const usados = new Set();
+    Object.keys(ult).forEach(function (wo) {
+      if (estado.val.visitasPeriodo && !campo[wo]) return;
+      const e = ult[wo], w = (e.reg.wos || []).find(function (x) { return x.wo === wo; }), tp = tipoAc(w ? tipoCurto(w.tipo) : "Outros");
+      ac.exec++; analisadas[wo] = true; tp.ana++;
+      if (e.resultado === "validada") { ac.sem++; tp.sem++; } else { tp.pend++; if (e.resultado === "ressalva") ac.res++; else if (e.resultado === "devolvida") ac.dev++; else if (e.resultado === "offline") ac.off++; }
+      if (!usados.has(e)) { usados.add(e); (e.pendencias || []).forEach(function (pp) { tiposP[pp.tipo] = (tiposP[pp.tipo] || 0) + 1; }); }
+    });
+    d.ac = ac; d.tiposP = tiposP; d.porTipo = porTipo;
+    const semAn = Object.keys(campo).filter(function (wo) { return !analisadas[wo]; });
+    d.campoSem = semAn.length;
+    d.campoOffSem = semAn.filter(function (wo) { return offSem[wo]; }).length;
+    d.offSem = offSem;
     d.cobertura = d.campo ? Math.round((d.campo - d.campoSem) * 1000 / d.campo) / 10 : null;
     d.aprovDireta = ac.exec ? Math.round(ac.sem * 1000 / ac.exec) / 10 : null;
     // Divergências com a base: mesma conta da tela Divergências
@@ -4421,7 +4445,7 @@
       Object.keys(campo).forEach(function (wo) {
         if (analisadas[wo]) return;
         const l = porWo[wo];
-        d.semVal.push({ l: baseMapa[wo], cat: l ? l.categoria : "campo", motivo: l ? l.motivo : "Executada em campo, sem validação", equipe: campo[wo].equipe || "" });
+        d.semVal.push({ l: baseMapa[wo], cat: l ? l.categoria : "campo", motivo: l ? l.motivo : (offSem[wo] ? "Enviada para validação offline sem análise online" : "Executada em campo, sem validação"), equipe: campo[wo].equipe || "" });
       });
       res.linhas.forEach(function (l) {
         if (campo[l.wo] || analisadas[l.wo] || !baseMapa[l.wo]) return;
@@ -4449,7 +4473,7 @@
     if (aba === "exec") {
       const cob = d.cobertura;
       t += '<div class="rv-bl"><div class="rv-hd">Eficiência da validação <span>' + esc(nomeP) + '</span></div><div class="rv-ef"><div><div class="l">Cobertura da validação</div><div class="g">' + (cob === null ? "—" : cob.toLocaleString("pt-BR") + "%") + '</div>' +
-        '<div class="rv-meta"><i style="width:' + Math.min(100, cob || 0) + '%"></i><u style="left:' + REGRAS.validacao.metaCobertura + '%"></u></div><div class="f">Meta ' + REGRAS.validacao.metaCobertura + "% · " + (d.campoSem ? "faltam <b>" + fmt(d.campoSem) + " WOs</b> executadas em campo sem análise " + lk("ver lista", "semval") : (d.campo ? "todas as WOs executadas em campo foram analisadas" : "nenhuma WO executada em campo no período")) + '</div></div>' +
+        '<div class="rv-meta"><i style="width:' + Math.min(100, cob || 0) + '%"></i><u style="left:' + REGRAS.validacao.metaCobertura + '%"></u></div><div class="f">Meta ' + REGRAS.validacao.metaCobertura + "% · " + (d.campoSem ? "de " + fmt(d.campo) + " executadas em campo: <b>" + fmt(d.campo - d.campoSem) + "</b> analisadas · <b>" + fmt(d.campoOffSem) + "</b> enviadas para offline sem análise · <b>" + fmt(d.campoSem - d.campoOffSem) + "</b> ainda sem análise " + lk("ver lista", "semval") : (d.campo ? "todas as WOs executadas em campo foram analisadas" : "nenhuma WO executada em campo no período")) + '</div></div>' +
         '<div><div class="l">Aprovação direta</div><div class="m">' + (d.aprovDireta === null ? "—" : d.aprovDireta.toLocaleString("pt-BR") + "%") + '</div><div class="f">' + fmt(A.sem) + " sem ressalva de " + fmt(A.exec) + " analisadas<br>" + fmt(pendTot) + " voltaram com pendências</div></div></div></div>";
       t += barras;
       const tp = Object.keys(d.tiposP).sort(function (x, y) { return d.tiposP[y] - d.tiposP[x]; }), totP = tp.reduce(function (s2, k) { return s2 + d.tiposP[k]; }, 0);
@@ -4470,8 +4494,8 @@
         nm(pendTot, "Com pendências", fmt(A.dev) + " devolvidas · " + fmt(d.offAbertos) + " casos offline " + lk("ver", "Offline"), true) + "</div></div>";
       t += barras;
       t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m4">' +
-        nm(d.exec, "Analisadas no dia", d.ev.length + (d.ev.length === 1 ? " site" : " sites")) + nm(d.sem, "Sem ressalva") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
-        nm(d.off, "Para validação offline", lk("ver", "Offline")) + "</div></div>";
+        nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
+        nm(d.filaOff, "Para validação offline", (d.filaOffSem ? fmt(d.filaOffSem) + " sem análise online<br>" : "") + lk("ver", "Offline")) + "</div></div>";
       const tk = Object.keys(d.tipos).sort(function (x, y) { return d.tipos[y] - d.tipos[x]; }), mx = tk.length ? d.tipos[tk[0]] : 1;
       t += '<div class="rv-2 rv-2b"><div class="rv-bl"><div class="rv-hd">Pendências por tipo · ' + (d.dia === hoje() ? "hoje" : "no dia") + '</div>' + (tk.length ? '<div style="padding:6px 0">' + tk.map(function (k) {
         return '<div class="rv-pr"><span>' + esc(k) + '</span><div class="t"><div style="width:' + Math.max(4, Math.round(d.tipos[k] * 100 / mx)) + '%"></div></div><b>' + d.tipos[k] + "</b></div>";
@@ -4498,7 +4522,7 @@
         const q = d.equipes[k], pp = q.exec ? Math.round(q.com * 100 / q.exec) : 0;
         return "<tr><td>" + esc(k) + '</td><td class="n">' + q.exec + '</td><td class="n">' + q.com + '</td><td class="n">' + q.dev + '</td><td class="n">' + q.res + '</td><td class="n">' + q.off + '</td><td class="n">' + pp + "%</td></tr>";
       }).join("") + "</table>" : '<div class="vl-mu" style="padding:12px 20px">Sem validações neste dia.</div>') + "</div>";
-      const tratar = d.ev.filter(function (e) { return e.resultado !== "validada"; });
+      const tratar = d.evTodos.filter(function (e) { return e.resultado !== "validada"; });
       t += '<h3 style="margin-top:16px">Pendências de Tratativa</h3>';
       if (!tratar.length) t += '<div class="vl-vazio">Nada para tratar neste dia.</div>';
       else t += "<table><tr><th>Site</th><th>WOs</th><th>Resultado</th><th>Pendências</th><th>Tratativa</th></tr>" + tratar.slice(0, 60).map(function (u) {
@@ -4509,7 +4533,7 @@
           esc(REGRAS.validacao.resultados[u.resultado]) + "</span></td><td>" + esc((u.pendencias || []).map(function (p) { return p.texto; }).join(" · ") || u.motivo || "—") +
           '</td><td><span class="vl-tag ' + trat[1] + '">' + trat[0] + "</span></td></tr>";
       }).join("") + "</table>";
-      const naLista = d.ev.filter(function (e) { return (e.na || []).length; });
+      const naLista = d.evTodos.filter(function (e) { return (e.na || []).length; });
       if (naLista.length) {
         t += '<h3 style="margin-top:16px">Equipamentos que o site não possui</h3><table><tr><th>Site</th><th>Equipamentos</th></tr>' +
           naLista.map(function (e) { return "<tr><td><b>" + esc(e.site) + "</b></td><td>" + esc(e.na.join(", ")) + "</td></tr>"; }).join("") + "</table>";
@@ -4522,8 +4546,9 @@
     const s = $("rvSetor").value;
     const tk = Object.keys(d.tipos).sort(function (a, b) { return d.tipos[b] - d.tipos[a]; });
     return "Resumo da validação · " + dataBR(d.dia).slice(0, 5) + (s ? " · " + NOME_SETOR[s] : "") + "\n" +
-      "WOs executadas: " + d.exec + "\nValidadas sem pendência: " + d.sem + "\nCom pendência: " + d.com +
+      "WOs analisadas: " + d.exec + "\nValidadas sem pendência: " + d.sem + "\nCom pendência: " + d.com +
       " (" + d.dev + " devolvidas ao técnico · " + d.res + " com ressalva · " + d.off + " para validação offline)" +
+      "\nPara validação offline: " + d.filaOff + (d.filaOffSem ? " (" + d.filaOffSem + " sem análise online)" : "") +
       (tk.length ? "\nPendências: " + tk.map(function (k) { return k + " " + d.tipos[k]; }).join(" · ") : "");
   }
   $("rvCorpo").addEventListener("click", function (e) {
@@ -5193,7 +5218,7 @@
     if (!rs.length) return false;
     const reg = rs[0], agora = new Date().toISOString(), motivo = "Técnico saiu do site sem solicitar a validação";
     const pend = [{ tipo: "Saída sem pedido", texto: motivo }];
-    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: "offline", motivo: motivo, pendencias: pend,
+    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: "offline", motivo: motivo, pendencias: pend, completa: false,
                  wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site, na: [] };
     await salvarVal(reg, { historico: (reg.historico || []).concat([ev]), resultado: "offline", motivo: motivo, situacao: "encerrada", encerrada_em: agora });
     await sincronizarCasoOffline(reg, "offline", pend, motivo, "sem_pedido");
@@ -5206,7 +5231,8 @@
     if (resultado !== "validada" && !motivo) { mostrarAviso("Informe o motivo.", "erro"); return; }
     const pend = pendenciasDe(reg);
     const agora = new Date().toISOString();
-    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, motivo: motivo || null, pendencias: pend,
+    const faltou = faltasDe(reg, linhas);
+    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, motivo: motivo || null, pendencias: pend, completa: faltou.length === 0,
                  wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site,
                  na: linhas.filter(ehNA).map(function (r) { return r.segmento || "—"; }) };
     const campos = { historico: (reg.historico || []).concat([ev]), resultado: resultado, motivo: motivo || null };
