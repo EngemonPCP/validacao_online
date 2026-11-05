@@ -3860,6 +3860,14 @@
     return c.map(function (x) { return x.trim(); });
   }
 
+  // Bloco a partir do código da tecnologia: S01SMSNE37 -> S01, USMSNE37 -> U. Sem prefixo (SMSNE37v2131) fica vazio.
+  function blocoDeTecnologia(t) {
+    const x = String(t || "").trim().toUpperCase().replace(/\s+/g, "");
+    const m = x.match(/SM[A-Z]{2,5}\d{1,3}/);
+    if (m) return x.slice(0, m.index);
+    const o = x.match(/^S\d{2}/);
+    return o ? o[0] : "";
+  }
   // Configuração: blocos "S01SMIBI57" seguidos de uma tabela (Nº Porta, Alarmado, Status Administrativo, ..., Texto do Alarme, Label, Severidade).
   function lerConfiguracaoAlarmes(texto) {
     const blocos = [];
@@ -3869,6 +3877,7 @@
       const mc = linha.trim().match(/^Consulta realizada em\s+(.*)$/i);
       if (mc) { consulta = mc[1]; return; }
       const c = alCelulas(linha);
+      if (c.length === 1 && /^[A-Z0-9]{1,3}SM[A-Z]{2,5}\d{1,3}$/i.test(c[0].replace(/\s+/g, "")) && blocoDeTecnologia(c[0])) { atual = { bloco: blocoDeTecnologia(c[0]), nome: c[0], alarmes: [] }; blocos.push(atual); cols = null; return; }
       if (c.length === 1 && /^S\d{2}/i.test(c[0])) { atual = { bloco: c[0].slice(0, 3).toUpperCase(), nome: c[0], alarmes: [] }; blocos.push(atual); cols = null; return; }
       const nomes = c.map(alNorm);
       if (nomes.some(function (n) { return n === "TEXTO DO ALARME"; })) {
@@ -3892,8 +3901,8 @@
   //  completo: ID, Sigla, Tecnologia, Severidade, Alarme, Data Inicial, Data Final, Data Equipamento, ID Alarme, Reaberturas
   //  enxuto:   ID, Tecnologia, Problema, Data Inicial, Data Final, Idade
   function lerHistoricoAlarmes(texto) {
-    const posCompleto = { sigla: 1, sev: 3, alarme: 4, ini: 5, fim: 6, eqp: 7 };
-    const posEnxuto = { sigla: 1, sev: -1, alarme: 2, ini: 3, fim: 4, eqp: -1 };
+    const posCompleto = { sigla: 1, tec: 2, sev: 3, alarme: 4, ini: 5, fim: 6, eqp: 7 };
+    const posEnxuto = { sigla: 1, tec: 1, sev: -1, alarme: 2, ini: 3, fim: 4, eqp: -1 };
     let pos = posCompleto, comCabecalho = false;
     const eventos = [];
     String(texto || "").split(/\r?\n/).forEach(function (linha) {
@@ -3902,7 +3911,7 @@
       const nomes = c.map(alNorm);
       const iAlarme = nomes.indexOf("ALARME") >= 0 ? nomes.indexOf("ALARME") : nomes.indexOf("PROBLEMA");
       if (iAlarme >= 0 && (nomes.indexOf("DATA INICIAL") >= 0 || nomes.indexOf("SEVERIDADE") >= 0)) {
-        pos = { sigla: nomes.indexOf("SIGLA") >= 0 ? nomes.indexOf("SIGLA") : nomes.indexOf("TECNOLOGIA"), sev: nomes.indexOf("SEVERIDADE"), alarme: iAlarme,
+        pos = { sigla: nomes.indexOf("SIGLA") >= 0 ? nomes.indexOf("SIGLA") : nomes.indexOf("TECNOLOGIA"), tec: nomes.indexOf("TECNOLOGIA"), sev: nomes.indexOf("SEVERIDADE"), alarme: iAlarme,
                 ini: nomes.indexOf("DATA INICIAL"), fim: nomes.indexOf("DATA FINAL"), eqp: nomes.indexOf("DATA EQUIPAMENTO") };
         comCabecalho = true;
         return;
@@ -3913,8 +3922,7 @@
       const ini = alDataHora(g(pos.ini)), eqp = alDataHora(g(pos.eqp));
       const texto2 = g(pos.alarme);
       if (!texto2) return;
-      const m = g(pos.sigla).match(/S\d{2}/i);
-      eventos.push({ bloco: m ? m[0].toUpperCase() : "", sigla: g(pos.sigla), severidade: g(pos.sev), texto: texto2,
+      eventos.push({ bloco: blocoDeTecnologia(g(pos.tec)) || blocoDeTecnologia(g(pos.sigla)), sigla: g(pos.sigla), severidade: g(pos.sev), texto: texto2,
                      ini: ini, fim: alDataHora(g(pos.fim)), eqp: eqp != null ? eqp : ini });
     });
     return { eventos: eventos };
@@ -3967,7 +3975,7 @@
         const ev = achou >= 0 ? lista.splice(achou, 1)[0] : null;
         const chave = b.bloco + "|" + k;
         const apt = apont[chave] || "";
-        itens.push({ bloco: b.bloco, texto: a.texto, severidade: a.severidade, chave: chave, externou: !!ev, quando: ev ? ev.eqp : null,
+        itens.push({ bloco: b.bloco, texto: a.texto, severidade: a.severidade, chave: chave, externou: !!ev, quando: ev ? ev.eqp : null, ini: ev ? ev.ini : null, fim: ev ? ev.fim : null,
                      apontamento: apt, dispensado: !ev && !!apt && apt !== "Sem apontamento" });
       });
     });
@@ -4722,11 +4730,21 @@
       if (falt.length) t += '<div class="vl-aptodos"><span>Apontamento do técnico para todos os alarmes que faltaram:</span><select id="svApontTodos">' + opcoesHtml(REGRAS.validacao.apontamentos, "", "Escolha...") + '</select><button class="bt" data-sv="apontTodos">Aplicar a todos</button></div>';
       t += "<table><tr><th>Bloco</th><th>Alarme configurado</th><th>Severidade</th><th>Resultado</th><th>Hora no equipamento</th><th>Permanência</th><th>Apontamento do técnico</th></tr>";
       const anP = analisePermanencia(reg);
+      const agoraHist = reg.alarmes && reg.alarmes.hist && reg.alarmes.hist.em ? new Date(reg.alarmes.hist.em).getTime() : Date.now();
+      const fmtDur = function (ms) {
+        const sg = Math.max(0, Math.round(ms / 1000)), h = Math.floor(sg / 3600), m = Math.floor((sg % 3600) / 60), r = sg % 60;
+        if (h) return h + " h " + doisDigitos(m) + " min";
+        if (m) return m + " min" + (r ? " " + r + " s" : "");
+        return r + " s";
+      };
       const celP = function (i) {
+        if (!i.externou || i.ini == null) return "";
+        return i.fim != null ? fmtDur(i.fim - i.ini) : '<b>Aberto · ' + fmtDur(agoraHist - i.ini) + "</b>";
+      };
+      const celFora = function (i) {
         if (!i.externou || !anP || anP.semHorario) return "";
         const e = anP.evs.find(function (x) { return x.quando === i.quando; });
-        if (!e) return "";
-        return e.pos === "dentro" ? '<span class="vl-ok">Dentro</span>' : '<span class="vl-no">Fora · ' + e.min + " min " + (e.pos === "antes" ? "antes" : "depois") + "</span>";
+        return e && e.pos !== "dentro" ? '<span class="vl-no" style="display:block;font-size:12px;margin-top:2px">Fora da visita · ' + e.min + " min " + (e.pos === "antes" ? "antes" : "depois") + "</span>" : "";
       };
       const blocos = [];
       b.itens.forEach(function (i) { if (blocos.indexOf(i.bloco) < 0) blocos.push(i.bloco); });
@@ -4735,7 +4753,7 @@
         t += '<tr><td class="grp" colspan="7">' + bl + " · " + its.filter(function (i) { return i.externou; }).length + " de " + its.length + " externaram</td></tr>";
         its.forEach(function (i) {
           t += "<tr><td>" + i.bloco + "</td><td>" + esc(i.texto) + "</td><td>" + esc(i.severidade) + "</td><td class=\"" + (i.externou ? "vl-ok" : (i.dispensado ? "vl-mu" : "vl-no")) + '">' +
-            (i.externou ? "Externou" : (i.dispensado ? "Dispensado" : "Faltou")) + "</td><td>" + horaSegDe(i.quando) + "</td><td>" + celP(i) + "</td><td>" +
+            (i.externou ? "Externou" : (i.dispensado ? "Dispensado" : "Faltou")) + "</td><td>" + horaSegDe(i.quando) + celFora(i) + "</td><td>" + celP(i) + "</td><td>" +
             (i.externou ? "" : '<select data-sv="apont" data-k="' + esc(i.chave) + '">' + opcoesHtml(REGRAS.validacao.apontamentos, i.apontamento, "Sem apontamento") + "</select>") + "</td></tr>";
         });
       });
