@@ -658,6 +658,9 @@
     .vl-pg button small { display:block; font-size:11px; color:#525252; }
     .vl-pg button.ativo { background:#fff; border-top:2px solid #0f62fe; font-weight:600; }
     .vl-caixa { background:#fff; padding:12px 14px; margin-top:12px; }
+    .vl-tw { width:100%; border-collapse:collapse; } .vl-tw th { background:#e0e0e0; text-align:left; padding:9px 12px; font-size:13px; } .vl-tw td { padding:10px 12px; border-bottom:1px solid #e0e0e0; vertical-align:top; } .vl-am { color:#0f62fe; font-weight:600; }
+    .vl-meta { display:flex; flex-wrap:wrap; gap:40px; margin-bottom:12px; } .vl-meta small { display:block; color:#525252; font-size:12px; margin-bottom:3px; }
+    .vl-cm { background:#f4f4f4; border-left:3px solid #8d8d8d; padding:10px 14px; } .vl-hist { border-left:1px solid #c6c6c6; padding-left:14px; } .vl-hist div { padding:5px 0; color:#525252; } .vl-hist b { color:#161616; }
     .vl-caixa.crit { border-top:3px solid #8e6a00; }
     .vl-slots { display:flex; gap:18px; flex-wrap:wrap; margin:12px 0; }
     .vl-slot { flex:1 1 340px; background:#fff; padding:12px 14px; border-top:3px solid #8d8d8d; }
@@ -4173,27 +4176,54 @@
   function fotoComProblema(e) { return !!(e && e.fotos && e.fotos !== "Ok" && DUPS.indexOf(e.fotos) < 0 && DUPS.indexOf(e.pend) < 0); }
   function obsFotoDe(e) { return String((e && (e.obs_foto != null ? e.obs_foto : e.obs)) || "").trim(); }
   function obsPendDe(e) { return String((e && (e.obs_pend != null ? e.obs_pend : e.obs)) || "").trim(); }
+  // Alarmes pesam na WO de Energia; só pesam na de Climatização quando o site tem apenas Climatização.
+  function wosDosAlarmes(reg) {
+    const ws = reg.wos || [], en = ws.filter(function (w) { return !ehClima(w); });
+    return (en.length ? en : ws).map(function (w) { return w.wo; });
+  }
+  function wosDoEquip(reg, k) {
+    const pre = String(k).split("|")[0], ws = reg.wos || [];
+    const m = ws.filter(function (w) { return tipoCasa(pre, w.tipo); });
+    return m.length ? m.map(function (w) { return w.wo; }) : wosDosAlarmes(reg);
+  }
+  function wosDoInventario(reg) {
+    const ws = reg.wos || [], c = ws.filter(ehClima);
+    return (c.length ? c : ws).map(function (w) { return w.wo; });
+  }
+  function resultadoPorWO(reg, pend, forca) {
+    const ws = reg.wos || [], out = {};
+    const afet = ws.filter(function (w) { return pend.some(function (p) { return (p.wos || []).indexOf(w.wo) >= 0; }); }).map(function (w) { return w.wo; });
+    const alvo = afet.length ? afet : ws.map(function (w) { return w.wo; });
+    ws.forEach(function (w) { out[w.wo] = forca && alvo.indexOf(w.wo) >= 0 ? forca : (afet.indexOf(w.wo) >= 0 ? "ressalva" : "validada"); });
+    return out;
+  }
+  function resultadoGeral(porWo, forca) {
+    if (forca) return forca;
+    return Object.keys(porWo).some(function (k) { return porWo[k] === "ressalva"; }) ? "ressalva" : "validada";
+  }
   function pendenciasDe(reg) {
     const p = [];
     const eq = reg.equipamentos || {};
+    const alW = wosDosAlarmes(reg);
     Object.keys(eq).forEach(function (k) {
-      const e = eq[k];
+      const e = eq[k], wk = wosDoEquip(reg, k), n0 = p.length;
       if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e), por: e.obs_pend_por || estado.usuarioEmail });
       if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e), por: e.obs_foto_por || estado.usuarioEmail });
+      for (let i = n0; i < p.length; i++) p[i].wos = wk;
     });
     const inv = reg.inventario || {};
-    REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado" }); });
+    REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado", wos: wosDoInventario(reg) }); });
     [["bornes", "Bornes sem “gatinho”"], ["fotos", "Fotos das abas de alarme"]].forEach(function (x) {
       const c = confBloco(reg.alarmes, x[0]);
-      if (c.estado === "nao") p.push({ tipo: "Alarmes", texto: x[1] + " · não ok" + (c.motivo ? ": " + c.motivo : ""), obs: (c.motivo || "").trim(), por: estado.usuarioEmail });
+      if (c.estado === "nao") p.push({ tipo: "Alarmes", texto: x[1] + " · não ok" + (c.motivo ? ": " + c.motivo : ""), obs: (c.motivo || "").trim(), por: estado.usuarioEmail, wos: alW });
     });
     const an = analisePermanencia(reg);
-    if (an && an.fora && an.fora.length) p.push({ tipo: "Alarmes", texto: an.fora.length + " alarme(s) fora da permanência: " + an.fora.slice(0, 3).map(function (e) { return e.texto + " às " + horaSegDe(e.quando); }).join(", ") + (an.fora.length > 3 ? " e outros" : "") });
+    if (an && an.fora && an.fora.length) p.push({ tipo: "Alarmes", texto: an.fora.length + " alarme(s) fora da permanência: " + an.fora.slice(0, 3).map(function (e) { return e.texto + " às " + horaSegDe(e.quando); }).join(", ") + (an.fora.length > 3 ? " e outros" : ""), wos: alW });
     const b = batimentoDoRegistro(reg);
     if (b) {
       const naoExt = b.itens.filter(function (i) { return !i.externou; });
-      if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram", lista: naoExt.map(function (i) { return (i.bloco ? i.bloco + " · " : "") + i.texto + (i.dispensado ? " — apontamento: " + i.apontamento : ""); }) });
-      b.ordem.forEach(function (o) { if (o.status === "violada") p.push({ tipo: "Alarmes", texto: o.texto }); });
+      if (b.resumo.faltaram > 0) p.push({ tipo: "Alarmes", texto: b.resumo.faltaram + " alarme(s) não externaram", lista: naoExt.map(function (i) { return (i.bloco ? i.bloco + " · " : "") + i.texto + (i.dispensado ? " — apontamento: " + i.apontamento : ""); }), wos: alW });
+      b.ordem.forEach(function (o) { if (o.status === "violada") p.push({ tipo: "Alarmes", texto: o.texto, wos: alW }); });
     }
     return p;
   }
@@ -4205,7 +4235,8 @@
   }
   async function salvarRascunho(reg) {
     if (estado.val.encerrando) return;
-    const r = { resultado: estado.val.resSelDe === reg.id ? estado.val.resSel || null : null, motivo: estado.val.motivo != null ? estado.val.motivo : null, em: new Date().toISOString() };
+    const rsel = estado.val.resSelDe === reg.id ? estado.val.resSel || null : null;
+    const r = { resultado: rsel === "devolvida" || rsel === "offline" ? rsel : null, motivo: estado.val.motivo != null ? estado.val.motivo : null, em: new Date().toISOString() };
     await salvarVal(reg, { alarmes: Object.assign({}, reg.alarmes || {}, { _rascunho: r }) });
   }
   // Comentário obrigatório que ficou em branco (impede qualquer resultado, não só "Validada").
@@ -4274,7 +4305,20 @@
   const SIT_VAL = { em_campo: ["Em campo", "v5"], aba_pedida: ["Aba pedida", "v3"], em_analise: ["Em análise", "v4"], encerrada: ["Encerrada", "v1"] };
   function eventosDe(lista) {
     const ev = [];
-    lista.forEach(function (v) { (v.historico || []).forEach(function (e) { if (e.tipo === "encerramento") ev.push(Object.assign({ setor: v.setor, reg: v }, e)); }); });
+    lista.forEach(function (v) {
+      (v.historico || []).forEach(function (e) {
+        if (e.tipo !== "encerramento") return;
+        if (!e.por_wo) { ev.push(Object.assign({ setor: v.setor, reg: v }, e)); return; }
+        // Resultado por WO: um evento para cada resultado, com só as WOs dele
+        const grupos = {};
+        Object.keys(e.por_wo).forEach(function (w) { (grupos[e.por_wo[w]] = grupos[e.por_wo[w]] || []).push(w); });
+        Object.keys(grupos).forEach(function (r) {
+          const ids = grupos[r];
+          ev.push(Object.assign({ setor: v.setor, reg: v }, e, { resultado: r, wo_ids: ids, wos: ids.length,
+            pendencias: (e.pendencias || []).filter(function (p) { return !p.wos || p.wos.some(function (w) { return ids.indexOf(w) >= 0; }); }) }));
+        });
+      });
+    });
     return ev;
   }
 
@@ -4664,7 +4708,7 @@
     const reg = estado.val.lista.find(function (v) { return String(v.id) === String(id); });
     if (!reg) return;
     estado.val.atual = reg; estado.val.pagina = "equip"; estado.val.colar = null; estado.val.pendente = null; estado.val.equip = []; estado.val.equipAviso = "";
-    { const rs = rascunhoDe(reg); estado.val.resSel = rs ? rs.resultado : null; estado.val.resSelDe = rs && rs.resultado ? reg.id : null; estado.val.motivo = rs && rs.motivo != null ? rs.motivo : null; }
+    { const rs = rascunhoDe(reg); const rr = rs && (rs.resultado === "devolvida" || rs.resultado === "offline") ? rs.resultado : null; estado.val.resSel = rr; estado.val.resSelDe = rr ? reg.id : null; estado.val.motivo = rs && rs.motivo != null ? rs.motivo : null; }
     irParaTela("SiteVal");
     $("svCorpo").innerHTML = '<div class="vl-vazio">Carregando...</div>';
     try {
@@ -4848,26 +4892,66 @@
     return t;
   }
 
+  function fmtDH(iso) { return iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "") : "—"; }
+  function fmtMin(m) { m = Math.max(0, Math.round(m)); return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60 ? m % 60 + " min" : ""); }
+  function classeRes(r) { return r === "validada" ? "vl-ok" : r === "ressalva" ? "vl-am" : "vl-no"; }
+  function areaDaWO(w) { return ehClima(w) ? "Climatização" : "Energia"; }
+  function tabelaPorWO(reg, porWo, pend) {
+    const ws = reg.wos || [];
+    return '<table class="vl-tw"><tr><th>WO</th><th>Área</th><th>Resultado</th><th>Pendências que pesaram</th></tr>' + ws.filter(function (w) { return porWo[w.wo]; }).map(function (w) {
+      const ps = pend.filter(function (q) { return !q.wos || q.wos.indexOf(w.wo) >= 0; });
+      return "<tr><td><b>" + esc(w.wo) + "</b></td><td>" + areaDaWO(w) + '</td><td class="' + classeRes(porWo[w.wo]) + '">' + esc(REGRAS.validacao.resultados[porWo[w.wo]]) + "</td><td>" + (ps.length ? esc(ps.map(function (q) { return q.texto; }).join(" · ")) : "—") + "</td></tr>";
+    }).join("") + "</table>";
+  }
+  function linhaConf(rot, itens, vazioOk) {
+    return '<div class="vl-r"><span>' + rot + '</span><span class="' + (itens.length ? "vl-no" : "vl-ok") + '">' + (itens.length ? esc(itens.map(function (p) { return p.texto; }).join(" · ")) : vazioOk) + "</span></div>";
+  }
+  function historicoEncerramentos(reg, minimo) {
+    const evs = (reg.historico || []).filter(function (e) { return e.tipo === "encerramento"; }).reverse();
+    if (evs.length < minimo) return "";
+    return '<div class="vl-caixa"><h3>Histórico de encerramentos</h3><div class="vl-hist">' + evs.map(function (e) {
+      const afet = e.por_wo ? Object.keys(e.por_wo).filter(function (w) { return e.por_wo[w] !== "validada"; }) : (e.wo_ids || []);
+      return "<div><b>" + fmtDH(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b> · " + esc(REGRAS.validacao.resultados[e.resultado] || e.resultado) + (afet.length ? " · " + esc(afet.join(", ")) : "") + (e.motivo ? " · “" + esc(e.motivo) + "”" : "") + "</div>";
+    }).join("") + "</div></div>";
+  }
+  function paginaEncerrada(reg) {
+    const evs = (reg.historico || []).filter(function (e) { return e.tipo === "encerramento"; });
+    const ev = evs[evs.length - 1];
+    if (!ev) return historicoEncerramentos(reg, 1);
+    const porWo = ev.por_wo || {};
+    if (!ev.por_wo) (ev.wo_ids || (reg.wos || []).map(function (w) { return w.wo; })).forEach(function (w) { porWo[w] = ev.resultado; });
+    const pend = ev.pendencias || [];
+    const porTipo = function (tipo) { return pend.filter(function (p) { return p.tipo === tipo; }); };
+    const dur = reg.analise_em && ev.em ? fmtMin((new Date(ev.em) - new Date(reg.analise_em)) / 60000) : "";
+    return '<div class="vl-caixa"><h3>Encerramento registrado</h3><div class="vl-meta">' +
+      "<div><small>Encerrada por</small>" + esc(nomeDoEmail(ev.por)) + "</div><div><small>Quando</small>" + fmtDH(ev.em) + "</div><div><small>Ação</small>" + esc(REGRAS.validacao.resultados[ev.resultado] || ev.resultado) + "</div>" +
+      (dur ? "<div><small>Tempo em análise</small>" + dur + "</div>" : "") + "</div>" + tabelaPorWO(reg, porWo, pend) +
+      (ev.motivo ? '<div class="vl-mu" style="font-size:12px;margin:14px 0 4px">Motivo informado</div><div class="vl-cm">' + esc(ev.motivo) + "</div>" : "") +
+      '<div class="vl-mu" style="font-size:12px;margin:14px 0 4px">Conferência no momento do encerramento</div>' +
+      linhaConf("Equipamentos e fotos", porTipo("Aba em aberto").concat(porTipo("Aba duplicada"), porTipo("Foto"), porTipo("Outros")), "Sem pendência") +
+      linhaConf("Inventário crítico e equipamentos", porTipo("Inventário"), "Sem pendência") +
+      linhaConf("Alarmes · batimento", porTipo("Alarmes"), "Sem pendência") + "</div>" + historicoEncerramentos(reg, 2);
+  }
   function paginaEncerrar(reg, linhas) {
+    if (reg.situacao === "encerrada" && !estado.val.voltarOffline) return paginaEncerrada(reg);
     const pend = pendenciasDe(reg), falt = faltasDe(reg, linhas);
     const porTipo = function (tipo) { return pend.filter(function (p) { return p.tipo === tipo; }); };
-    function linha(rot, itens, vazioOk) {
-      return '<div class="vl-r"><span>' + rot + '</span><span class="' + (itens.length ? "vl-no" : "vl-ok") + '">' + (itens.length ? esc(itens.map(function (p) { return p.texto; }).join(" · ")) : vazioOk) + "</span></div>";
-    }
     let t = '<div class="vl-caixa"><h3>Resumo da conferência</h3>' +
-      linha("Equipamentos e fotos", porTipo("Aba em aberto").concat(porTipo("Aba duplicada"), porTipo("Foto"), porTipo("Outros")), "Sem pendência") +
-      linha("Inventário crítico e equipamentos", porTipo("Inventário"), "Sem pendência") +
-      linha("Alarmes · batimento", porTipo("Alarmes"), "Sem pendência") +
+      linhaConf("Equipamentos e fotos", porTipo("Aba em aberto").concat(porTipo("Aba duplicada"), porTipo("Foto"), porTipo("Outros")), "Sem pendência") +
+      linhaConf("Inventário crítico e equipamentos", porTipo("Inventário"), "Sem pendência") +
+      linhaConf("Alarmes · batimento", porTipo("Alarmes"), "Sem pendência") +
       '<div class="vl-r"><span>Etapas não feitas</span><span class="' + (falt.length ? "vl-no" : "vl-ok") + '">' + (falt.length ? esc(falt.join(" · ")) : "Todas feitas") + "</span></div></div>";
     const sugestao = estado.val.motivo != null ? estado.val.motivo : pend.map(function (p) { return p.texto; }).join(" · ");
-    const livre = pend.length === 0 && falt.length === 0, semCom = faltasDeComentario(falt).length > 0;
-    const libera = { validada: livre, ressalva: !falt.length, devolvida: !semCom, offline: !semCom };
-    const escolhido = estado.val.resSelDe === reg.id && libera[estado.val.resSel] ? estado.val.resSel : null;
-    const botao = function (r, classe, rot) { return '<button class="bt ' + classe + (escolhido === r ? " sel" : "") + '" data-sv="res" data-r="' + r + '"' + (libera[r] ? "" : " disabled") + ">" + rot + "</button>"; };
-    t += '<div class="vl-caixa"><h3>Resultado</h3><div class="vl-ferr">' +
-      botao("validada", "g", "Validada") + botao("ressalva", "", "Validada com ressalva") + botao("devolvida", "r", "Devolver ao técnico") + botao("offline", "", "Encaminhar para validação offline") + "</div>" +
-      '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo (obrigatório, menos na validada)</div><textarea id="svMotivo">' + esc(sugestao) + "</textarea>" +
-      '<div class="vl-fim"><button class="bt enc" data-sv="encerrar"' + (escolhido ? "" : " disabled") + ">Encerrar Validação</button></div></div>";
+    const semCom = faltasDeComentario(falt).length > 0;
+    const sel = estado.val.resSelDe === reg.id ? estado.val.resSel : null;
+    const forca = (sel === "devolvida" || sel === "offline") && !semCom ? sel : null;
+    const porWo = resultadoPorWO(reg, pend, forca);
+    const botao = function (r, classe, rot) { return '<button class="bt ' + classe + (forca === r ? " sel" : "") + '" data-sv="res" data-r="' + r + '"' + (semCom ? " disabled" : "") + ">" + rot + "</button>"; };
+    const pode = forca ? true : falt.length === 0;
+    t += '<div class="vl-caixa"><h3>Resultado</h3>' + tabelaPorWO(reg, porWo, pend) + '<div class="vl-ferr" style="margin-top:14px">' +
+      botao("devolvida", "r", "Devolver ao técnico") + botao("offline", "", "Encaminhar para validação offline") + "</div>" +
+      '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo (obrigatório com ressalva, devolução ou offline)</div><textarea id="svMotivo">' + esc(sugestao) + "</textarea>" +
+      '<div class="vl-fim"><button class="bt enc" data-sv="encerrar"' + (pode ? "" : " disabled") + ">Encerrar Validação</button></div></div>" + historicoEncerramentos(reg, 1);
     return t;
   }
 
@@ -4966,8 +5050,8 @@
       else if (a === "guardardetectado") {
         const p = estado.val.pendente; estado.val.pendente = null;
         await guardarAlarme(p.detectado, p.texto); desenharSiteVal();
-      } else if (a === "res") { estado.val.resSel = el.dataset.r; estado.val.resSelDe = reg.id; await salvarRascunho(reg); desenharSiteVal(); }
-      else if (a === "encerrar") { if (estado.val.resSel && estado.val.resSelDe === reg.id) await encerrarValidacao(estado.val.resSel); }
+      } else if (a === "res") { const ja = estado.val.resSelDe === reg.id && estado.val.resSel === el.dataset.r; estado.val.resSel = ja ? null : el.dataset.r; estado.val.resSelDe = ja ? null : reg.id; await salvarRascunho(reg); desenharSiteVal(); }
+      else if (a === "encerrar") { const rs = estado.val.resSelDe === reg.id ? estado.val.resSel : null; await encerrarValidacao(rs === "devolvida" || rs === "offline" ? rs : null); }
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
   });
 
@@ -5049,11 +5133,15 @@
   function precisaValidar(c) {
     const h = c.historico || [], i = ultimoSemAnalise(h);
     if (i >= 0) return h[i].sem_analise === true;
-    return (c.pendencias || []).some(function (p) { return p.tipo === "Saída sem pedido" && p.estado !== "Resolvida" && p.estado !== "Não resolvida"; });
+    const aberta = function (p) { return p.estado !== "Resolvida" && p.estado !== "Não resolvida"; };
+    if ((c.pendencias || []).some(function (p) { return aberta(p) && (p.tipo === "Saída sem pedido" || /sem solicitar a valida/i.test(p.texto || "")); })) return true;
+    const v = ((estado.off && estado.off.vals) || {})[c.id];
+    if (v && !c.concluido_em) { const he = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; }); const u = he[he.length - 1]; if (u && u.resultado === "offline" && u.completa === false) return true; }
+    return false;
   }
   function validacaoIniciada(c) { const h = c.historico || [], i = ultimoSemAnalise(h); return i >= 0 && h.slice(i + 1).some(function (e) { return e.iniciou; }); }
 
-  async function sincronizarCasoOffline(reg, resultado, pend, motivo, origemCaso, completa) {
+  async function sincronizarCasoOffline(reg, resultado, pend, motivo, origemCaso, completa, wosCaso) {
     const agora = new Date().toISOString(), quem = estado.usuarioEmail;
     const existente = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", reg.id).limit(1))[0];
     if (resultado === "validada") {
@@ -5073,9 +5161,10 @@
     if (completa !== undefined) entrada.sem_analise = !completa;
     if (existente) {
       conferir(await banco.from("casos_offline").update({ origem: origemCaso || resultado, motivo: motivo || null, pendencias: novos, concluido_em: null, atualizado_por: quem, atualizado_em: agora,
+        wos: wosCaso && wosCaso.length ? wosCaso : existente.wos,
         historico: (existente.historico || []).concat([entrada]) }).eq("id", existente.id));
     } else {
-      conferir(await banco.from("casos_offline").insert({ validacao_id: reg.id, site: reg.site, setor: reg.setor, equipe: reg.equipe, wos: reg.wos || [],
+      conferir(await banco.from("casos_offline").insert({ validacao_id: reg.id, site: reg.site, setor: reg.setor, equipe: reg.equipe, wos: wosCaso && wosCaso.length ? wosCaso : reg.wos || [],
         origem: origemCaso || resultado, motivo: motivo || null, pendencias: novos, historico: [entrada], criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
     }
   }
@@ -5342,15 +5431,19 @@
     estado.val.encerrando = true;
     try { await encerrarValidacao2(resultado, reg, linhas); } finally { estado.val.encerrando = false; }
   }
-  async function encerrarValidacao2(resultado, reg, linhas) {
+  async function encerrarValidacao2(forca, reg, linhas) {
     const motivo = ($("svMotivo").value || "").trim();
-    if (resultado !== "validada" && !motivo) { mostrarAviso("Informe o motivo.", "erro"); return; }
     const semCom = faltasDeComentario(faltasDe(reg, linhas));
     if (semCom.length) { mostrarAviso(semCom[0], "erro"); return; }
     const pend = pendenciasDe(reg);
     const agora = new Date().toISOString();
     const faltou = faltasDe(reg, linhas);
-    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, motivo: motivo || null, pendencias: pend, completa: faltou.length === 0,
+    if (!forca && faltou.length) { mostrarAviso(faltou[0], "erro"); return; }
+    const porWo = resultadoPorWO(reg, pend, forca);
+    const resultado = resultadoGeral(porWo, forca);
+    if (resultado !== "validada" && !motivo) { mostrarAviso("Informe o motivo.", "erro"); return; }
+    const wosCaso = (reg.wos || []).filter(function (w) { return porWo[w.wo] !== "validada"; });
+    const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: resultado, por_wo: porWo, motivo: motivo || null, pendencias: pend, completa: faltou.length === 0,
                  wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site,
                  na: linhas.filter(ehNA).map(function (r) { return r.segmento || "—"; }) };
     const alSemRascunho = Object.assign({}, reg.alarmes || {}); delete alSemRascunho._rascunho;
@@ -5358,7 +5451,7 @@
     if (resultado === "devolvida") { Object.assign(campos, { situacao: "em_campo", aba_pedida_em: null, analista: null, analise_em: null, encerrada_em: null }); }
     else { Object.assign(campos, { situacao: "encerrada", encerrada_em: agora }); }
     await salvarVal(reg, campos);
-    try { await sincronizarCasoOffline(reg, resultado, pend, motivo, undefined, faltou.length === 0); }
+    try { await sincronizarCasoOffline(reg, resultado, pend, motivo, undefined, faltou.length === 0, wosCaso); }
     catch (e) { mostrarAviso("Validação gravada, mas o caso offline não foi criado: " + e.message + " (rode o SQL validacao_offline_sql.txt)", "erro"); }
     estado.val.motivo = null; estado.val.resSel = null; estado.val.resSelDe = null;
     mostrarAviso(reg.site + ": " + REGRAS.validacao.resultados[resultado] + ".");
