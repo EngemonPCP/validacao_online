@@ -1506,8 +1506,18 @@
     $("telaLogin").classList.remove("oculto");
   });
 
+  // Perfil de acesso: só quem está na tabela perfis como coordenação pode reabrir uma validação encerrada.
+  async function carregarPerfil() {
+    estado.perfil = "";
+    try {
+      const r = await banco.from("perfis").select("nivel").eq("email", String(estado.usuarioEmail || "").toLowerCase());
+      if (!r.error && r.data && r.data.length) estado.perfil = r.data[0].nivel || "";
+    } catch (e) { estado.perfil = ""; }
+  }
+  function ehCoordenacao() { return estado.perfil === "coordenacao"; }
   async function iniciarSistema(usuario) {
     estado.usuarioEmail = usuario.email;
+    carregarPerfil();
     $("nomeUsuario").textContent = usuario.email;
     $("nomeUsuarioTopo").textContent = usuario.email;
     $("telaLogin").classList.add("oculto");
@@ -4044,7 +4054,7 @@
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
     toleranciaPermanenciaMin: 15,
     metaCobertura: 95,
-    apontamentos: ["Alarme sem contato no bloco", "Bloqueado pelo cliente", "Equipamento não existe no site", "Técnico informou que não externou", "Outro"],
+    apontamentos: ["Alarme sem contato no bloco", "Bloqueado pelo cliente", "N/A · Alarme de GMG (sem teste de gerador)", "Equipamento não existe no site", "Técnico informou que não externou", "Outro"],
     ordemAlarmes: [{ antes: "FALHA DE ENERGIA AC", depois: "BATERIA EM DESCARGA" }],
     rajada: { segundos: 3, minimo: 6 },
     // Preventiva só de climatização: só estes alarmes são cobrados (pedaço do texto, sem acento, em maiúsculas). Energia cobra todos.
@@ -4190,8 +4200,9 @@
     const ws = reg.wos || [], c = ws.filter(ehClima);
     return (c.length ? c : ws).map(function (w) { return w.wo; });
   }
-  function resultadoPorWO(reg, pend, forca) {
+  function resultadoPorWO(reg, pend, forca, todas) {
     const ws = reg.wos || [], out = {};
+    if (forca && todas) { ws.forEach(function (w) { out[w.wo] = forca; }); return out; }
     const afet = ws.filter(function (w) { return pend.some(function (p) { return (p.wos || []).indexOf(w.wo) >= 0; }); }).map(function (w) { return w.wo; });
     const alvo = afet.length ? afet : ws.map(function (w) { return w.wo; });
     ws.forEach(function (w) { out[w.wo] = forca && alvo.indexOf(w.wo) >= 0 ? forca : (afet.indexOf(w.wo) >= 0 ? "ressalva" : "validada"); });
@@ -4242,9 +4253,18 @@
   // Comentário obrigatório que ficou em branco (impede qualquer resultado, não só "Validada").
   function faltasDeComentario(faltas) { return faltas.filter(function (f) { return /comentário|informe por que/.test(f); }); }
   // Etapas que ainda não foram feitas (impedem "Validada").
+  // WOs do site que não têm nenhum equipamento na planilha: sem o que conferir, a validação não pode ser dada.
+  function wosSemEquip(reg, linhasEquip) {
+    const ws = reg.wos || [];
+    if (!linhasEquip.length) return ws;
+    if (!ws.some(function (w) { return linhasEquip.some(function (r) { return tipoCasa(r.tipo, w.tipo); }); })) return [];
+    return ws.filter(function (w) { return !linhasEquip.some(function (r) { return tipoCasa(r.tipo, w.tipo); }); });
+  }
   function faltasDe(reg, linhasEquip) {
     const f = [];
     const eq = reg.equipamentos || {};
+    const semPlan = wosSemEquip(reg, linhasEquip);
+    if (semPlan.length) f.push("Equipamentos e fotos: sem equipamentos na planilha para " + semPlan.map(function (w) { return tipoCurto(w.tipo); }).join(", "));
     const sem = linhasEquip.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !(e && (e.fotos || e.pend)); }).length;
     if (sem > 0) f.push("Equipamentos e fotos: faltam conferir " + sem);
     let semCom = 0;
@@ -4707,7 +4727,7 @@
   async function abrirSiteVal(id) {
     const reg = estado.val.lista.find(function (v) { return String(v.id) === String(id); });
     if (!reg) return;
-    estado.val.atual = reg; estado.val.pagina = "equip"; estado.val.colar = null; estado.val.pendente = null; estado.val.equip = []; estado.val.equipAviso = "";
+    estado.val.reabrindo = false; estado.val.atual = reg; estado.val.pagina = "equip"; estado.val.colar = null; estado.val.pendente = null; estado.val.equip = []; estado.val.equipAviso = "";
     { const rs = rascunhoDe(reg); const rr = rs && (rs.resultado === "devolvida" || rs.resultado === "offline") ? rs.resultado : null; estado.val.resSel = rr; estado.val.resSelDe = rr ? reg.id : null; estado.val.motivo = rs && rs.motivo != null ? rs.motivo : null; }
     irParaTela("SiteVal");
     $("svCorpo").innerHTML = '<div class="vl-vazio">Carregando...</div>';
@@ -4907,9 +4927,10 @@
     return '<div class="vl-r"><span>' + rot + '</span><span class="' + (itens.length ? "vl-no" : "vl-ok") + '">' + (itens.length ? esc(itens.map(function (p) { return p.texto; }).join(" · ")) : vazioOk) + "</span></div>";
   }
   function historicoEncerramentos(reg, minimo) {
-    const evs = (reg.historico || []).filter(function (e) { return e.tipo === "encerramento"; }).reverse();
+    const evs = (reg.historico || []).filter(function (e) { return e.tipo === "encerramento" || e.tipo === "reabertura"; }).reverse();
     if (evs.length < minimo) return "";
     return '<div class="vl-caixa"><h3>Histórico de encerramentos</h3><div class="vl-hist">' + evs.map(function (e) {
+      if (e.tipo === "reabertura") return "<div><b>" + fmtDH(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b> · Reabriu a validação" + (e.motivo ? " · “" + esc(e.motivo) + "”" : "") + "</div>";
       const afet = e.por_wo ? Object.keys(e.por_wo).filter(function (w) { return e.por_wo[w] !== "validada"; }) : (e.wo_ids || []);
       return "<div><b>" + fmtDH(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b> · " + esc(REGRAS.validacao.resultados[e.resultado] || e.resultado) + (afet.length ? " · " + esc(afet.join(", ")) : "") + (e.motivo ? " · “" + esc(e.motivo) + "”" : "") + "</div>";
     }).join("") + "</div></div>";
@@ -4923,7 +4944,10 @@
     const pend = ev.pendencias || [];
     const porTipo = function (tipo) { return pend.filter(function (p) { return p.tipo === tipo; }); };
     const dur = reg.analise_em && ev.em ? fmtMin((new Date(ev.em) - new Date(reg.analise_em)) / 60000) : "";
-    return '<div class="vl-caixa"><h3>Encerramento registrado</h3><div class="vl-meta">' +
+    const reab = estado.val.reabrindo && ehCoordenacao()
+      ? '<div class="vl-caixa"><h3>Reabrir validação</h3><div class="vl-mu" style="font-size:12px;margin:0 0 4px">Motivo da reabertura (obrigatório)</div><textarea id="svReabMotivo"></textarea><div class="vl-fim" style="gap:8px"><button class="bt g" data-sv="reabcancel">Cancelar</button><button class="bt" data-sv="reabconf">Reabrir</button></div></div>' : "";
+    const btnReab = ehCoordenacao() && !estado.val.reabrindo ? '<button class="bt g" data-sv="reabrir">Reabrir validação</button>' : "";
+    return reab + '<div class="vl-caixa"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Encerramento registrado</h3>' + btnReab + '</div><div class="vl-meta">' +
       "<div><small>Encerrada por</small>" + esc(nomeDoEmail(ev.por)) + "</div><div><small>Quando</small>" + fmtDH(ev.em) + "</div><div><small>Ação</small>" + esc(REGRAS.validacao.resultados[ev.resultado] || ev.resultado) + "</div>" +
       (dur ? "<div><small>Tempo em análise</small>" + dur + "</div>" : "") + "</div>" + tabelaPorWO(reg, porWo, pend) +
       (ev.motivo ? '<div class="vl-mu" style="font-size:12px;margin:14px 0 4px">Motivo informado</div><div class="vl-cm">' + esc(ev.motivo) + "</div>" : "") +
@@ -4945,7 +4969,7 @@
     const semCom = faltasDeComentario(falt).length > 0;
     const sel = estado.val.resSelDe === reg.id ? estado.val.resSel : null;
     const forca = (sel === "devolvida" || sel === "offline") && !semCom ? sel : null;
-    const porWo = resultadoPorWO(reg, pend, forca);
+    const porWo = resultadoPorWO(reg, pend, forca, falt.length > 0);
     const botao = function (r, classe, rot) { return '<button class="bt ' + classe + (forca === r ? " sel" : "") + '" data-sv="res" data-r="' + r + '"' + (semCom ? " disabled" : "") + ">" + rot + "</button>"; };
     const pode = forca ? true : falt.length === 0;
     t += '<div class="vl-caixa"><h3>Resultado</h3>' + tabelaPorWO(reg, porWo, pend) + '<div class="vl-ferr" style="margin-top:14px">' +
@@ -4955,12 +4979,15 @@
     return t;
   }
 
+  // Validação encerrada não se edita: só a revalidação pela Validação offline reabre as abas.
+  function validacaoTravada(reg) { return !!reg && reg.situacao === "encerrada" && !estado.val.voltarOffline; }
   function desenharSiteVal() {
     const reg = estado.val.atual;
     if (!reg) return;
     const linhas = estado.val.equip;
     const pg = estado.val.pagina;
     $("svCorpo").innerHTML = cabecalhoSiteVal(reg, linhas) + (pg === "equip" ? paginaEquip(reg, linhas) : pg === "alarmes" ? paginaAlarmes(reg) : paginaEncerrar(reg, linhas));
+    if (validacaoTravada(reg)) $("svCorpo").querySelectorAll("input, select, textarea, button").forEach(function (c) { const sv = (c.dataset && c.dataset.sv) || ""; if (sv === "pg" || sv === "voltar" || sv.indexOf("reab") === 0 || c.id === "svReabMotivo") return; c.disabled = true; });
   }
 
   async function guardarAlarme(tipo, texto) {
@@ -4984,7 +5011,7 @@
     desenharSiteVal();
   }
   document.addEventListener("paste", function (e) {
-    if (estado.val.pagina !== "alarmes" || $("telaSiteVal").classList.contains("oculto")) return;
+    if (estado.val.pagina !== "alarmes" || $("telaSiteVal").classList.contains("oculto") || validacaoTravada(estado.val.atual)) return;
     if (e.target && /^(textarea|input|select)$/i.test(e.target.tagName)) return;
     const texto = e.clipboardData ? e.clipboardData.getData("text") : "";
     if (texto) { e.preventDefault(); receberTextoAlarme(texto, null); }
@@ -4996,7 +5023,21 @@
     const reg = estado.val.atual, a = el.dataset.sv;
     if (a === "voltar") { if (estado.val.voltarOffline) { estado.val.voltarOffline = false; estado.off.vals = {}; irParaTela("Offline"); } else irParaTela("FilaVal"); return; }
     if (a === "pg") { estado.val.pagina = el.dataset.p; if (estado.val.motivo == null && rascunhoDe(reg) && rascunhoDe(reg).motivo != null) estado.val.motivo = rascunhoDe(reg).motivo; desenharSiteVal(); return; }
-    if (!reg) return;
+    if (reg && a === "reabrir" && ehCoordenacao()) { estado.val.reabrindo = true; desenharSiteVal(); return; }
+    if (reg && a === "reabcancel") { estado.val.reabrindo = false; desenharSiteVal(); return; }
+    if (reg && a === "reabconf" && ehCoordenacao()) {
+      const m = ($("svReabMotivo").value || "").trim();
+      if (!m) { mostrarAviso("Informe o motivo da reabertura.", "erro"); return; }
+      try {
+        const agora = new Date().toISOString();
+        await salvarVal(reg, { historico: (reg.historico || []).concat([{ tipo: "reabertura", em: agora, por: estado.usuarioEmail, motivo: m }]), situacao: "em_analise", encerrada_em: null, resultado: null, motivo: null, analista: estado.usuarioEmail, analise_em: agora });
+        estado.val.reabrindo = false; estado.val.pagina = "equip"; estado.val.resSel = null; estado.val.resSelDe = null; estado.val.motivo = null;
+        mostrarAviso(reg.site + ": validação reaberta.");
+        desenharSiteVal();
+      } catch (er) { mostrarAviso("Erro ao reabrir: " + er.message, "erro"); }
+      return;
+    }
+    if (!reg || validacaoTravada(reg)) return;
     try {
       if (a === "bl") {
         const al = Object.assign({}, reg.alarmes || {});
@@ -5059,7 +5100,7 @@
     const el = e.target.closest("[data-sv]");
     if (!el) return;
     const reg = estado.val.atual, a = el.dataset.sv;
-    if (!reg) return;
+    if (!reg || validacaoTravada(reg)) return;
     try {
       if (a === "eq") {
         const tr = el.closest("tr"), k = tr.dataset.k;
@@ -5103,7 +5144,7 @@
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
   });
   $("svCorpo").addEventListener("input", function (e) { if (e.target.id === "svMotivo") estado.val.motivo = e.target.value; });
-  $("svCorpo").addEventListener("change", function (e) { if (e.target.id === "svMotivo" && estado.val.atual) salvarRascunho(estado.val.atual).catch(function (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }); });
+  $("svCorpo").addEventListener("change", function (e) { if (e.target.id === "svMotivo" && estado.val.atual && !validacaoTravada(estado.val.atual)) salvarRascunho(estado.val.atual).catch(function (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }); });
 
   // ==== VALIDAÇÃO OFFLINE ========================================================
   REGRAS.offline = {
@@ -5439,7 +5480,9 @@
     const agora = new Date().toISOString();
     const faltou = faltasDe(reg, linhas);
     if (!forca && faltou.length) { mostrarAviso(faltou[0], "erro"); return; }
-    const porWo = resultadoPorWO(reg, pend, forca);
+    const semPlan = wosSemEquip(reg, linhas);
+    if (semPlan.length) pend.push({ tipo: "Outros", texto: "Sem equipamentos na planilha: " + semPlan.map(function (w) { return tipoCurto(w.tipo); }).join(", "), wos: semPlan.map(function (w) { return w.wo; }) });
+    const porWo = resultadoPorWO(reg, pend, forca, faltou.length > 0);
     const resultado = resultadoGeral(porWo, forca);
     if (resultado !== "validada" && !motivo) { mostrarAviso("Informe o motivo.", "erro"); return; }
     const wosCaso = (reg.wos || []).filter(function (w) { return porWo[w.wo] !== "validada"; });
