@@ -4450,6 +4450,14 @@
       }
       estado.val.visitasPeriodo = tudo;
     } catch (e) { estado.val.visitasPeriodo = null; estado.val.visitasErro = String((e && e.message) || e); }
+    if (estado.val.visitasPeriodo && await criarCasosSemVisita()) {
+      try {
+        const fx2 = faixaDoPeriodo();
+        const cs2 = conferir(await banco.from("casos_offline").select("*").order("id").limit(2000));
+        estado.val.casosMes = cs2.filter(function (c) { const dd = dataLocalDe(c.criado_em || new Date().toISOString()); return dd >= fx2[0] && dd <= fx2[1]; });
+        estado.val.lista = await carregarValidacoes();
+      } catch (e) { /* mantém o que já estava */ }
+    }
     desenharResumoVal();
   }
   function dadosResumoVal() {
@@ -5151,7 +5159,7 @@
     diasRisco: 7,
     estados: ["Aberta", "Em tratativa", "Resolvida", "Não resolvida"],
     acoes: ["Contato com o técnico", "Contato com o cliente", "Correção feita no sistema", "Contestação enviada ao cliente", "Aguardando retorno", "Outro"],
-    origens: { offline: "Encaminhada", ressalva: "Com ressalva", devolvida: "Devolvida", sem_pedido: "Saiu sem pedir validação" }
+    origens: { offline: "Encaminhada", ressalva: "Com ressalva", devolvida: "Devolvida", sem_pedido: "Saiu sem pedir validação", sem_visita: "Executada sem visita" }
   };
   estado.off = { casos: [], filtro: "abertas", setor: "", resp: "", sel: null, passo: false };
 
@@ -5172,13 +5180,44 @@
   // O caso precisa da verificação das abas quando foi encaminhado sem tudo preenchido (ou saiu sem pedir validação).
   function ultimoSemAnalise(h) { for (let i = h.length - 1; i >= 0; i--) if (h[i].sem_analise !== undefined) return i; return -1; }
   function precisaValidar(c) {
+    if (c.origem === "sem_visita") return false;
     const h = c.historico || [], i = ultimoSemAnalise(h);
     if (i >= 0) return h[i].sem_analise === true;
     const aberta = function (p) { return p.estado !== "Resolvida" && p.estado !== "Não resolvida"; };
     if ((c.pendencias || []).some(function (p) { return aberta(p) && (p.tipo === "Saída sem pedido" || /sem solicitar a valida/i.test(p.texto || "")); })) return true;
     const v = ((estado.off && estado.off.vals) || {})[c.id];
-    if (v && !c.concluido_em) { const he = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; }); const u = he[he.length - 1]; if (u && u.resultado === "offline" && u.completa === false) return true; }
+    if (v && !c.concluido_em) { const he = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; }); const u = he[he.length - 1]; if (u && u.resultado === "offline" && !eventoAnalisado(Object.assign({ reg: v }, u))) return true; }
     return false;
+  }
+  function tecnicoDe(c) { const h = c.historico || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].tecnico) return h[i]; return null; }
+  // WO que a base mostra como executada, sem visita registrada: vira caso da Validação offline, sozinha.
+  async function criarCasosSemVisita() {
+    if (estado.val.criandoSV) return 0;
+    estado.val.criandoSV = true;
+    let criados = 0;
+    try {
+      const d = dadosResumoVal();
+      const itens = (d.semVal || []).filter(function (x) { return x.cat === "exec_sem_visita" && x.l && String(x.l.data_fim || "").slice(0, 10) >= REGRAS.validacao.inicio; });
+      if (!itens.length) return 0;
+      const ids = itens.map(function (x) { return "SV-" + x.l.wo; });
+      const ja = {};
+      for (let i = 0; i < ids.length; i += 200) conferir(await banco.from("validacoes").select("visita_id").in("visita_id", ids.slice(i, i + 200))).forEach(function (v) { ja[v.visita_id] = true; });
+      const agora = new Date().toISOString(), quem = estado.usuarioEmail;
+      for (const x of itens) {
+        const vid = "SV-" + x.l.wo; if (ja[vid]) continue;
+        const site = String(x.l.programado_infratel || x.l.clr_sdr_site_helix || "").trim();
+        const dia = String(x.l.data_fim || "").slice(0, 10) || hoje();
+        const wos = [{ wo: x.l.wo, tipo: x.l.tipo }], setor = setorDe(x.l);
+        conferir(await banco.from("validacoes").upsert({ visita_id: vid, data: dia, site: site, site_chave: x.l.chaveSite || limparSite(site), equipe: null, setor: setor, wos: wos,
+          situacao: "encerrada", resultado: "offline", motivo: "Executada na base sem visita registrada", encerrada_em: agora, historico: [], atualizado_por: quem, atualizado_em: agora }, { onConflict: "visita_id" }));
+        const reg = conferir(await banco.from("validacoes").select("id").eq("visita_id", vid).limit(1))[0]; if (!reg) continue;
+        conferir(await banco.from("casos_offline").insert({ validacao_id: reg.id, site: site, setor: setor, equipe: null, wos: wos, origem: "sem_visita", motivo: "Executada na base sem visita registrada", pendencias: [],
+          historico: [{ em: agora, por: "Sistema", acao: "Executada na base sem visita registrada", base_data: dia }], criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
+        criados++;
+      }
+    } catch (e) { window.__svErr = String(e && e.message || e); }
+    finally { estado.val.criandoSV = false; }
+    return criados;
   }
   function validacaoIniciada(c) { const h = c.historico || [], i = ultimoSemAnalise(h); return i >= 0 && h.slice(i + 1).some(function (e) { return e.iniciou; }); }
 
@@ -5318,18 +5357,21 @@
     const todasFechadas = pend.every(function (p) { return (p.estado === "Resolvida" || p.estado === "Não resolvida") && p.resposta && p.resposta.texto; });
     const O = estado.off, lista = nomes.slice(); if (lista.indexOf(me) < 0) lista.push(me); lista.sort();
     const h = c.historico || [], abertas = pend.filter(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa"; }).length;
+    const sv = c.origem === "sem_visita", tec = tecnicoDe(c);
     let t = '<div class="of-voltar" data-of="voltar">← Voltar para a lista</div><div class="of-cab"><div><h1>' + esc(c.site) + " · " + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + '</h1><div class="sub">' +
-      (c.equipe ? "Equipe " + esc(c.equipe) + " · " : "") + esc(REGRAS.offline.origens[c.origem] || c.origem) + " em " + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (h[0] ? " por " + esc(nomeDoEmail(h[0].por)) : "") + "</div></div><div class=\"vl-ferr\">" +
+      (sv ? (tec ? "Técnico: " + esc(tec.tecnico) + " · informado por " + esc(nomeDoEmail(tec.por)) + " em " + dataBR(dataLocalDe(tec.em)).slice(0, 5) + " " + horaDe(tec.em) : "Executada na base" + (h[0] && h[0].base_data ? " em " + dataBR(h[0].base_data).slice(0, 5) : "") + " · sem visita registrada no sistema")
+        : (c.equipe ? "Equipe " + esc(c.equipe) + " · " : "") + esc(REGRAS.offline.origens[c.origem] || c.origem) + " em " + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (h[0] ? " por " + esc(nomeDoEmail(h[0].por)) : "")) + "</div></div><div class=\"vl-ferr\">" +
       '<select data-of="resp"><option value="">Sem responsável</option>' + lista.map(function (n) { return '<option value="' + esc(n) + '"' + (c.responsavel === n ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("") + "</select>" +
       (c.responsavel !== me && !conc ? '<button class="bt peq" data-of="assumir">Assumir</button>' : "") +
-      (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : '<button class="bt p" data-of="concluir"' + (todasFechadas && !precisaValidar(c) ? "" : " disabled") + ">Concluir caso</button>") + "</div></div>";
+      (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : '<button class="bt p" data-of="concluir"' + (todasFechadas && !precisaValidar(c) && (!sv || tec) ? "" : " disabled") + ">Concluir caso</button>") + "</div></div>";
     const auto = pend.map(function (p) { return p.texto; }).join(" · "), repetido = function (x) { return !x || String(x).trim() === auto || String(x).trim() === String(c.motivo || "").trim() && String(c.motivo || "").trim() === auto; };
     const semAbas = !conc && precisaValidar(c);
+    if (sv && !conc) t += '<div class="of-tit">Quem executou</div><div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Técnico que executou o serviço (obrigatório)</div><div style="display:flex;gap:12px;align-items:flex-end"><input type="text" id="ofTec" style="width:320px" value="' + esc(tec ? tec.tecnico : "") + '"><button class="bt p" data-of="tecnico">Salvar</button></div></div>';
     if (semAbas) t += '<div class="of-tit">Abas para validar</div><div class="of-box" style="margin-bottom:24px">' + (c.wos || []).map(function (w) {
       return '<div class="of-it" style="display:flex;justify-content:space-between;align-items:center"><span><b>' + esc(tipoCurto(w.tipo)) + '</b> <span class="vl-mu">· WO ' + esc(w.wo) + '</span></span><span class="vl-tag v2">Não validada</span></div>';
     }).join("") + '<div style="padding:12px 16px"><button class="bt p" data-of="validarabas">Validar abas agora</button></div></div>';
-    t += '<div><div><div class="of-tit">Pendências · ' + abertas + " em aberto</div><div class=\"of-box\">";
-    if (!repetido(c.motivo)) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Comentário inserido na validação online por: ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
+    t += '<div><div>' + (sv && !pend.length ? "" : '<div class="of-tit">Pendências · ' + abertas + " em aberto</div><div class=\"of-box\">");
+    if (!(sv && !pend.length) && !repetido(c.motivo)) t += '<div class="of-it"><div class="of-cm" style="margin:0"><small>Comentário inserido na validação online por: ' + (h[0] ? esc(nomeDoEmail(h[0].por)) + " · " : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + "</small>" + esc(c.motivo) + "</div></div>";
     const usados = {}, grupos = [], idx = {};
     pend.forEach(function (p0) {
       const p = Object.assign({}, p0, { obs: obsDaPendencia(c, p0, usados) });
@@ -5357,7 +5399,7 @@
           '</span><select data-of="estado"' + (conc ? " disabled" : "") + ">" +
           REGRAS.offline.estados.map(function (s) { return "<option" + (s === valor ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select></div>";
       }).join("") + "</div>";
-    }).join("") + "</div></div>";
+    }).join("") + (sv && !pend.length ? "</div>" : "</div></div>");
     t += '<div style="margin-top:24px"><div class="of-tit">Andamento</div><div class="of-box" style="padding:16px">' +
       (conc ? "" : '<textarea id="ofAnd" class="auto" rows="2" placeholder="Escreva o que foi feito neste caso…"></textarea><div style="margin-top:8px"><button class="bt p" data-of="andamento">Registrar andamento</button></div>') +
       '<div class="of-tl">' + h.slice().reverse().map(function (e) {
@@ -5419,7 +5461,12 @@
         await salvarCaso(c, { pendencias: pe, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: $("ofAcao").value, itens: itens, situacao: sit || null, texto: texto }]) });
         estado.off.passo = false;
       }
-      else if (a === "concluir") { if (precisaValidar(c)) { mostrarAviso("Valide as abas antes de concluir o caso.", "erro"); return; } await salvarCaso(c, { concluido_em: agora, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Caso concluído" }]) }); }
+      else if (a === "tecnico") {
+        const tn = ($("ofTec").value || "").trim();
+        if (tn.length < 3) { mostrarAviso("Informe o nome do técnico que executou.", "erro"); return; }
+        await salvarCaso(c, { historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Técnico informado", tecnico: tn }]) });
+      }
+      else if (a === "concluir") { if (c.origem === "sem_visita" && !tecnicoDe(c)) { mostrarAviso("Informe quem executou antes de concluir.", "erro"); return; } if (precisaValidar(c)) { mostrarAviso("Valide as abas antes de concluir o caso.", "erro"); return; } await salvarCaso(c, { concluido_em: agora, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Caso concluído" }]) }); }
       else if (a === "reabrir") { await salvarCaso(c, { concluido_em: null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Caso reaberto" }]) }); }
       desenharOffline();
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
