@@ -958,7 +958,7 @@
     <section id="telaDivergencias" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Divergências</span></div>
       <h1>Divergências: Base Atualização Preventiva x visitas</h1>
-      <p class="ib-sub">Só MOP. WOs em que a base e as visitas registradas não batem, com o motivo provável. Confirme o motivo real na última coluna para ir fechando a lista.</p>
+      <p class="ib-sub">Só MOP. WOs em que a base e as visitas registradas não batem, com o motivo provável. </p>
       <div class="ib-campos" id="dvCampos"></div>
 
       <div class="ib-secao"><span>Por motivo provável</span><span class="aux">Clique numa linha para filtrar a lista</span></div>
@@ -968,11 +968,14 @@
       <div class="ib-barra">
         <div class="ib-chips" id="dvChips">
           <button data-filtro="abertas" class="ativo">Sem tratativa</button>
+          <button data-filtro="aguardando">Aguardando a base</button>
+          <button data-filtro="emprazo">Em prazo (hoje)</button>
           <button data-filtro="exec_sem_visita">Executadas sem visita</button>
           <button data-filtro="andamento_sem_visita">Em andamento sem visita</button>
           <button data-filtro="data_diferente">Data diferente</button>
           <button data-filtro="visita_sem_exec_base">Visita sem execução na base</button>
           <button data-filtro="tratadas">Tratadas</button>
+          <button data-filtro="historico">Histórico de fechamentos</button>
           <button data-filtro="todas">Todas</button>
         </div>
         <div class="ib-ferr">
@@ -1176,6 +1179,7 @@
       // Motivos que a validadora pode confirmar para cada WO (edite à vontade).
       motivos: ["Visita não registrada", "WO marcada em outra sigla/visita", "Executada antes do sistema",
                 "Feita por outra equipe/célula", "Erro na Base Atualização Preventiva", "Base ainda não atualizada", "Sem ação necessária", "Outro"],
+      diasPrazoFechamento: 2,          // pedido de fechamento sem retorno da base além disso fica "Atrasado"
       maxLinhas: 400                   // quantas linhas desenhar de uma vez (use os filtros para ver o resto)
     },
 
@@ -2091,6 +2095,20 @@
       const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !estado.expurgadas[l.wo]; });
       const res = calcularDivergencias(baseMop, visitas, r[2], irmas);
       estado.dv.linhas = res.linhas; estado.dv.minData = res.minData; estado.dv.maxData = res.maxData; estado.dv.nVisitas = res.nVisitas;
+      // Pedido de fechamento cuja WO já aparece como executada na base: o sistema registra a resolução.
+      try {
+        const ativas = {}; res.linhas.forEach(function (l) { ativas[l.wo] = true; });
+        const nabase = {}; estado.base.forEach(function (l) { nabase[l.wo] = l; });
+        const agora = new Date().toISOString(), resolver = Object.keys(estado.dv.trat).filter(function (w) {
+          const b = nabase[w]; return estado.dv.trat[w].motivo === FECH && !ativas[w] && b && rankStatus(b.status_final) === 3; });
+        for (const w of resolver) {
+          const t = estado.dv.trat[w];
+          const reg = { wo: w, motivo: FECH_OK, observacao: null, atualizado_por: "Sistema", atualizado_em: agora,
+            historico: (t.historico || []).concat([{ em: agora, por: "Sistema", acao: "Resolvida: WO executada na base" }]) };
+          conferir(await banco.from("divergencias_tratativa").upsert([reg], { onConflict: "wo" }));
+          estado.dv.trat[w] = reg;
+        }
+      } catch (e) { /* tenta de novo na próxima abertura */ }
       desenharDivergencias();
     } catch (e) {
       mostrarAviso("Não consegui montar as divergências: " + e.message, "erro");
@@ -2106,23 +2124,44 @@
       }
       if (ignorarFiltro) return true;
       if (D.status && l.status !== D.status) return false;
-      const tratada = !!(D.trat[l.wo] && (D.trat[l.wo].motivo || D.trat[l.wo].observacao));
+      const est = dvEstado(l);
       if (D.motivo && l.motivoCodigo !== D.motivo) return false;
       const f = D.filtro;
-      if (f === "abertas") return !tratada;
-      if (f === "tratadas") return tratada;
+      if (f === "abertas") return est === "solicitar" || est === "aberta";
+      if (f === "aguardando") return est === "aguardando";
+      if (f === "emprazo") return est === "prazo";
+      if (f === "tratadas") return est === "tratada";
+      if (f === "historico") return false;
       if (f === "todas") return true;
-      return l.categoria === f;
+      return l.categoria === f && est !== "prazo";
     });
   }
 
   function rankStatus(s) { const x = semAcento(String(s || "")).toLowerCase(); return x.indexOf("pendente") === 0 ? 0 : x === "aberta" ? 1 : x === "executada" ? 3 : 2; }
   function corStatus(s) { const r = rankStatus(s); return r === 0 ? "p-vermelho" : r === 1 ? "p-laranja" : r === 3 ? "p-verde" : "p-cinza"; }
+  const FECH = "Fechamento solicitado", FECH_OK = "Fechamento resolvido";
+  function dvDataRef(l) { return String((l.visita && l.visita.data_execucao) || l.dataFim || "").slice(0, 10); }
+  function dvFluxo(l) { return l.categoria === "visita_sem_exec_base"; }
+  function dvPedido(l) { const t = estado.dv.trat[l.wo]; return dvFluxo(l) && t && t.motivo === FECH ? t : null; }
+  // prazo = hoje (ainda em execução) · aguardando = pedido de fechamento feito · solicitar/aberta = sem tratativa · tratada = motivo confirmado
+  function dvEstado(l) {
+    if (dvPedido(l)) return "aguardando";
+    if (dvDataRef(l) === hoje()) return "prazo";
+    if (dvFluxo(l)) return "solicitar";
+    const t = estado.dv.trat[l.wo];
+    return t && (t.motivo || t.observacao) ? "tratada" : "aberta";
+  }
+  function dvUltimoPedido(t) { const h = (t && t.historico) || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].pedido) return h[i]; return null; }
   function desenharDivergencias() {
     const D = estado.dv, cfg = REGRAS.divergencias;
-    const base = linhasDivergenciaFiltradas(true);                 // respeita grupo e busca
+    const baseTodas = linhasDivergenciaFiltradas(true);            // respeita grupo e busca
+    const base = baseTodas.filter(function (l) { return dvEstado(l) !== "prazo"; });
     const cont = function (c) { return base.filter(function (l) { return l.categoria === c; }).length; };
-    const tratadas = base.filter(function (l) { return D.trat[l.wo] && (D.trat[l.wo].motivo || D.trat[l.wo].observacao); }).length;
+    const tratadas = base.filter(function (l) { return dvEstado(l) === "tratada"; }).length;
+    const nEst = function (e) { return baseTodas.filter(function (l) { return dvEstado(l) === e; }).length; };
+    const nHist = Object.keys(D.trat).filter(function (w) { return (D.trat[w].historico || []).length; }).length;
+    const rot = { abertas: "Sem tratativa · " + (nEst("solicitar") + nEst("aberta")), aguardando: "Aguardando a base · " + nEst("aguardando"), emprazo: "Em prazo (hoje) · " + nEst("prazo"), historico: "Histórico de fechamentos · " + nHist };
+    document.querySelectorAll("#dvChips button").forEach(function (b) { if (rot[b.dataset.filtro]) b.textContent = rot[b.dataset.filtro]; });
     const campo = function (rot, v, cls) { return '<div class="ib-campo ' + (cls || "") + '"><div class="r">' + esc(rot) + '</div><div class="v">' + v + "</div></div>"; };
     const nExec = cont("exec_sem_visita"), nAnd = cont("andamento_sem_visita");
     $("dvCampos").innerHTML =
@@ -2135,8 +2174,8 @@
     // resumo por motivo provável (conta o que está aberto, no grupo/busca escolhidos)
     const porMotivo = {};
     base.forEach(function (l) {
-      const t = D.trat[l.wo] && (D.trat[l.wo].motivo || D.trat[l.wo].observacao);
-      if (t) return;
+      const est = dvEstado(l);
+      if (est !== "solicitar" && est !== "aberta") return;
       porMotivo[l.motivoCodigo] = (porMotivo[l.motivoCodigo] || 0) + 1;
     });
     const cods = Object.keys(porMotivo).sort(function (a, b) { return porMotivo[b] - porMotivo[a]; });
@@ -2149,10 +2188,29 @@
     base.forEach(function (l) { if (l.status && statusLista.indexOf(l.status) < 0) statusLista.push(l.status); });
     statusLista.sort(function (a, b) { return rankStatus(a) - rankStatus(b) || a.localeCompare(b); });
     $("dvStatus").innerHTML = '<option value="">Todos os status</option>' + statusLista.map(function (x) { return "<option" + (x === D.status ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("");
-    const lista = linhasDivergenciaFiltradas(false).slice().sort(function (a, b) { return rankStatus(a.status) - rankStatus(b.status); });
+    const dataRef = dvDataRef;
+    const lista = linhasDivergenciaFiltradas(false).slice().sort(function (a, b) {
+      const da = dataRef(a), db = dataRef(b);
+      return rankStatus(a.status) - rankStatus(b.status) || (da && db ? da.localeCompare(db) : da ? -1 : db ? 1 : 0) || String(a.siteTxt || "").localeCompare(String(b.siteTxt || "")) || String(a.wo).localeCompare(String(b.wo));
+    });
     $("dvContagem").textContent = lista.length + " WO(s)" + (D.motivo ? " · filtro: " + (NOMES_MOTIVO[D.motivo] || D.motivo) + " (clique de novo para limpar)" : "") +
       (lista.length > cfg.maxLinhas ? " · mostrando as primeiras " + cfg.maxLinhas : "");
 
+    if (D.filtro === "historico") {
+      const ws = Object.keys(D.trat).filter(function (w) { return (D.trat[w].historico || []).length; }).sort(function (a, b) {
+        const ha = D.trat[a].historico, hb = D.trat[b].historico; return String(hb[hb.length - 1].em).localeCompare(String(ha[ha.length - 1].em)); });
+      $("dvContagem").textContent = ws.length + " WO(s) com histórico";
+      let hh = '<div class="dv-l dv-cab"><div>WO</div><div>Site</div><div>Tipo</div><div>Situação</div><div style="grid-column:5 / span 3">Linha do tempo</div></div>';
+      if (!ws.length) hh += '<div class="dv-vazio">Nenhum pedido de fechamento registrado ainda.</div>';
+      ws.forEach(function (w) {
+        const t = D.trat[w], h = t.historico, pri = h[0] || {}, res = t.motivo === FECH_OK;
+        hh += '<div class="dv-l ' + (res ? "trat" : "med") + '"><div class="dv-wo">' + esc(w) + "</div><div><b>" + esc(pri.site || "") + "</b></div><div>" + esc(tipoCurto(pri.tipo || "")) + "</div><div>" +
+          pill(res ? "Resolvida" : "Aguardando a base", res ? "p-verde" : "p-laranja") + '</div><div style="grid-column:5 / span 3">' +
+          h.map(function (e) { return "<div><b>" + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(e.por === "Sistema" ? "Sistema" : nomeDoEmail(e.por)) + "</b> · " + esc(e.acao) + "</div>"; }).join("") + "</div></div>";
+      });
+      $("dvTabela").innerHTML = hh;
+      return;
+    }
     const opMotivo = function (sel) {
       return '<option value="">— motivo real —</option>' + cfg.motivos.map(function (m) { return "<option" + (m === sel ? " selected" : "") + ">" + esc(m) + "</option>"; }).join("");
     };
@@ -2160,17 +2218,29 @@
     if (lista.length === 0) html += '<div class="dv-vazio">Nenhuma WO neste filtro.</div>';
     lista.slice(0, cfg.maxLinhas).forEach(function (l) {
       const t = D.trat[l.wo] || {};
-      const tratada = !!(t.motivo || t.observacao);
+      const est = dvEstado(l), tratada = est === "tratada";
       const cat = NOMES_CATEGORIA[l.categoria];
-      const cor = tratada ? "trat" : (l.categoria === "exec_sem_visita" || l.categoria === "visita_sem_exec_base" ? "pend" : "med");
+      const cor = tratada ? "trat" : est === "aguardando" || est === "prazo" ? "med" : (l.categoria === "exec_sem_visita" || l.categoria === "visita_sem_exec_base" ? "pend" : "med");
+      let cel;
+      if (dvFluxo(l)) {
+        const ped = dvUltimoPedido(t), dias = ped ? diasEntre(hoje(), dataLocalDe(ped.em)) : 0, atras = dias > cfg.diasPrazoFechamento;
+        cel = '<div class="dv-trat" style="display:block">';
+        if (est === "prazo") cel += pill("Em prazo", "p-cinza");
+        else if (est === "solicitar") cel += pill("A solicitar", "p-cinza") + ' <button class="sec" data-fech="solicitar"' + (D.tratErro ? " disabled" : "") + ">Solicitar fechamento</button>";
+        else cel += pill((atras ? "Atrasado · " : "Aguardando · ") + dias + (dias === 1 ? " dia" : " dias"), atras ? "p-vermelho" : "p-laranja") + '<span class="dv-sub">Solicitado em ' + (ped ? dataBR(dataLocalDe(ped.em)).slice(0, 5) + " por " + esc(nomeDoEmail(ped.por)) : "") + "</span>" +
+          '<button class="sec" data-fech="reenviar" style="margin-top:6px">Ainda aberta · Reenviar</button>';
+        cel += "</div>";
+      } else {
+        cel = '<div class="dv-trat"><select data-campo="motivo"' + (estado.dv.tratErro ? ' disabled title="Rode o SQL divergencias_sql.txt no Supabase para liberar"' : "") + ">" + opMotivo(t.motivo || "") + "</select>" +
+          '<input type="text" data-campo="obs" placeholder="observação" value="' + esc(t.observacao || "") + '"' + (estado.dv.tratErro ? " disabled" : "") + "></div>";
+      }
       html += '<div class="dv-l ' + cor + '" data-wo="' + esc(l.wo) + '">' +
         '<div class="dv-wo">' + esc(l.wo) + '<span class="dv-sub">' + esc(l.grupo) + "</span></div>" +
         "<div><b>" + esc(l.siteTxt) + "</b></div><div>" + esc(tipoCurto(l.tipo)) + "</div>" +
         "<div>" + pill(l.status, corStatus(l.status)) + '<span class="dv-sub">' + (l.dataFim ? "relatório " + dataBR(l.dataFim) : "sem data") + "</span></div>" +
         "<div>" + pill(cat[0], cat[1]) + "</div>" +
         "<div>" + esc(l.motivo) + (l.visita ? '<span class="dv-sub">Visita: ' + esc(l.visita.site) + " · " + esc(l.visita.equipe) + " · " + dataBR(l.visita.data_execucao) + "</span>" : "") + "</div>" +
-        '<div class="dv-trat"><select data-campo="motivo"' + (estado.dv.tratErro ? ' disabled title="Rode o SQL divergencias_sql.txt no Supabase para liberar"' : "") + ">" + opMotivo(t.motivo || "") + "</select>" +
-        '<input type="text" data-campo="obs" placeholder="observação" value="' + esc(t.observacao || "") + '"' + (estado.dv.tratErro ? " disabled" : "") + "></div></div>";
+        cel + "</div>";
     });
     $("dvTabela").innerHTML = html;
   }
@@ -2206,6 +2276,22 @@
       mostrarAviso("Tratativa salva: " + wo);
       if (estado.dv.filtro === "abertas" || estado.dv.filtro === "tratadas") setTimeout(desenharDivergencias, 400); else desenharDivergencias();
     } catch (err) { mostrarAviso("Não salvou: " + err.message, "erro"); }
+  });
+
+  $("dvTabela").addEventListener("click", async function (e) {
+    const b = e.target.closest("button[data-fech]"); if (!b) return;
+    const linha = b.closest(".dv-l[data-wo]"); if (!linha) return;
+    const wo = linha.dataset.wo, l = estado.dv.linhas.find(function (x) { return x.wo === wo; }); if (!l) return;
+    const agora = new Date().toISOString(), t = estado.dv.trat[wo] || {}, reenvio = b.dataset.fech === "reenviar";
+    const hist = (t.historico || []).concat([{ em: agora, por: estado.usuarioEmail, pedido: true, acao: reenvio ? "Pedido de fechamento reenviado (WO ainda aberta na base)" : "Fechamento solicitado", site: l.siteTxt, tipo: l.tipo }]);
+    const reg = { wo: wo, motivo: FECH, observacao: null, atualizado_por: estado.usuarioEmail, atualizado_em: agora, historico: hist };
+    b.disabled = true;
+    try {
+      conferir(await banco.from("divergencias_tratativa").upsert([reg], { onConflict: "wo" }));
+      estado.dv.trat[wo] = reg;
+      mostrarAviso("Fechamento solicitado: " + wo);
+      desenharDivergencias();
+    } catch (err) { b.disabled = false; mostrarAviso("Não salvou: " + err.message + " (rode o SQL divergencias_historico_sql.txt no Supabase)", "erro"); }
   });
 
   $("dvExportar").addEventListener("click", function () {
@@ -4349,7 +4435,7 @@
     desenharFila();
   }
   function desenharFila() {
-    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && doSetorVal(v); });
+    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && String(v.visita_id).indexOf("SV-") !== 0 && doSetorVal(v); });
     const h = hoje();
     const n = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
     lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
@@ -5180,7 +5266,10 @@
   // O caso precisa da verificação das abas quando foi encaminhado sem tudo preenchido (ou saiu sem pedir validação).
   function ultimoSemAnalise(h) { for (let i = h.length - 1; i >= 0; i--) if (h[i].sem_analise !== undefined) return i; return -1; }
   function precisaValidar(c) {
-    if (c.origem === "sem_visita") return false;
+    if (c.origem === "sem_visita") {
+      const vs = ((estado.off && estado.off.vals) || {})[c.id], hs = vs ? (vs.historico || []).filter(function (e) { return e.tipo === "encerramento"; }) : [], us = hs[hs.length - 1];
+      return !(us && eventoAnalisado(Object.assign({ reg: vs }, us)));
+    }
     const h = c.historico || [], i = ultimoSemAnalise(h);
     if (i >= 0) return h[i].sem_analise === true;
     const aberta = function (p) { return p.estado !== "Resolvida" && p.estado !== "Não resolvida"; };
@@ -5197,7 +5286,7 @@
     let criados = 0;
     try {
       const d = dadosResumoVal();
-      const itens = (d.semVal || []).filter(function (x) { return x.cat === "exec_sem_visita" && x.l && String(x.l.data_fim || "").slice(0, 10) >= REGRAS.validacao.inicio; });
+      const itens = (d.semVal || []).filter(function (x) { return x.cat === "exec_sem_visita" && x.l && String(x.l.data_fim || "").slice(0, 10) >= REGRAS.validacao.inicio && String(x.l.data_fim || "").slice(0, 10) < hoje(); });
       if (!itens.length) return 0;
       const ids = itens.map(function (x) { return "SV-" + x.l.wo; });
       const ja = {};
@@ -5212,7 +5301,7 @@
           situacao: "encerrada", resultado: "offline", motivo: "Executada na base sem visita registrada", encerrada_em: agora, historico: [], atualizado_por: quem, atualizado_em: agora }, { onConflict: "visita_id" }));
         const reg = conferir(await banco.from("validacoes").select("id").eq("visita_id", vid).limit(1))[0]; if (!reg) continue;
         conferir(await banco.from("casos_offline").insert({ validacao_id: reg.id, site: site, setor: setor, equipe: null, wos: wos, origem: "sem_visita", motivo: "Executada na base sem visita registrada", pendencias: [],
-          historico: [{ em: agora, por: "Sistema", acao: "Executada na base sem visita registrada", base_data: dia }], criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
+          historico: [{ em: agora, por: "Sistema", acao: "Executada na base sem visita registrada", sem_analise: true, base_data: dia }], criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
         criados++;
       }
     } catch (e) { window.__svErr = String(e && e.message || e); }
@@ -5226,6 +5315,10 @@
     const existente = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", reg.id).limit(1))[0];
     if (resultado === "validada") {
       if (!existente || existente.concluido_em) return;
+      if (existente.origem === "sem_visita" && !tecnicoDe(existente)) {
+        conferir(await banco.from("casos_offline").update({ atualizado_por: quem, atualizado_em: agora, historico: (existente.historico || []).concat([{ em: agora, por: quem, acao: "Abas validadas sem pendência", sem_analise: false }]) }).eq("id", existente.id));
+        return;
+      }
       const pe = (existente.pendencias || []).map(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa" ? Object.assign({}, p, { estado: "Resolvida" }) : p; });
       conferir(await banco.from("casos_offline").update({ pendencias: pe, concluido_em: agora, atualizado_por: quem, atualizado_em: agora,
         historico: (existente.historico || []).concat([{ em: agora, por: quem, acao: "Revalidada sem pendência", texto: motivo || "", sem_analise: false }]) }).eq("id", existente.id));
@@ -5240,7 +5333,7 @@
     const entrada = { em: agora, por: quem, acao: origemCaso === "sem_pedido" ? "Saiu do site sem pedir a validação" : resultado === "offline" ? "Encaminhada para a validação offline" : resultado === "ressalva" ? "Validada com ressalva" : "Devolvida ao técnico", texto: motivo || "" };
     if (completa !== undefined) entrada.sem_analise = !completa;
     if (existente) {
-      conferir(await banco.from("casos_offline").update({ origem: origemCaso || resultado, motivo: motivo || null, pendencias: novos, concluido_em: null, atualizado_por: quem, atualizado_em: agora,
+      conferir(await banco.from("casos_offline").update({ origem: existente.origem === "sem_visita" ? "sem_visita" : origemCaso || resultado, motivo: motivo || null, pendencias: novos, concluido_em: null, atualizado_por: quem, atualizado_em: agora,
         wos: wosCaso && wosCaso.length ? wosCaso : existente.wos,
         historico: (existente.historico || []).concat([entrada]) }).eq("id", existente.id));
     } else {
@@ -5405,7 +5498,7 @@
       '<div class="of-tl">' + h.slice().reverse().map(function (e) {
         const manual = e.acao === "Andamento" || (e.texto && !repetido(e.texto));
         return '<div class="' + (manual ? "m" : "") + '"><b>' + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b>" +
-          (e.acao !== "Andamento" ? " · " + esc(e.acao) + (e.itens && e.itens.length ? " · " + esc(e.itens.join(", ")) : "") + (e.situacao ? " → " + esc(e.situacao) : "") : "") +
+          (e.acao !== "Andamento" ? " · " + esc(e.acao) + (e.tecnico ? " · " + esc(e.tecnico) : e.itens && e.itens.length ? " · " + esc(e.itens.join(", ")) : "") + (e.situacao ? " → " + esc(e.situacao) : "") : "") +
           (e.texto && !repetido(e.texto) ? "<p>" + esc(e.texto) + "</p>" : "") + "</div>";
       }).join("") + "</div></div></div></div>";
     return t;
