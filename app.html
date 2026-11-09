@@ -2205,7 +2205,7 @@
       ws.forEach(function (w) {
         const t = D.trat[w], h = t.historico, pri = h[0] || {}, res = t.motivo === FECH_OK;
         hh += '<div class="dv-l ' + (res ? "trat" : "med") + '"><div class="dv-wo">' + esc(w) + "</div><div><b>" + esc(pri.site || "") + "</b></div><div>" + esc(tipoCurto(pri.tipo || "")) + "</div><div>" +
-          pill(res ? "Resolvida" : "Aguardando a base", res ? "p-verde" : "p-laranja") + '</div><div style="grid-column:5 / span 3">' +
+          pill(res ? "Resolvida" : "Aguardando", res ? "p-verde" : "p-laranja") + '</div><div style="grid-column:5 / span 3">' +
           h.map(function (e) { return "<div><b>" + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(e.por === "Sistema" ? "Sistema" : nomeDoEmail(e.por)) + "</b> · " + esc(e.acao) + "</div>"; }).join("") + "</div></div>";
       });
       $("dvTabela").innerHTML = hh;
@@ -4147,7 +4147,7 @@
     alarmesClima: ["TROCADOR", "AR[ -]?COND", "CLIMA", "\\bPLC\\b", "\\bPORTA\\b", "TEMPERATURA", "\\bTEMP\\b", "HVAC"],
     resultados: { validada: "Validada", ressalva: "Validada com ressalva", devolvida: "Devolvida ao técnico", offline: "Para validação offline" }
   };
-  estado.val = { lista: [], filtro: "aba_pedida", setor: "", atual: null, pagina: "equip", equip: [], equipAviso: "", colar: null, pendente: null };
+  estado.val = { lista: [], filtro: "agir", periodo: "hoje", limite: 15, setor: "", atual: null, pagina: "equip", equip: [], equipAviso: "", colar: null, pendente: null };
 
   function dataLocalDe(iso) { const d = new Date(iso); return d.getFullYear() + "-" + doisDigitos(d.getMonth() + 1) + "-" + doisDigitos(d.getDate()); }
   function horaDe(iso) { return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"; }
@@ -4445,14 +4445,21 @@
     const listaB = q ? lista.filter(function (v) { return String(v.site || "").toUpperCase().indexOf(q) >= 0; }) : lista;
     const nB = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
     listaB.forEach(function (v) { if (nB[v.situacao] !== undefined) nB[v.situacao]++; });
-    let mostrar = listaB.filter(function (v) { return f === "todas" || v.situacao === f; });
+    const dd = function (n) { const d = new Date(h + "T12:00:00"); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    const per = estado.val.periodo, faixa = per === "ontem" ? [dd(-1), dd(-1)] : per === "7d" ? [dd(-6), h] : per === "mes" ? [h.slice(0, 8) + "01", h] : [h, h];
+    const diaEnc = function (v) { return v.encerrada_em ? dataLocalDe(v.encerrada_em) : String(v.data || ""); };
+    const noPeriodo = function (v) { if (q) return true; const d = diaEnc(v); return d >= faixa[0] && d <= faixa[1]; };
+    const agir = listaB.filter(function (v) { return v.situacao === "aba_pedida" || v.situacao === "em_analise"; });
+    const campo = listaB.filter(function (v) { return v.situacao === "em_campo"; });
+    const enc = listaB.filter(function (v) { return v.situacao === "encerrada" && noPeriodo(v); });
+    let mostrar = f === "agir" ? agir : f === "em_campo" ? campo : f === "encerrada" ? enc : agir.concat(campo, enc);
     mostrar.sort(function (a, b) {
-      if (f === "aba_pedida") return String(a.aba_pedida_em).localeCompare(String(b.aba_pedida_em));
+      if (f === "agir") return String(a.aba_pedida_em || a.criado_em).localeCompare(String(b.aba_pedida_em || b.criado_em));
       return String(b.criado_em).localeCompare(String(a.criado_em));
     });
-    mostrar = mostrar.slice(0, 300);
-    const chips = [["aba_pedida", "Aba pedida", nB.aba_pedida], ["em_analise", "Em análise", nB.em_analise], ["em_campo", "Em campo", nB.em_campo],
-                   ["encerrada", "Encerradas", nB.encerrada], ["todas", "Todas", listaB.length]];
+    const totalMostrar = mostrar.length;
+    mostrar = mostrar.slice(0, estado.val.limite || 15);
+    const chips = [["agir", "Para agir", agir.length], ["em_campo", "Em campo", campo.length], ["encerrada", "Encerradas", enc.length], ["todas", "Todas", agir.length + campo.length + enc.length]];
     let t = '<div class="vl-cards">' +
       '<div class="vl-c"><div class="r">Em campo</div><div class="v">' + n.em_campo + "</div></div>" +
       '<div class="vl-c amar"><div class="r">Aba pedida</div><div class="v">' + n.aba_pedida + "</div></div>" +
@@ -4460,9 +4467,10 @@
       '<div class="vl-c verde"><div class="r">Encerradas hoje</div><div class="v">' + encHoje + "</div></div>" +
       '<div class="vl-c verm"><div class="r">Devolvidas ao técnico hoje</div><div class="v">' + devHoje + "</div></div></div>";
     t += '<input id="flBusca" class="of-busca" type="search" placeholder="Pesquisar site" value="' + esc(estado.val.busca || "") + '">';
-    t += '<div class="vl-chips" id="flChips">' + chips.map(function (c) {
+    t += '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap"><div class="vl-chips" id="flChips">' + chips.map(function (c) {
       return '<button data-f="' + c[0] + '"' + (c[0] === f ? ' class="ativo"' : "") + ">" + c[1] + " · " + c[2] + "</button>";
-    }).join("") + "</div>";
+    }).join("") + '</div><div><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Período</div><select id="flPeriodo">' +
+      [["hoje", "Hoje"], ["ontem", "Ontem"], ["7d", "Últimos 7 dias"], ["mes", "Mês inteiro"]].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === per ? " selected" : "") + ">" + x[1] + "</option>"; }).join("") + "</select></div></div>";
     if (mostrar.length === 0) {
       t += '<div class="vl-vazio">Nada nesta lista.</div>';
     } else {
@@ -4479,18 +4487,24 @@
           return '<tr data-id="' + v.id + '"><td><b>' + esc(v.site) + "</b></td><td>" + esc(v.equipe) + "</td><td>" + esc(wos) + "</td><td>" + sitTxt + "</td><td>" +
             (v.aba_pedida_em ? horaDe(v.aba_pedida_em) + " · " + haQuanto(v.aba_pedida_em) : "—") + "</td><td>" + visto + "</td>" +
             '<td style="text-align:right">' + (acao ? '<button class="bt' + acao[2] + '" data-acao="' + acao[0] + '">' + acao[1] + "</button>" : "") + "</td></tr>";
-        }).join("") + "</table>";
+        }).join("") + "</table>" +
+        (totalMostrar > mostrar.length ? '<div style="text-align:center;padding:14px;background:#fff"><button class="bt" id="flMais">Mostrar mais ' + Math.min(15, totalMostrar - mostrar.length) + " · restam " + (totalMostrar - mostrar.length) + "</button></div>" : "");
     }
     $("flCorpo").innerHTML = t;
   }
   $("flCorpo").addEventListener("input", function (e) {
     if (e.target.id !== "flBusca") return;
-    estado.val.busca = e.target.value; desenharFila();
+    estado.val.busca = e.target.value; estado.val.limite = 15; desenharFila();
     const b = $("flBusca"); if (b) { b.focus(); const n = b.value.length; b.setSelectionRange(n, n); }
+  });
+  $("flCorpo").addEventListener("change", function (e) {
+    if (e.target.id !== "flPeriodo") return;
+    estado.val.periodo = e.target.value; estado.val.limite = 15; desenharFila();
   });
   $("flCorpo").addEventListener("click", async function (e) {
     const chip = e.target.closest("#flChips button");
-    if (chip) { estado.val.filtro = chip.dataset.f; desenharFila(); return; }
+    if (chip) { estado.val.filtro = chip.dataset.f; estado.val.limite = 15; desenharFila(); return; }
+    if (e.target.closest("#flMais")) { estado.val.limite = (estado.val.limite || 15) + 15; desenharFila(); return; }
     const botao = e.target.closest("button[data-acao]");
     if (!botao) return;
     const reg = estado.val.lista.find(function (v) { return String(v.id) === botao.closest("tr").dataset.id; });
@@ -5403,7 +5417,9 @@
     if (!lista.length) t += '<div class="vl-vazio">Nada nesta lista.</div>';
     else t += "<table><tr><th>Site</th><th>Atividade</th><th>Equipe</th><th>Origem</th><th>Pendências</th><th>Responsável</th><th>Entrada</th></tr>" + lista.map(function (c) {
       const pe = c.pendencias || [], nab = pe.filter(function (p) { return p.estado === "Aberta"; }).length, ntr = pe.filter(function (p) { return p.estado === "Em tratativa"; }).length;
-      const tg = c.concluido_em || (!nab && !ntr) ? '<span class="vl-tag v1">Resolvido</span>' : nab ? '<span class="vl-tag v2">' + nab + (nab === 1 ? " aberta" : " abertas") + "</span>" : '<span class="vl-tag v5">' + ntr + " em tratativa</span>";
+      const svc = c.origem === "sem_visita", hz = c.historico || [], iz = ultimoSemAnalise(hz);
+      const faltaAbas = !c.concluido_em && (svc ? (iz < 0 || hz[iz].sem_analise === true) : precisaValidar(c));
+      const tg = c.concluido_em ? '<span class="vl-tag v1">Resolvido</span>' : faltaAbas ? '<span class="vl-tag v2">Abas para validar</span>' : svc && !tecnicoDe(c) ? '<span class="vl-tag v2">Informar quem executou</span>' : (!nab && !ntr) ? '<span class="vl-tag v5">Pronto para concluir</span>' : nab ? '<span class="vl-tag v2">' + nab + (nab === 1 ? " aberta" : " abertas") + "</span>" : '<span class="vl-tag v5">' + ntr + " em tratativa</span>";
       return '<tr data-id="' + c.id + '" class="vl-clic"><td><b>' + esc(c.site) + "</b></td><td>" + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + "</td><td>" + esc(c.equipe || "—") + "</td><td>" +
         esc(REGRAS.offline.origens[c.origem] || c.origem) + "</td><td>" + tg + "</td><td>" + (c.responsavel ? esc(c.responsavel) : "—") + "</td><td>" + (emRisco(c) ? '<span class="vl-tag v2">' : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (emRisco(c) ? "</span>" : "") + "</td></tr>";
     }).join("") + "</table>";
