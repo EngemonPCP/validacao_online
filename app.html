@@ -434,7 +434,8 @@
     #telaDivergencias button.sec { background:#fff; color:#0f62fe; border:1px solid #0f62fe; border-radius:0; padding:7px 14px; font:inherit; cursor:pointer; }
     #telaDivergencias button.sec:hover { background:#e5f0ff; }
     #telaDivergencias .dv-rolagem { overflow-x:auto; }
-    #telaDivergencias .dv-l { display:grid; grid-template-columns:150px 120px 80px 100px 210px minmax(240px,1.6fr) minmax(330px,1.2fr); min-width:1240px; font-size:12px; border-bottom:1px solid #e0e0e0; align-items:start; }
+    #telaDivergencias .dv-l { display:grid; grid-template-columns:150px 120px 118px 100px 210px minmax(240px,1.6fr) minmax(330px,1.2fr); min-width:1280px; font-size:12px; border-bottom:1px solid #e0e0e0; align-items:start; }
+    #telaDivergencias .dv-l.dv-l6 { grid-template-columns:150px 120px 118px 130px 210px minmax(300px,1fr); min-width:980px; }
     #telaDivergencias .dv-l > div { padding:5px 8px; min-width:0; word-break:break-word; }
     #telaDivergencias .dv-cab { background:#e0e0e0; font-weight:600; position:sticky; top:0; z-index:1; align-items:center; }
     #telaDivergencias .dv-l:not(.dv-cab):nth-child(even) { background:#f9f9f9; }
@@ -978,7 +979,7 @@
         <div class="ib-chips" id="dvChips">
           <button data-filtro="abertas" class="ativo">Para tratar</button>
           <button data-filtro="aguardando">Aguardando a base</button>
-          <button data-filtro="apontamentos">Apontamentos</button>
+          <button data-filtro="apontamentos">Data diferente</button>
           <button data-filtro="historico">Histórico de fechamentos</button>
           <button data-filtro="todas">Todas</button>
         </div>
@@ -2181,7 +2182,7 @@
     const semPrazo = baseTodas.filter(function (l) { return dvEstado(l) !== "prazo"; });
     const nCat = function (c) { return semPrazo.filter(function (l) { return l.categoria === c; }).length; };
     const cont = { abertas: nEst("solicitar") + nEst("aberta"), aguardando: nEst("aguardando"), apontamentos: nEst("apontamento"), historico: nHist, todas: baseTodas.length };
-    const rot = { abertas: "Para tratar", aguardando: "Aguardando a base", apontamentos: "Apontamentos", historico: "Histórico de fechamentos", todas: "Todas" };
+    const rot = { abertas: "Para tratar", aguardando: "Aguardando a base", apontamentos: "Data diferente", historico: "Histórico de fechamentos", todas: "Todas" };
     document.querySelectorAll("#dvChips button").forEach(function (b) {
       b.textContent = rot[b.dataset.filtro] + (b.dataset.filtro === "todas" ? "" : " · " + cont[b.dataset.filtro]);
       b.classList.toggle("ativo", b.dataset.filtro === D.filtro);
@@ -2189,7 +2190,7 @@
     const campo = function (rot, v, cls, attr) { return '<div class="ib-campo ' + (cls || "") + '" ' + (attr || "") + '><div class="r">' + esc(rot) + '</div><div class="v">' + v + "</div></div>"; };
     $("dvCampos").innerHTML =
       campo("Para tratar", cont.abertas, cont.abertas ? "verm" : "", 'data-dvc="f:abertas"') + campo("Aguardando a base", cont.aguardando, "", 'data-dvc="f:aguardando"') +
-      campo("Apontamentos (data diferente)", cont.apontamentos, "", 'data-dvc="f:apontamentos"') +
+      campo("Data diferente", cont.apontamentos, "", 'data-dvc="f:apontamentos"') +
       campo("Executadas sem visita", nCat("exec_sem_visita"), D.tipo === "exec_sem_visita" ? "sel" : "", 'data-dvc="t:exec_sem_visita"') +
       campo("Em andamento sem visita", nCat("andamento_sem_visita"), D.tipo === "andamento_sem_visita" ? "sel" : "", 'data-dvc="t:andamento_sem_visita"') +
       campo("Visita sem execução na base", nCat("visita_sem_exec_base"), D.tipo === "visita_sem_exec_base" ? "sel" : "", 'data-dvc="t:visita_sem_exec_base"');
@@ -2219,7 +2220,8 @@
       return rankStatus(a.status) - rankStatus(b.status) || (da && db ? da.localeCompare(db) : da ? -1 : db ? 1 : 0) || String(a.siteTxt || "").localeCompare(String(b.siteTxt || "")) || String(a.wo).localeCompare(String(b.wo));
     });
     $("dvContagem").textContent = lista.length + " WO(s)" + (lista.length > cfg.maxLinhas ? " · mostrando as primeiras " + cfg.maxLinhas : "");
-    let html = '<div class="dv-l dv-cab"><div>WO</div><div>Site</div><div>Tipo</div><div>Na base</div><div>Divergência</div><div>Motivo provável</div><div>Tratativa</div></div>';
+    const semTrat = lista.length > 0 && lista.every(function (l) { return dvEstado(l) === "apontamento"; }), c6 = semTrat ? " dv-l6" : "";
+    let html = '<div class="dv-l dv-cab' + c6 + '"><div>WO</div><div>Site</div><div>Tipo</div><div>Na base</div><div>Divergência</div><div>Motivo provável</div>' + (semTrat ? "" : "<div>Tratativa</div>") + "</div>";
     if (lista.length === 0) html += '<div class="dv-vazio">Nenhuma WO nesta lista.</div>';
     lista.slice(0, cfg.maxLinhas).forEach(function (l) {
       const t = D.trat[l.wo] || {}, est = dvEstado(l), cat = NOMES_CATEGORIA[l.categoria];
@@ -2231,16 +2233,16 @@
         const ped = dvUltimoPedido(t), dias = ped ? diasEntre(hoje(), dataLocalDe(ped.em)) : 0, atras = dias > cfg.diasPrazoFechamento;
         cel = '<div class="dv-trat" style="display:block">' + pill((atras ? "Atrasado · " : "Aguardando · ") + dias + (dias === 1 ? " dia" : " dias"), atras ? "p-vermelho" : "p-laranja") + '<span class="dv-sub">Solicitado em ' + (ped ? dataBR(dataLocalDe(ped.em)).slice(0, 5) + " por " + esc(nomeDoEmail(ped.por)) : "") + "</span>" +
           '<button class="sec" data-fech="reenviar" style="margin-top:6px">Ainda aberta · Reenviar</button></div>';
-      } else if (est === "apontamento") cel = '<div class="dv-trat">' + pill("Apontamento", "p-cinza") + "</div>";
+      } else if (est === "apontamento") cel = '<div class="dv-trat"></div>';
       else if (est === "offline") cel = '<div class="dv-trat">' + pill("Na validação offline", "p-cinza") + "</div>";
       else cel = '<div class="dv-trat"><input type="text" data-campo="obs" placeholder="observação" value="' + esc(t.observacao || "") + '"' + (D.tratErro ? " disabled" : "") + "></div>";
-      html += '<div class="dv-l ' + cor + '" data-wo="' + esc(l.wo) + '">' +
+      html += '<div class="dv-l ' + cor + c6 + '" data-wo="' + esc(l.wo) + '">' +
         '<div class="dv-wo">' + esc(l.wo) + '<span class="dv-sub">' + esc(l.grupo) + "</span></div>" +
         "<div><b>" + esc(l.siteTxt) + "</b></div><div>" + esc(tipoCurto(l.tipo)) + "</div>" +
         "<div>" + pill(l.status, corStatus(l.status)) + '<span class="dv-sub">' + (l.dataFim ? "relatório " + dataBR(l.dataFim) : "sem data") + "</span></div>" +
         "<div>" + pill(cat[0], cat[1]) + "</div>" +
         "<div>" + esc(l.motivo) + (l.visita ? '<span class="dv-sub">Visita: ' + esc(l.visita.site) + " · " + esc(l.visita.equipe) + " · " + dataBR(l.visita.data_execucao) + "</span>" : "") + dvValidacaoTxt(l) + "</div>" +
-        cel + "</div>";
+        (semTrat ? "" : cel) + "</div>";
     });
     $("dvTabela").innerHTML = html;
   }
@@ -4152,7 +4154,7 @@
     const m = Math.max(0, Math.round(minutosDesde(iso)));
     return m < 60 ? "há " + m + " min" : "há " + Math.floor(m / 60) + " h " + doisDigitos(m % 60);
   }
-  function tipoCurto(t) { const p = String(t || "").split(" - "); return p[p.length - 1].trim(); }
+  function tipoCurto(t) { const p = String(t || "").split(" - "), x = p[p.length - 1].trim(); return /^climatizacao$/i.test(x) ? "Climatização" : x; }
   function opcoesHtml(lista, valor, vazio) {
     return '<option value="">' + esc(vazio || "—") + "</option>" + lista.map(function (o) {
       return '<option value="' + esc(o) + '"' + (o === valor ? " selected" : "") + ">" + esc(o) + "</option>";
