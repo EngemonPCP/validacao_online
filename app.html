@@ -442,6 +442,18 @@
     #telaDivergencias .dv-l.pend { box-shadow:inset 3px 0 0 #da1e28; }
     #telaDivergencias .dv-l.med { box-shadow:inset 3px 0 0 #f1c21b; }
     #telaDivergencias .dv-wo { font-weight:600; white-space:nowrap; } #telaDivergencias .dv-l > div { word-break:normal; overflow-wrap:anywhere; } #telaDivergencias .dv-l .pill { white-space:nowrap; }
+    #telaDivergencias .dv-l2 { grid-template-columns:130px 130px 90px 230px 200px 190px 90px; min-width:1060px; align-items:center; }
+    #telaDivergencias .dv-l2[data-wo] { cursor:pointer; } #telaDivergencias .dv-l2[data-wo]:hover { background:#e8e8e8 !important; }
+    #telaDivergencias .dv-l2 > div { padding:11px 8px; }
+    #telaDivergencias button[data-dv]:not(.sec) { background:#0f62fe; color:#fff; border:0; border-radius:0; padding:10px 18px; font:inherit; font-size:13px; cursor:pointer; }
+    #telaDivergencias button[data-dv]:not(.sec):hover { background:#0353e9; }
+    #telaDivergencias button[data-dv]:disabled { opacity:.5; cursor:default; }
+    #telaDivergencias .dv-box { background:#fff; padding:16px 20px; margin-bottom:16px; }
+    #telaDivergencias .dv-g { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; font-size:13px; }
+    #telaDivergencias .dv-lb { font-size:12px; color:#6f6f6f; margin-bottom:2px; }
+    #telaDivergencias .dv-tit { font-size:12px; font-weight:600; letter-spacing:.3px; color:#525252; text-transform:uppercase; margin:20px 0 8px; }
+    #telaDivergencias .dv-topo { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin:12px 0; }
+    #telaDivergencias .dv-voltar { color:#0f62fe; text-decoration:none; font-size:13px; }
     #telaDivergencias .dv-sub { display:block; color:#525252; font-size:11px; margin-top:2px; }
     #telaDivergencias .dv-trat { display:flex; gap:6px; } #telaDivergencias .dv-trat select { flex:0 0 150px; width:150px; } #telaDivergencias .dv-trat input[type=text] { flex:1; min-width:0; }
     #telaDivergencias .dv-vazio { padding:16px 8px; color:#525252; }
@@ -957,35 +969,22 @@
     <!-- DIVERGENCIAS -->
     <section id="telaDivergencias" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Divergências</span></div>
-      <h1>Divergências: Base Atualização Preventiva x visitas</h1>
-      <p class="ib-sub">Só MOP. WOs em que a base e as visitas registradas não batem, com o motivo provável. </p>
-      <div class="ib-campos" id="dvCampos"></div>
-
-      <div class="ib-secao"><span>Por motivo provável</span><span class="aux">Clique numa linha para filtrar a lista</span></div>
-      <div class="resumo-motivos" id="dvMotivos"></div>
-
-      <div class="ib-secao"><span>WOs</span><span class="aux" id="dvContagem"></span></div>
-      <div class="ib-barra">
-        <div class="ib-chips" id="dvChips">
-          <button data-filtro="abertas" class="ativo">Sem tratativa</button>
-          <button data-filtro="aguardando">Aguardando a base</button>
-          <button data-filtro="emprazo">Em prazo (hoje)</button>
-          <button data-filtro="exec_sem_visita">Executadas sem visita</button>
-          <button data-filtro="andamento_sem_visita">Em andamento sem visita</button>
-          <button data-filtro="data_diferente">Data diferente</button>
-          <button data-filtro="visita_sem_exec_base">Visita sem execução na base</button>
-          <button data-filtro="tratadas">Tratadas</button>
-          <button data-filtro="historico">Histórico de fechamentos</button>
-          <button data-filtro="todas">Todas</button>
+      <div id="dvLista">
+        <h1>Divergências com a base</h1>
+        <p class="ib-sub" id="dvContagem"></p>
+        <div class="ib-barra">
+          <div class="ib-ferr">
+            <select id="dvVisao"></select>
+            <input type="text" class="busca" id="dvBusca" placeholder="Pesquisar site ou WO">
+            <select id="dvTipo"></select>
+            <select id="dvStatus"></select>
+            <button class="sec" id="dvAtualizar">Atualizar</button>
+            <button class="sec" id="dvExportar">Exportar CSV</button>
+          </div>
         </div>
-        <div class="ib-ferr">
-          <select id="dvStatus"></select>
-          <input type="text" class="busca" id="dvBusca" placeholder="Buscar WO, site ou equipe">
-          <button class="sec" id="dvAtualizar">Atualizar</button>
-          <button class="sec" id="dvExportar">Exportar CSV</button>
-        </div>
+        <div class="dv-rolagem"><div id="dvTabela"></div></div>
       </div>
-      <div class="dv-rolagem"><div id="dvTabela"></div></div>
+      <div id="dvCaso" class="oculto"></div>
     </section>
 
     <!-- RESUMO DIA -->
@@ -2068,7 +2067,7 @@
     return todas;
   }
 
-  estado.dv = { linhas: [], trat: {}, filtro: "abertas", motivo: "", status: "", tratErro: "" };
+  estado.dv = { linhas: [], trat: {}, vals: {}, filtro: "abertas", tipo: "", aberto: null, motivo: "", status: "", tratErro: "" };
 
   async function atualizarDivergencias() {
     try {
@@ -2095,6 +2094,15 @@
       const baseMop = estado.base.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !estado.expurgadas[l.wo]; });
       const res = calcularDivergencias(baseMop, visitas, r[2], irmas);
       estado.dv.linhas = res.linhas; estado.dv.minData = res.minData; estado.dv.maxData = res.maxData; estado.dv.nVisitas = res.nVisitas;
+      try {
+        const vs = await carregarTodasAsLinhas("validacoes", "id,visita_id,wos,situacao,resultado,historico,data,encerrada_em"), vals = {};
+        vs.filter(function (v) { return v.situacao === "encerrada" && String(v.visita_id).indexOf("SV-") !== 0; }).forEach(function (v) {
+          eventosDe([v]).sort(function (a, b) { return String(a.em).localeCompare(String(b.em)); }).forEach(function (e) {
+            (e.wo_ids || (v.wos || []).map(function (w) { return w.wo; })).forEach(function (id) { vals[id] = { resultado: e.resultado, em: e.em, por: e.por }; });
+          });
+        });
+        estado.dv.vals = vals;
+      } catch (e) { estado.dv.vals = {}; }
       // Pedido de fechamento cuja WO já aparece como executada na base: o sistema registra a resolução.
       try {
         const ativas = {}; res.linhas.forEach(function (l) { ativas[l.wo] = true; });
@@ -2125,15 +2133,14 @@
       if (ignorarFiltro) return true;
       if (D.status && l.status !== D.status) return false;
       const est = dvEstado(l);
-      if (D.motivo && l.motivoCodigo !== D.motivo) return false;
+      if (D.tipo && l.categoria !== D.tipo) return false;
       const f = D.filtro;
       if (f === "abertas") return est === "solicitar" || est === "aberta";
       if (f === "aguardando") return est === "aguardando";
+      if (f === "apontamentos") return est === "apontamento";
       if (f === "emprazo") return est === "prazo";
-      if (f === "tratadas") return est === "tratada";
       if (f === "historico") return false;
-      if (f === "todas") return true;
-      return l.categoria === f && est !== "prazo";
+      return true;
     });
   }
 
@@ -2147,59 +2154,72 @@
   function dvEstado(l) {
     if (dvPedido(l)) return "aguardando";
     if (dvDataRef(l) === hoje()) return "prazo";
+    if (l.categoria === "data_diferente") return "apontamento";
+    if (l.categoria === "exec_sem_visita") return "offline";
     if (dvFluxo(l)) return "solicitar";
     const t = estado.dv.trat[l.wo];
     return t && (t.motivo || t.observacao) ? "tratada" : "aberta";
   }
   function dvUltimoPedido(t) { const h = (t && t.historico) || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].pedido) return h[i]; return null; }
+  const DV_VISOES = [["abertas", "Para tratar"], ["aguardando", "Aguardando a base"], ["apontamentos", "Apontamentos"], ["emprazo", "Em prazo (hoje)"], ["historico", "Histórico de fechamentos"], ["todas", "Todas"]];
+  const DV_RESULT = { validada: "Validada", ressalva: "Com ressalva", devolvida: "Devolvida", offline: "Offline" };
+  function dvValidacaoTxt(l) {
+    const v = estado.dv.vals[l.wo];
+    return v ? pill(DV_RESULT[v.resultado] || v.resultado, v.resultado === "validada" ? "p-verde" : "p-cinza") + '<span class="dv-sub">' + dataBR(dataLocalDe(v.em)).slice(0, 5) + "</span>" : "—";
+  }
+  function dvSituacaoPill(l) {
+    const est = dvEstado(l), t = estado.dv.trat[l.wo];
+    if (est === "aguardando") {
+      const ped = dvUltimoPedido(t), dias = ped ? diasEntre(hoje(), dataLocalDe(ped.em)) : 0, atras = dias > REGRAS.divergencias.diasPrazoFechamento;
+      return pill((atras ? "Atrasado · " : "Aguardando · ") + dias + (dias === 1 ? " dia" : " dias"), atras ? "p-vermelho" : "p-laranja");
+    }
+    return pill({ solicitar: "A solicitar", aberta: "A tratar", apontamento: "Apontamento", prazo: "Em prazo", offline: "Na validação offline", tratada: "Tratada" }[est], "p-cinza");
+  }
+  function dvPaginaCaso(l) {
+    const D = estado.dv, cfg = REGRAS.divergencias, t = D.trat[l.wo] || {}, est = dvEstado(l), cat = NOMES_CATEGORIA[l.categoria], ped = dvUltimoPedido(t);
+    let acao = "";
+    if (est === "solicitar") acao = '<button data-dv="solicitar"' + (D.tratErro ? " disabled" : "") + ">Solicitar fechamento</button>";
+    else if (est === "aguardando") acao = '<button class="sec" data-dv="reenviar">Ainda aberta · Reenviar</button>';
+    const dias = ped ? diasEntre(hoje(), dataLocalDe(ped.em)) : null;
+    let h = '<a href="#" class="dv-voltar" data-dv="voltar">← Voltar para a lista</a>' +
+      '<div class="dv-topo"><div><h1 style="margin:0">' + esc(l.siteTxt) + " · " + esc(tipoCurto(l.tipo)) + '</h1><div class="ib-sub" style="margin:2px 0 0">' + esc(l.wo) + " · " + esc(cat[0]) + "</div></div><div>" + acao + "</div></div>" +
+      '<div class="dv-box"><div class="dv-g">' +
+      '<div><div class="dv-lb">Na base</div>' + pill(l.status, corStatus(l.status)) + '<span class="dv-sub">' + (l.dataFim ? "relatório " + dataBR(l.dataFim) : "sem data") + "</span></div>" +
+      '<div><div class="dv-lb">Visita</div>' + (l.visita ? esc(l.visita.site) + '<span class="dv-sub">' + esc(l.visita.equipe) + " · " + dataBR(l.visita.data_execucao) + "</span>" : "Nenhuma visita") + "</div>" +
+      '<div><div class="dv-lb">Validação</div>' + dvValidacaoTxt(l) + "</div>" +
+      '<div><div class="dv-lb">Situação</div>' + dvSituacaoPill(l) + (est === "aguardando" && ped ? '<span class="dv-sub">Solicitado em ' + dataBR(dataLocalDe(ped.em)).slice(0, 5) + " por " + esc(nomeDoEmail(ped.por)) + "</span>" : "") + "</div>" +
+      '</div><div style="margin-top:14px;font-size:13px">' + esc(l.motivo) + "</div></div>";
+    if (l.categoria === "andamento_sem_visita") {
+      h += '<div class="dv-tit">Tratativa</div><div class="dv-box" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap"><div><div class="dv-lb">Motivo real</div><select id="dvMotivoCaso"><option value="">— motivo real —</option>' +
+        cfg.motivos.map(function (m) { return "<option" + (m === t.motivo ? " selected" : "") + ">" + esc(m) + "</option>"; }).join("") + '</select></div>' +
+        '<div><div class="dv-lb">Observação</div><input type="text" id="dvObsCaso" style="width:360px" value="' + esc(t.observacao || "") + '"></div><button data-dv="salvar">Salvar</button></div>';
+    }
+    const hist = (t.historico || []);
+    if (hist.length) h += '<div class="dv-tit">Andamento</div><div class="dv-box">' + hist.slice().reverse().map(function (e) {
+      return '<div style="border-left:3px solid #e0e0e0;padding-left:12px;margin-bottom:10px"><b>' + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(e.por === "Sistema" ? "Sistema" : nomeDoEmail(e.por)) + "</b> · " + esc(e.acao) + "</div>"; }).join("") + "</div>";
+    return h;
+  }
   function desenharDivergencias() {
     const D = estado.dv, cfg = REGRAS.divergencias;
-    const baseTodas = linhasDivergenciaFiltradas(true);            // respeita grupo e busca
-    const base = baseTodas.filter(function (l) { return dvEstado(l) !== "prazo"; });
-    const cont = function (c) { return base.filter(function (l) { return l.categoria === c; }).length; };
-    const tratadas = base.filter(function (l) { return dvEstado(l) === "tratada"; }).length;
+    const baseTodas = linhasDivergenciaFiltradas(true);            // respeita a busca
     const nEst = function (e) { return baseTodas.filter(function (l) { return dvEstado(l) === e; }).length; };
     const nHist = Object.keys(D.trat).filter(function (w) { return (D.trat[w].historico || []).length; }).length;
-    const rot = { abertas: "Sem tratativa · " + (nEst("solicitar") + nEst("aberta")), aguardando: "Aguardando a base · " + nEst("aguardando"), emprazo: "Em prazo (hoje) · " + nEst("prazo"), historico: "Histórico de fechamentos · " + nHist };
-    document.querySelectorAll("#dvChips button").forEach(function (b) { if (rot[b.dataset.filtro]) b.textContent = rot[b.dataset.filtro]; });
-    const campo = function (rot, v, cls) { return '<div class="ib-campo ' + (cls || "") + '"><div class="r">' + esc(rot) + '</div><div class="v">' + v + "</div></div>"; };
-    const nExec = cont("exec_sem_visita"), nAnd = cont("andamento_sem_visita");
-    $("dvCampos").innerHTML =
-      campo("Divergências (executada + andamento, sem visita)", nExec + nAnd, (nExec + nAnd) ? "verm" : "") +
-      campo("Executadas sem visita", nExec) + campo("Em andamento sem visita", nAnd) +
-      campo("Relatório em data diferente", cont("data_diferente")) +
-      campo("Visita sem execução na base", cont("visita_sem_exec_base"), cont("visita_sem_exec_base") ? "verm" : "") +
-      campo("Com motivo confirmado", tratadas + " <small style=\"font-size:12px;font-weight:400\">de " + base.length + "</small>", "verde");
-
-    // resumo por motivo provável (conta o que está aberto, no grupo/busca escolhidos)
-    const porMotivo = {};
-    base.forEach(function (l) {
-      const est = dvEstado(l);
-      if (est !== "solicitar" && est !== "aberta") return;
-      porMotivo[l.motivoCodigo] = (porMotivo[l.motivoCodigo] || 0) + 1;
-    });
-    const cods = Object.keys(porMotivo).sort(function (a, b) { return porMotivo[b] - porMotivo[a]; });
-    $("dvMotivos").innerHTML = '<div class="rm-l rm-cab"><div class="t">Motivo provável (sem tratativa)</div><div class="n">WOs</div></div>' +
-      (cods.length ? cods.map(function (c) {
-        return '<div class="rm-l' + (D.motivo === c ? " ativo" : "") + '" data-motivo="' + c + '"><div class="t">' + esc(NOMES_MOTIVO[c] || c) + '</div><div class="n">' + porMotivo[c] + "</div></div>";
-      }).join("") : '<div class="rm-l"><div class="t" style="color:#525252">Nada em aberto neste filtro.</div><div class="n"></div></div>');
-
+    const cont = { abertas: nEst("solicitar") + nEst("aberta"), aguardando: nEst("aguardando"), apontamentos: nEst("apontamento"), emprazo: nEst("prazo"), historico: nHist, todas: baseTodas.length };
+    $("dvVisao").innerHTML = DV_VISOES.map(function (v) { return '<option value="' + v[0] + '"' + (v[0] === D.filtro ? " selected" : "") + ">" + v[1] + " · " + cont[v[0]] + "</option>"; }).join("");
+    $("dvTipo").innerHTML = '<option value="">Todos os tipos</option>' + Object.keys(NOMES_CATEGORIA).map(function (k) { return '<option value="' + k + '"' + (k === D.tipo ? " selected" : "") + ">" + esc(NOMES_CATEGORIA[k][0]) + "</option>"; }).join("");
     const statusLista = [];
-    base.forEach(function (l) { if (l.status && statusLista.indexOf(l.status) < 0) statusLista.push(l.status); });
+    baseTodas.forEach(function (l) { if (l.status && statusLista.indexOf(l.status) < 0) statusLista.push(l.status); });
     statusLista.sort(function (a, b) { return rankStatus(a) - rankStatus(b) || a.localeCompare(b); });
     $("dvStatus").innerHTML = '<option value="">Todos os status</option>' + statusLista.map(function (x) { return "<option" + (x === D.status ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("");
-    const dataRef = dvDataRef;
-    const lista = linhasDivergenciaFiltradas(false).slice().sort(function (a, b) {
-      const da = dataRef(a), db = dataRef(b);
-      return rankStatus(a.status) - rankStatus(b.status) || (da && db ? da.localeCompare(db) : da ? -1 : db ? 1 : 0) || String(a.siteTxt || "").localeCompare(String(b.siteTxt || "")) || String(a.wo).localeCompare(String(b.wo));
-    });
-    $("dvContagem").textContent = lista.length + " WO(s)" + (D.motivo ? " · filtro: " + (NOMES_MOTIVO[D.motivo] || D.motivo) + " (clique de novo para limpar)" : "") +
-      (lista.length > cfg.maxLinhas ? " · mostrando as primeiras " + cfg.maxLinhas : "");
+    $("dvContagem").textContent = cont.abertas + " para tratar · " + cont.aguardando + " aguardando a base";
+    const aberta = D.aberto && D.linhas.find(function (x) { return x.wo === D.aberto; });
+    if (D.aberto && !aberta) D.aberto = null;
+    $("dvLista").classList.toggle("oculto", !!aberta); $("dvCaso").classList.toggle("oculto", !aberta);
+    if (aberta) { $("dvCaso").innerHTML = dvPaginaCaso(aberta); return; }
 
     if (D.filtro === "historico") {
       const ws = Object.keys(D.trat).filter(function (w) { return (D.trat[w].historico || []).length; }).sort(function (a, b) {
         const ha = D.trat[a].historico, hb = D.trat[b].historico; return String(hb[hb.length - 1].em).localeCompare(String(ha[ha.length - 1].em)); });
-      $("dvContagem").textContent = ws.length + " WO(s) com histórico";
       let hh = '<div class="dv-l dv-cab"><div>WO</div><div>Site</div><div>Tipo</div><div>Situação</div><div style="grid-column:5 / span 3">Linha do tempo</div></div>';
       if (!ws.length) hh += '<div class="dv-vazio">Nenhum pedido de fechamento registrado ainda.</div>';
       ws.forEach(function (w) {
@@ -2211,97 +2231,68 @@
       $("dvTabela").innerHTML = hh;
       return;
     }
-    const opMotivo = function (sel) {
-      return '<option value="">— motivo real —</option>' + cfg.motivos.map(function (m) { return "<option" + (m === sel ? " selected" : "") + ">" + esc(m) + "</option>"; }).join("");
-    };
-    let html = '<div class="dv-l dv-cab"><div>WO</div><div>Site</div><div>Tipo</div><div>Na base</div><div>Divergência</div><div>Motivo provável</div><div>Tratativa</div></div>';
-    if (lista.length === 0) html += '<div class="dv-vazio">Nenhuma WO neste filtro.</div>';
-    lista.slice(0, cfg.maxLinhas).forEach(function (l) {
-      const t = D.trat[l.wo] || {};
-      const est = dvEstado(l), tratada = est === "tratada";
-      const cat = NOMES_CATEGORIA[l.categoria];
-      const cor = tratada ? "trat" : est === "aguardando" || est === "prazo" ? "med" : (l.categoria === "exec_sem_visita" || l.categoria === "visita_sem_exec_base" ? "pend" : "med");
-      let cel;
-      if (dvFluxo(l)) {
-        const ped = dvUltimoPedido(t), dias = ped ? diasEntre(hoje(), dataLocalDe(ped.em)) : 0, atras = dias > cfg.diasPrazoFechamento;
-        cel = '<div class="dv-trat" style="display:block">';
-        if (est === "prazo") cel += pill("Em prazo", "p-cinza");
-        else if (est === "solicitar") cel += pill("A solicitar", "p-cinza") + ' <button class="sec" data-fech="solicitar"' + (D.tratErro ? " disabled" : "") + ">Solicitar fechamento</button>";
-        else cel += pill((atras ? "Atrasado · " : "Aguardando · ") + dias + (dias === 1 ? " dia" : " dias"), atras ? "p-vermelho" : "p-laranja") + '<span class="dv-sub">Solicitado em ' + (ped ? dataBR(dataLocalDe(ped.em)).slice(0, 5) + " por " + esc(nomeDoEmail(ped.por)) : "") + "</span>" +
-          '<button class="sec" data-fech="reenviar" style="margin-top:6px">Ainda aberta · Reenviar</button>';
-        cel += "</div>";
-      } else {
-        cel = '<div class="dv-trat"><select data-campo="motivo"' + (estado.dv.tratErro ? ' disabled title="Rode o SQL divergencias_sql.txt no Supabase para liberar"' : "") + ">" + opMotivo(t.motivo || "") + "</select>" +
-          '<input type="text" data-campo="obs" placeholder="observação" value="' + esc(t.observacao || "") + '"' + (estado.dv.tratErro ? " disabled" : "") + "></div>";
-      }
-      html += '<div class="dv-l ' + cor + '" data-wo="' + esc(l.wo) + '">' +
-        '<div class="dv-wo">' + esc(l.wo) + '<span class="dv-sub">' + esc(l.grupo) + "</span></div>" +
-        "<div><b>" + esc(l.siteTxt) + "</b></div><div>" + esc(tipoCurto(l.tipo)) + "</div>" +
-        "<div>" + pill(l.status, corStatus(l.status)) + '<span class="dv-sub">' + (l.dataFim ? "relatório " + dataBR(l.dataFim) : "sem data") + "</span></div>" +
-        "<div>" + pill(cat[0], cat[1]) + "</div>" +
-        "<div>" + esc(l.motivo) + (l.visita ? '<span class="dv-sub">Visita: ' + esc(l.visita.site) + " · " + esc(l.visita.equipe) + " · " + dataBR(l.visita.data_execucao) + "</span>" : "") + "</div>" +
-        cel + "</div>";
+    const lista = linhasDivergenciaFiltradas(false).slice().sort(function (a, b) {
+      const da = dvDataRef(a), db = dvDataRef(b);
+      return rankStatus(a.status) - rankStatus(b.status) || (da && db ? da.localeCompare(db) : da ? -1 : db ? 1 : 0) || String(a.siteTxt || "").localeCompare(String(b.siteTxt || "")) || String(a.wo).localeCompare(String(b.wo));
     });
+    let html = '<div class="dv-l dv-l2 dv-cab"><div>Site</div><div>WO</div><div>Tipo</div><div>Divergência</div><div>Validação</div><div>Situação</div><div>Desde</div></div>';
+    if (lista.length === 0) html += '<div class="dv-vazio">Nenhuma WO nesta lista.</div>';
+    lista.slice(0, cfg.maxLinhas).forEach(function (l) {
+      const est = dvEstado(l), cat = NOMES_CATEGORIA[l.categoria];
+      const cor = est === "tratada" ? "trat" : est === "solicitar" ? "pend" : "med";
+      html += '<div class="dv-l dv-l2 ' + cor + '" data-wo="' + esc(l.wo) + '"><div><b>' + esc(l.siteTxt) + "</b></div><div>" + esc(l.wo) + "</div><div>" + esc(tipoCurto(l.tipo)) + "</div><div>" + pill(cat[0], cat[1]) +
+        "</div><div>" + dvValidacaoTxt(l) + "</div><div>" + dvSituacaoPill(l) + "</div><div>" + (dvDataRef(l) ? dataBR(dvDataRef(l)).slice(0, 5) : "—") + "</div></div>";
+    });
+    if (lista.length > cfg.maxLinhas) html += '<div class="dv-vazio">Mostrando as primeiras ' + cfg.maxLinhas + " de " + lista.length + ".</div>";
     $("dvTabela").innerHTML = html;
   }
+  function dvFiltroExterno(f) {
+    const D = estado.dv; D.aberto = null; D.tipo = ""; D.status = "";
+    if (DV_VISOES.some(function (v) { return v[0] === f; })) D.filtro = f;
+    else if (NOMES_CATEGORIA[f]) { D.filtro = "todas"; D.tipo = f; }
+    else D.filtro = "todas";
+  }
 
-  $("dvMotivos").addEventListener("click", function (e) {
-    const l = e.target.closest(".rm-l[data-motivo]"); if (!l) return;
-    estado.dv.motivo = estado.dv.motivo === l.dataset.motivo ? "" : l.dataset.motivo;
-    desenharDivergencias();
-  });
-  $("dvChips").addEventListener("click", function (e) {
-    const b = e.target.closest("button[data-filtro]"); if (!b) return;
-    estado.dv.filtro = b.dataset.filtro;
-    document.querySelectorAll("#dvChips button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
-    desenharDivergencias();
-  });
+  $("dvVisao").addEventListener("change", function () { estado.dv.filtro = $("dvVisao").value; desenharDivergencias(); });
+  $("dvTipo").addEventListener("change", function () { estado.dv.tipo = $("dvTipo").value; desenharDivergencias(); });
   $("dvBusca").addEventListener("input", desenharDivergencias);
   $("dvStatus").addEventListener("change", function () { estado.dv.status = $("dvStatus").value; desenharDivergencias(); });
   $("dvAtualizar").addEventListener("click", atualizarDivergencias);
-
-  $("dvTabela").addEventListener("change", async function (e) {
-    const linha = e.target.closest(".dv-l[data-wo]"); if (!linha) return;
-    const wo = linha.dataset.wo;
-    const motivo = linha.querySelector('[data-campo="motivo"]').value, obs = linha.querySelector('[data-campo="obs"]').value.trim();
-    try {
-      if (!motivo && !obs) {
-        conferir(await banco.from("divergencias_tratativa").delete().eq("wo", wo));
-        delete estado.dv.trat[wo];
-      } else {
-        const reg = { wo: wo, motivo: motivo || null, observacao: obs || null, atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString() };
-        conferir(await banco.from("divergencias_tratativa").upsert([reg], { onConflict: "wo" }));
-        estado.dv.trat[wo] = reg;
-      }
-      mostrarAviso("Tratativa salva: " + wo);
-      if (estado.dv.filtro === "abertas" || estado.dv.filtro === "tratadas") setTimeout(desenharDivergencias, 400); else desenharDivergencias();
-    } catch (err) { mostrarAviso("Não salvou: " + err.message, "erro"); }
+  $("dvTabela").addEventListener("click", function (e) {
+    const r = e.target.closest(".dv-l2[data-wo]"); if (!r) return;
+    estado.dv.aberto = r.dataset.wo; desenharDivergencias(); window.scrollTo(0, 0);
   });
-
-  $("dvTabela").addEventListener("click", async function (e) {
-    const b = e.target.closest("button[data-fech]"); if (!b) return;
-    const linha = b.closest(".dv-l[data-wo]"); if (!linha) return;
-    const wo = linha.dataset.wo, l = estado.dv.linhas.find(function (x) { return x.wo === wo; }); if (!l) return;
-    const agora = new Date().toISOString(), t = estado.dv.trat[wo] || {}, reenvio = b.dataset.fech === "reenviar";
-    const hist = (t.historico || []).concat([{ em: agora, por: estado.usuarioEmail, pedido: true, acao: reenvio ? "Pedido de fechamento reenviado (WO ainda aberta na base)" : "Fechamento solicitado", site: l.siteTxt, tipo: l.tipo }]);
-    const reg = { wo: wo, motivo: FECH, observacao: null, atualizado_por: estado.usuarioEmail, atualizado_em: agora, historico: hist };
-    b.disabled = true;
+  $("dvCaso").addEventListener("click", async function (e) {
+    const b = e.target.closest("[data-dv]"); if (!b) return;
+    e.preventDefault();
+    const D = estado.dv, wo = D.aberto, l = D.linhas.find(function (x) { return x.wo === wo; });
+    if (b.dataset.dv === "voltar") { D.aberto = null; desenharDivergencias(); return; }
+    if (!l) return;
+    const agora = new Date().toISOString(), t = D.trat[wo] || {};
     try {
+      if (b.dataset.dv === "salvar") {
+        const motivo = $("dvMotivoCaso").value, obs = $("dvObsCaso").value.trim();
+        if (!motivo && !obs) { conferir(await banco.from("divergencias_tratativa").delete().eq("wo", wo)); delete D.trat[wo]; }
+        else { const reg = { wo: wo, motivo: motivo || null, observacao: obs || null, atualizado_por: estado.usuarioEmail, atualizado_em: agora }; conferir(await banco.from("divergencias_tratativa").upsert([reg], { onConflict: "wo" })); D.trat[wo] = Object.assign({}, t, reg); }
+        mostrarAviso("Tratativa salva: " + wo); desenharDivergencias(); return;
+      }
+      const reenvio = b.dataset.dv === "reenviar";
+      b.disabled = true;
+      const hist = (t.historico || []).concat([{ em: agora, por: estado.usuarioEmail, pedido: true, acao: reenvio ? "Pedido de fechamento reenviado (WO ainda aberta na base)" : "Fechamento solicitado", site: l.siteTxt, tipo: l.tipo }]);
+      const reg = { wo: wo, motivo: FECH, observacao: null, atualizado_por: estado.usuarioEmail, atualizado_em: agora, historico: hist };
       conferir(await banco.from("divergencias_tratativa").upsert([reg], { onConflict: "wo" }));
-      estado.dv.trat[wo] = reg;
-      mostrarAviso("Fechamento solicitado: " + wo);
-      desenharDivergencias();
+      D.trat[wo] = reg; mostrarAviso("Fechamento solicitado: " + wo); desenharDivergencias();
     } catch (err) { b.disabled = false; mostrarAviso("Não salvou: " + err.message + " (rode o SQL divergencias_historico_sql.txt no Supabase)", "erro"); }
   });
 
   $("dvExportar").addEventListener("click", function () {
     const lista = linhasDivergenciaFiltradas(false);
     const q = function (t) { return '"' + String(t == null ? "" : t).replace(/"/g, '""') + '"'; };
-    const linhas = [["WO", "Site", "Tipo", "Grupo", "Status na base", "Data relatório", "Divergência", "Motivo provável", "Visita (site)", "Visita (equipe)", "Visita (data)", "Motivo confirmado", "Observação"]]
+    const linhas = [["WO", "Site", "Tipo", "Grupo", "Status na base", "Data relatório", "Divergência", "Motivo provável", "Visita (site)", "Visita (equipe)", "Visita (data)", "Validação", "Motivo confirmado", "Observação"]]
       .concat(lista.map(function (l) {
-        const t = estado.dv.trat[l.wo] || {};
+        const t = estado.dv.trat[l.wo] || {}, v = estado.dv.vals[l.wo];
         return [l.wo, l.siteTxt, l.tipo, l.grupo, l.status, dataBR(l.dataFim), NOMES_CATEGORIA[l.categoria][0], l.motivo,
-                l.visita ? l.visita.site : "", l.visita ? l.visita.equipe : "", l.visita ? dataBR(l.visita.data_execucao) : "", t.motivo || "", t.observacao || ""];
+                l.visita ? l.visita.site : "", l.visita ? l.visita.equipe : "", l.visita ? dataBR(l.visita.data_execucao) : "", v ? (DV_RESULT[v.resultado] || v.resultado) : "", t.motivo || "", t.observacao || ""];
       }));
     const csv = "﻿" + linhas.map(function (r) { return r.map(q).join(";"); }).join("\r\n");
     const a = document.createElement("a");
@@ -4812,9 +4803,8 @@
       if (alvo === "vlista") { const pf = String(go.dataset.f || "periodo:validada").split(":"); estado.val.rvLista = { escopo: pf[0], filtro: pf[1], aberta: null }; desenharResumoVal(); window.scrollTo(0, 0); return; }
       if (alvo === "semval") { estado.val.rvAba = "oper"; estado.val.semValFiltro = "todas"; desenharResumoVal(); const el = $("rvSemVal"); if (el) el.scrollIntoView({ behavior: "smooth" }); }
       else if (alvo === "dv") {
-        estado.dv.filtro = go.dataset.f || "todas";
+        dvFiltroExterno(go.dataset.f || "todas");
         irParaTela("Divergencias", "", $("rvSetor").value || "MÓVEL");
-        document.querySelectorAll("#dvChips button").forEach(function (x) { x.classList.toggle("ativo", x.dataset.filtro === estado.dv.filtro); });
       }
       else if (alvo === "FilaVal") { estado.val.filtro = "todas"; irParaTela("FilaVal"); }
       else irParaTela(alvo);
