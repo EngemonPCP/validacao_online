@@ -4609,6 +4609,10 @@
       (v.wos_visita || []).forEach(function (w) { if (baseMapa[w.wo]) campo[w.wo] = v; });
     });
     d.campo = Object.keys(campo).length;
+    d.baseMapa = baseMapa; d.campoMapa = campo; d.ult = ult;
+    d.campoNaBase = Object.keys(campo).filter(function (wo) { return ehExecutadaBase(baseMapa[wo]); }).length;
+    d.campoBasePend = d.campo - d.campoNaBase;
+    d.execSemCampo = Math.max(0, d.mopExec - d.campoNaBase);
     Object.keys(campo).forEach(function (wo) { tipoAc(tipoCurto(baseMapa[wo].tipo)).camp++; });
     const usados = new Set();
     d.listaPeriodo = []; d.listaDia = [];
@@ -4665,10 +4669,27 @@
     const L = estado.val.rvLista, fmt = function (n) { return Number(n).toLocaleString("pt-BR"); };
     const nomeP = estado.periodo.mes ? NOMES_MES[estado.periodo.mes - 1] + "/" + estado.periodo.ano : "ano " + estado.periodo.ano;
     const rotEscopo = L.escopo === "dia" ? "Dia " + dataBR(d.dia).slice(0, 5) : esc(nomeP);
-    const rows = (L.escopo === "dia" ? d.listaDia : d.listaPeriodo).slice().sort(function (a, b) { return String(b.e.em).localeCompare(String(a.e.em)); });
-    const ROT = { validada: "Sem ressalva", ressalva: "Com ressalva", devolvida: "Devolvidas", offline: "Offline", todas: "Todas" };
+    let rows = (L.escopo === "dia" ? d.listaDia : d.listaPeriodo).slice().sort(function (a, b) { return String(b.e.em).localeCompare(String(a.e.em)); });
+    let ROT = { validada: "Sem ressalva", ressalva: "Com ressalva", devolvida: "Devolvidas", offline: "Offline", todas: "Todas" };
+    if (L.modo === "pend") { rows = rows.filter(function (x) { return x.e.resultado !== "validada"; }); ROT = { todas: "Todas", ressalva: "Com ressalva", devolvida: "Devolvidas", offline: "Offline" }; }
     const cont = function (k) { return rows.filter(function (x) { return k === "todas" || x.e.resultado === k; }).length; };
     const voltar = '<a class="rv-lk" data-vl="resumo">← Voltar para o resumo</a>';
+    if (L.modo === "exec" || L.modo === "campo") {
+      const ids = L.modo === "exec" ? Object.keys(d.baseMapa).filter(function (w) { return ehExecutadaBase(d.baseMapa[w]); }) : Object.keys(d.campoMapa);
+      const itens = ids.map(function (w) {
+        const l = d.baseMapa[w], v = d.campoMapa[w], ult = d.ult[w], naBase = ehExecutadaBase(l);
+        return { l: l, w: w, emCampo: !!v, naBase: naBase, equipe: v ? v.equipe : (l.equipe_engemon || ""), ult: ult };
+      }).sort(function (a, b) { return String(a.l.programado_infratel || a.l.clr_sdr_site_helix || "").localeCompare(String(b.l.programado_infratel || b.l.clr_sdr_site_helix || "")); });
+      const R2 = L.modo === "exec" ? { todas: "Todas", campo: "Em campo", semcampo: "Sem visita de campo" } : { todas: "Todas", nabase: "Já executadas na base", basepend: "Base ainda pendente" };
+      const ok2 = function (x, k) { return k === "todas" || (k === "campo" && x.emCampo) || (k === "semcampo" && !x.emCampo) || (k === "nabase" && x.naBase) || (k === "basepend" && !x.naBase); };
+      const vis2 = itens.filter(function (x) { return ok2(x, L.filtro); });
+      return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>" + (L.modo === "exec" ? "Total executadas" : "Executadas em campo") + " · " + esc(nomeP) + " · " + fmt(itens.length) + " WOs</span></div>" +
+        '<div class="rv-chips">' + Object.keys(R2).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + R2[k] + " · " + itens.filter(function (x) { return ok2(x, k); }).length + "</button>"; }).join("") + "</div>" +
+        (vis2.length ? '<div class="rv-tab"><table><tr><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Na base</th><th>Campo</th><th>Análise</th></tr>' + vis2.slice(0, 400).map(function (x) {
+          return "<tr><td><b>" + esc(x.l.programado_infratel || x.l.clr_sdr_site_helix || "") + "</b></td><td>" + esc(x.w) + "</td><td>" + esc(tipoCurto(x.l.tipo)) + "</td><td>" + esc(x.equipe || "—") + '</td><td><span class="rv-tg">' + esc(x.l.status_final || "—") + "</span></td><td>" + (x.emCampo ? "Visita de campo" : "Sem visita de campo") + "</td><td>" +
+            (x.ult ? esc(REGRAS.validacao.resultados[x.ult.resultado] || x.ult.resultado) : "Sem análise") + "</td></tr>";
+        }).join("") + "</table></div>" : '<div class="vl-mu" style="padding:12px 20px">Nenhuma WO nesta lista.</div>') + "</div>";
+    }
     if (L.aberta) {
       const x = rows.find(function (r) { return r.e.reg.id + "|" + r.wo === L.aberta; });
       if (x) {
@@ -4688,6 +4709,22 @@
       L.aberta = null;
     }
     const vis = rows.filter(function (x) { return L.filtro === "todas" || x.e.resultado === L.filtro; });
+    if (L.modo === "pend") {
+      const casoDe = function (reg) { return (estado.val.casosMes || []).find(function (c) { return c.validacao_id === reg.id; }); };
+      const sit = function (x) {
+        const reg = x.e.reg, c = casoDe(reg);
+        if (x.e.resultado === "devolvida" && !c) return reg.situacao === "encerrada" ? "Revalidada" : "Aguardando técnico";
+        if (!c) return "—";
+        return c.concluido_em ? "Concluído em " + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) : 'Em aberto · <a class="rv-lk" data-go="Offline">Abrir →</a>';
+      };
+      return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>Com pendências · " + esc(nomeP) + " · " + fmt(rows.length) + " WOs</span></div>" +
+        '<div class="rv-chips">' + Object.keys(ROT).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + ROT[k] + " · " + cont(k) + "</button>"; }).join("") + "</div>" +
+        (vis.length ? '<div class="rv-tab"><table><tr><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Resultado</th><th>Pendências</th><th>Situação do caso</th></tr>' + vis.slice(0, 400).map(function (x) {
+          const e = x.e, reg = e.reg, w = (reg.wos || []).find(function (y) { return y.wo === x.wo; }), cl = { devolvida: "v2", ressalva: "v3", offline: "v4" }[e.resultado];
+          return "<tr><td><b>" + esc(reg.site) + "</b></td><td>" + esc(x.wo) + "</td><td>" + esc(w ? tipoCurto(w.tipo) : "—") + "</td><td>" + esc(reg.equipe || "—") + '</td><td><span class="vl-tag ' + cl + '">' + esc(REGRAS.validacao.resultados[e.resultado] || e.resultado) + "</span></td><td>" +
+            esc((e.pendencias || []).map(function (p) { return p.texto; }).join(" · ") || e.motivo || "—") + "</td><td>" + sit(x) + "</td></tr>";
+        }).join("") + "</table></div>" : '<div class="vl-mu" style="padding:12px 20px">Nenhuma WO nesta lista.</div>') + "</div>";
+    }
     return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>" + rotEscopo + " · em WOs</span></div>" +
       '<div class="rv-chips">' + Object.keys(ROT).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + ROT[k] + " · " + cont(k) + "</button>"; }).join("") + "</div>" +
       (vis.length ? '<div class="rv-tab"><table><tr><th>Quando</th><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Validadora</th><th>Conferido</th><th>Resultado</th><th>Comentário</th></tr>' + vis.slice(0, 300).map(function (x) {
@@ -4729,10 +4766,10 @@
     } else {
       const nm = function (n, rot, nota, neg) { return '<div><div class="l">' + rot + '</div><div class="v' + (neg ? " neg" : "") + '">' + fmt(n) + '</div><div class="n">' + (nota || "") + "</div></div>"; };
       t += '<div class="rv-bl"><div class="rv-hd">' + esc(nomeP) + ' · acumulado <span>MOP · em WOs · base do período ' + fmt(d.mopTotal) + '</span></div><div class="rv-m rv-m5">' +
-        nm(d.mopExec, "Total executadas", d.dv && d.dv.exec ? fmt(d.dv.exec) + " sem visita registrada " + lk("ver", "dv", "exec_sem_visita") : "") +
-        nm(d.campo, "Executadas em campo", d.campoSem ? fmt(d.campoSem) + " sem análise " + lk("ver", "semval") + (d.dv && d.dv.vis ? "<br>" + fmt(d.dv.vis) + " com a base ainda pendente " + lk("ver", "dv", "visita_sem_exec_base") : "") : "") +
-        nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo") + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
-        nm(pendTot, "Com pendências", fmt(A.dev) + " devolvidas · " + fmt(d.offAbertos) + " casos offline " + lk("ver", "Offline"), true) + "</div></div>";
+        nm(d.mopExec, "Total executadas", fmt(d.campoNaBase) + " em campo" + (d.execSemCampo ? " · " + fmt(d.execSemCampo) + " sem visita de campo " + lk("ver", "wlista", "exec:semcampo") : "") + "<br>" + lk("ver lista", "wlista", "exec:todas")) +
+        nm(d.campo, "Executadas em campo", (d.campo ? fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise " + lk("ver", "semval") : "")) +
+        nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo" + (A.exec ? "<br>" + lk("ver lista", "vlista", "periodo:todas") : "")) + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
+        nm(pendTot, "Com pendências", fmt(A.dev) + " devolvidas · " + fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Offline"), true) + "</div></div>";
       t += barras;
       t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m4">' +
         nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva", d.sem ? lk("ver lista", "vlista", "dia:validada") : "") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
@@ -4809,6 +4846,8 @@
     if (go) {
       const alvo = go.dataset.go;
       if (alvo === "vlista") { const pf = String(go.dataset.f || "periodo:validada").split(":"); estado.val.rvLista = { escopo: pf[0], filtro: pf[1], aberta: null }; desenharResumoVal(); window.scrollTo(0, 0); return; }
+      if (alvo === "plista") { estado.val.rvAba = "oper"; estado.val.rvLista = { escopo: "periodo", modo: "pend", filtro: "todas", aberta: null }; desenharResumoVal(); window.scrollTo(0, 0); return; }
+      if (alvo === "wlista") { const pf2 = String(go.dataset.f || "exec:todas").split(":"); estado.val.rvLista = { escopo: "periodo", modo: pf2[0], filtro: pf2[1], aberta: null }; desenharResumoVal(); window.scrollTo(0, 0); return; }
       if (alvo === "semval") { estado.val.rvAba = "oper"; estado.val.semValFiltro = "todas"; desenharResumoVal(); const el = $("rvSemVal"); if (el) el.scrollIntoView({ behavior: "smooth" }); }
       else if (alvo === "dv") {
         dvFiltroExterno(go.dataset.f || "todas");
