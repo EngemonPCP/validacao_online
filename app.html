@@ -2009,6 +2009,7 @@
           Math.abs(d) + (Math.abs(d) === 1 ? " dia " : " dias ") + (d > 0 ? "depois" : "antes") + " da visita)";
         saida.push(linha); return;
       }
+      if (executada && l.data_fim) { const fxp = faixaDoPeriodo(), dfp = String(l.data_fim).slice(0, 10); if (dfp < fxp[0] || dfp > fxp[1]) return; }   // executada em outro mês: fica no mês dela
       linha.categoria = executada ? "exec_sem_visita" : "andamento_sem_visita";
       const chaves = [linha.site, limparSite(l.clr_sdr_site_helix)].filter(function (k, i, a) { return k && a.indexOf(k) === i; });
       let doSite = [];
@@ -4537,7 +4538,7 @@
     try {
       const fx = faixaDoPeriodo();
       const cs = conferir(await banco.from("casos_offline").select("*").order("id").limit(2000));
-      estado.val.casosMes = cs.filter(function (c) { const dd = dataLocalDe(c.criado_em || new Date().toISOString()); return dd >= fx[0] && dd <= fx[1]; });
+      estado.val.casosMes = cs.filter(function (c) { const dd = dataCaso(c); return dd >= fx[0] && dd <= fx[1]; });
     } catch (e) { estado.val.casosMes = []; }
     try {
       const fx = faixaDoPeriodo(), ini = somarDias(fx[0], -5), fim = somarDias(fx[1], 5), tudo = [];
@@ -4552,7 +4553,7 @@
       try {
         const fx2 = faixaDoPeriodo();
         const cs2 = conferir(await banco.from("casos_offline").select("*").order("id").limit(2000));
-        estado.val.casosMes = cs2.filter(function (c) { const dd = dataLocalDe(c.criado_em || new Date().toISOString()); return dd >= fx2[0] && dd <= fx2[1]; });
+        estado.val.casosMes = cs2.filter(function (c) { const dd = dataCaso(c); return dd >= fx2[0] && dd <= fx2[1]; });
         estado.val.lista = await carregarValidacoes();
       } catch (e) { /* mantém o que já estava */ }
     }
@@ -5267,6 +5268,7 @@
     if (c.concluido_em) return "resolvida";
     return (c.pendencias || []).some(function (p) { return p.estado !== "Aberta"; }) ? "tratativa" : "aberta";
   }
+  function dataCaso(c) { const h0 = c.historico && c.historico[0]; if (c.origem === "sem_visita" && h0 && h0.base_data) return h0.base_data; return dataLocalDe(c.criado_em || (h0 && h0.em) || new Date().toISOString()); }
   function idadeCaso(c) { const t = new Date(c.criado_em || (c.historico && c.historico[0] && c.historico[0].em) || Date.now()).getTime(); return Math.max(0, Math.floor((Date.now() - t) / 86400000)); }
   function emRisco(c) {
     if (c.concluido_em) return (c.pendencias || []).some(function (p) { return p.estado === "Não resolvida"; });
@@ -5297,7 +5299,7 @@
     let criados = 0;
     try {
       const d = dadosResumoVal();
-      const itens = (d.semVal || []).filter(function (x) { return x.cat === "exec_sem_visita" && x.l && String(x.l.data_fim || "").slice(0, 10) >= REGRAS.validacao.inicio && String(x.l.data_fim || "").slice(0, 10) < hoje(); });
+      const itens = (d.semVal || []).filter(function (x) { return x.cat === "exec_sem_visita" && x.l && String(x.l.data_fim || "").slice(0, 10) >= REGRAS.validacao.inicio && String(x.l.data_fim || "").slice(0, 10) < hoje() && String(x.l.data_fim || "").slice(0, 7) === hoje().slice(0, 7); });
       if (!itens.length) return 0;
       const ids = itens.map(function (x) { return "SV-" + x.l.wo; });
       const ja = {};
@@ -5363,7 +5365,7 @@
       }
       const fx = faixaDoPeriodo();
       estado.off.casos = todos.filter(function (c) {
-        const d = dataLocalDe(c.criado_em || (c.historico && c.historico[0] && c.historico[0].em) || new Date().toISOString());
+        const d = dataCaso(c);
         return d >= fx[0] && d <= fx[1];
       });
     } catch (e) { $("ofCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar: ' + esc(e.message) + " (o SQL validacao_offline_sql.txt já foi rodado?)</div>"; return; }
@@ -5418,7 +5420,7 @@
       const faltaAbas = !c.concluido_em && (svc ? (iz < 0 || hz[iz].sem_analise === true) : precisaValidar(c));
       const tg = c.concluido_em ? '<span class="vl-tag v1">Resolvido</span>' : faltaAbas ? '<span class="vl-tag v2">Abas para validar</span>' : svc && !tecnicoDe(c) ? '<span class="vl-tag v2">Informar quem executou</span>' : (!nab && !ntr) ? '<span class="vl-tag v5">Pronto para concluir</span>' : nab ? '<span class="vl-tag v2">' + nab + (nab === 1 ? " aberta" : " abertas") + "</span>" : '<span class="vl-tag v5">' + ntr + " em tratativa</span>";
       return '<tr data-id="' + c.id + '" class="vl-clic"><td><b>' + esc(c.site) + "</b></td><td>" + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + "</td><td>" + esc(c.equipe || "—") + "</td><td>" +
-        esc(REGRAS.offline.origens[c.origem] || c.origem) + "</td><td>" + tg + "</td><td>" + (c.responsavel ? esc(c.responsavel) : "—") + "</td><td>" + (emRisco(c) ? '<span class="vl-tag v2">' : "") + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (emRisco(c) ? "</span>" : "") + "</td></tr>";
+        esc(REGRAS.offline.origens[c.origem] || c.origem) + "</td><td>" + tg + "</td><td>" + (c.responsavel ? esc(c.responsavel) : "—") + "</td><td>" + (emRisco(c) ? '<span class="vl-tag v2">' : "") + (c.origem === "sem_visita" ? dataBR(dataCaso(c)).slice(0, 5) : dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em)) + (emRisco(c) ? "</span>" : "") + "</td></tr>";
     }).join("") + "</table>";
     t += "</div></div>";
     const cs = casoSel(), topo = document.querySelector("#telaOffline .vl-topo");
