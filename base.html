@@ -192,7 +192,7 @@
         const bruto = texto(celula(linha, "wo"));
         if (bruto) { comTexto++; if (exemplos.length < 3) exemplos.push(bruto); }
         const wo = bruto ? bruto.replace(/\s+/g, "") : null;
-        if (!wo || !/^(WO|ABRIR)\d+/i.test(wo)) { resultado.semWO++; continue; }
+        if (!wo || !/^(WO|ABRIR(MANUAL)?)\d+/i.test(wo)) { resultado.semWO++; continue; }
         resultado.total++;
 
         // Todas as preventivas entram; só contamos as que vieram sem setor reconhecido.
