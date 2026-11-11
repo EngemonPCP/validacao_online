@@ -349,6 +349,7 @@
 
       // ---- chave reserva: SITE | TIPO | MÊS (a WO pode mudar; a chave não) ----------
       function normChave(t) { return String(t == null ? "" : t).replace(/\s+/g, " ").trim().toUpperCase(); }
+      function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
       function chaveBase(l) { return normChave(l.programado_infratel || l.clr_sdr_site_helix) + "|" + normChave(l.tipo) + "|" + l.mes; }
       // Dá a cada linha a sua chave; se o mesmo site tiver 2 WOs do mesmo tipo no mês, a 2ª ganha "|2" etc. (pela ordem da WO).
       function atribuirChaves(linhas) {
@@ -379,7 +380,7 @@
           if (gS[k].length === 1 && gC[k] && gC[k].length === 1) pares[gS[k][0].wo] = gC[k][0].wo; else gS[k].forEach(function (x) { orfas.push(x.wo); });
         });
         const velhos = Object.keys(pares);
-        const resultado = { trocas: 0, semPar: 0, visitas: 0, validacoes: 0 };
+        const resultado = { trocas: 0, semPar: 0, visitas: 0, validacoes: 0, soltas: [] };
         // só mexe no que está de fato em uso
         const usados = {};
         const todosVelhos = velhos.concat(orfas);
@@ -432,6 +433,13 @@
             resultado.validacoes++;
           }
         }
+        const vistas = {};
+        val.forEach(function (v) { (v.wos || []).forEach(function (w) {
+          if (!w || !w.wo || codigosNovos[w.wo] || mapa[w.wo] || vistas[w.wo]) return;
+          vistas[w.wo] = true;
+          const k = chaveBase({ programado_infratel: v.site, tipo: w.tipo, mes: mes }), n = gNovas[k] ? gNovas[k].length : 0;
+          resultado.soltas.push(v.site + " · " + (w.tipo || "") + " · " + w.wo + (n > 1 ? " (a planilha tem " + n + " WOs desse tipo no site)" : n === 0 ? " (sem WO desse site e tipo na planilha)" : ""));
+        }); });
         const cas = await banco.from("casos_offline").select("id,site,wos");
         if (!cas.error) {
           for (const c of cas.data) {
@@ -583,6 +591,7 @@
         } else {
           $("msgGravar").innerHTML = '<span class="ok">Pronto: ' + gravadas + " WOs gravadas.</span>" +
             (trocas && (trocas.trocas || trocas.validacoes) ? '<br><span class="ok">Códigos provisórios trocados pela WO real em ' + trocas.trocas + " WO(s) já usadas (" + trocas.validacoes + " validação(ões) atualizada(s)).</span>" : "") +
+            (trocas && trocas.soltas && trocas.soltas.length ? '<br><span class="aviso">' + trocas.soltas.length + " WO(s) de validações continuam com código antigo e sem par:<br>" + trocas.soltas.slice(0, 40).map(function (x) { return esc(x); }).join("<br>") + "</span>" : "") +
             (trocas && trocas.semPar ? '<br><span class="aviso">' + trocas.semPar + " WO(s) já registrada(s) com código provisório não tiveram par (mesmo site e tipo) na planilha nova. Confira essas visitas.</span>" : "");
         }
         mostrarUltimaAtualizacao();
