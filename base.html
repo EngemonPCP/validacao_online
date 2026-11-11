@@ -380,7 +380,6 @@
         });
         const velhos = Object.keys(pares);
         const resultado = { trocas: 0, semPar: 0, visitas: 0, validacoes: 0 };
-        if (!velhos.length && !orfas.length) return resultado;
         // só mexe no que está de fato em uso
         const usados = {};
         const todosVelhos = velhos.concat(orfas);
@@ -395,34 +394,48 @@
         for (const velho of trocaveis) {
           for (const tabela of ["wos_visita", "expurgos", "divergencias_tratativa"]) {
             const r = await banco.from(tabela).update({ wo: pares[velho] }).eq("wo", velho);
-            if (r.error) throw new Error(tabela + ": " + r.error.message);
+            if (r.error && !/does not exist|schema cache|relation/i.test(r.error.message)) throw new Error(tabela + ": " + r.error.message);   // tabela ainda não criada: nada a trocar nela
           }
           resultado.trocas++;
         }
-        // WOs guardadas dentro das validações e dos casos offline
-        const mapa = pares;
-        const trocarLista = function (lista) { let mudou = false; const nova = (lista || []).map(function (w) { if (w && mapa[w.wo] && usados[w.wo]) { mudou = true; return Object.assign({}, w, { wo: mapa[w.wo] }); } return w; }); return [mudou, nova]; };
-        const val = await banco.from("validacoes").select("id,wos,historico").gte("data", mes + "-01").lte("data", mes + "-31");
-        if (!val.error) {
-          for (const v of val.data) {
-            const [mudou, wos] = trocarLista(v.wos);
-            let histMudou = false;
-            const hist = (v.historico || []).map(function (e) {
-              if (!e || !e.wo_ids) return e;
-              const ids = e.wo_ids.map(function (id) { if (mapa[id] && usados[id]) { histMudou = true; return mapa[id]; } return id; });
-              return Object.assign({}, e, { wo_ids: ids });
-            });
-            if (mudou || histMudou) {
-              const u = await banco.from("validacoes").update({ wos: wos, historico: hist }).eq("id", v.id);
-              if (u.error) throw new Error("validacoes: " + u.error.message);
-              resultado.validacoes++;
-            }
+        // WOs guardadas dentro das validações e dos casos offline.
+        // Vale para o par encontrado agora e também para códigos provisórios que ficaram para trás numa carga anterior:
+        // se a WO guardada não existe na planilha, procura a WO real do mesmo site e tipo (só quando houver uma única).
+        const mapa = Object.assign({}, pares);
+        const gNovas = porChave(novas);
+        const realDe = function (w, site) {
+          if (!w || !w.wo) return null;
+          if (mapa[w.wo]) return mapa[w.wo];
+          if (codigosNovos[w.wo]) return null;
+          const k = chaveBase({ programado_infratel: site, tipo: w.tipo, mes: mes });
+          return gNovas[k] && gNovas[k].length === 1 ? gNovas[k][0].wo : null;
+        };
+        const trocarLista = function (lista, site) { let mudou = false; const nova = (lista || []).map(function (w) { const n = realDe(w, site); if (n && n !== w.wo) { mudou = true; mapa[w.wo] = n; return Object.assign({}, w, { wo: n }); } return w; }); return [mudou, nova]; };
+        const val = [];
+        for (let de = 0; ; de += 1000) {
+          const r = await banco.from("validacoes").select("id,site,wos,historico").order("id").range(de, de + 999);
+          if (r.error) throw new Error("validacoes: " + r.error.message);
+          r.data.forEach(function (x) { val.push(x); });
+          if (r.data.length < 1000) break;
+        }
+        for (const v of val) {
+          const [mudou, wos] = trocarLista(v.wos, v.site);
+          let histMudou = false;
+          const hist = (v.historico || []).map(function (e) {
+            if (!e || !e.wo_ids) return e;
+            const ids = e.wo_ids.map(function (id) { const n = mapa[id] || (realDe({ wo: id, tipo: (v.wos || []).filter(function (w) { return w.wo === id; }).map(function (w) { return w.tipo; })[0] }, v.site)); if (n && n !== id) { histMudou = true; return n; } return id; });
+            return Object.assign({}, e, { wo_ids: ids });
+          });
+          if (mudou || histMudou) {
+            const u = await banco.from("validacoes").update({ wos: wos, historico: hist }).eq("id", v.id);
+            if (u.error) throw new Error("validacoes: " + u.error.message);
+            resultado.validacoes++;
           }
         }
-        const cas = await banco.from("casos_offline").select("id,wos");
+        const cas = await banco.from("casos_offline").select("id,site,wos");
         if (!cas.error) {
           for (const c of cas.data) {
-            const [mudou, wos] = trocarLista(c.wos);
+            const [mudou, wos] = trocarLista(c.wos, c.site);
             if (mudou) await banco.from("casos_offline").update({ wos: wos }).eq("id", c.id);
           }
         }
@@ -569,7 +582,7 @@
             " WOs, mas não consegui remover as antigas: " + limpeza.error.message + "</span>";
         } else {
           $("msgGravar").innerHTML = '<span class="ok">Pronto: ' + gravadas + " WOs gravadas.</span>" +
-            (trocas && trocas.trocas ? '<br><span class="ok">Códigos provisórios trocados pela WO real em ' + trocas.trocas + " WO(s) já usadas (" + trocas.validacoes + " validação(ões) atualizada(s)).</span>" : "") +
+            (trocas && (trocas.trocas || trocas.validacoes) ? '<br><span class="ok">Códigos provisórios trocados pela WO real em ' + trocas.trocas + " WO(s) já usadas (" + trocas.validacoes + " validação(ões) atualizada(s)).</span>" : "") +
             (trocas && trocas.semPar ? '<br><span class="aviso">' + trocas.semPar + " WO(s) já registrada(s) com código provisório não tiveram par (mesmo site e tipo) na planilha nova. Confira essas visitas.</span>" : "");
         }
         mostrarUltimaAtualizacao();
