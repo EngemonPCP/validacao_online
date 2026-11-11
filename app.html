@@ -299,7 +299,7 @@
     #telaRegistrar .ib-grade { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px 28px; margin-bottom:6px; }
     #telaRegistrar .ib-campo > label { display:block; font-size:11px; font-weight:400; color:#525252; margin:0 0 2px; }
     #telaRegistrar .ib-campo.larg { grid-column:1 / -1; }
-    #telaRegistrar .req { color:#da1e28; }
+    .req { color:#ff832b; font-weight:600; font-size:15px; line-height:1; vertical-align:top; margin-left:2px; }
     #telaRegistrar input[type=text], #telaRegistrar input[type=date], #telaRegistrar input[type=time], #telaRegistrar select, #telaRegistrar textarea {
       width:100%; font:inherit; font-size:13px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; border-radius:0; padding:8px 8px; margin:0; color:#161616; }
     #telaRegistrar input:focus, #telaRegistrar select:focus, #telaRegistrar textarea:focus { outline:2px solid #0f62fe; outline-offset:-2px; border-bottom-color:transparent; }
@@ -5027,7 +5027,7 @@
             "</tr>";
           const cf = fotoComProblema(e), cp = !!e.pend && DUPS.indexOf(e.pend) < 0;
           if (cf || cp) {
-            const caixa = function (rot, campo, val) { return '<div class="vl-cx"><label>' + rot + ' <b style="color:#da1e28">(obrigatório)</b></label><textarea class="auto" rows="2" data-sv="eq" data-c="' + campo + '">' + esc(val) + "</textarea></div>"; };
+            const caixa = function (rot, campo, val) { return '<div class="vl-cx"><label>' + rot + ' <span class="req">*</span></label><textarea class="auto" rows="2" data-sv="eq" data-c="' + campo + '">' + esc(val) + "</textarea></div>"; };
             t += '<tr class="vl-ex" data-k="' + esc(k) + '" data-tag="' + esc(r.tag || r.segmento || "") + '" data-seg="' + esc(r.segmento || "") + '"><td colspan="6"><div class="vl-cxs">' + (cf ? caixa("Comentário da foto", "obs_foto", obsFotoDe(e)) : "") + (cp ? caixa("Comentário da pendência", "obs_pend", obsPendDe(e)) : "") + "</div></td></tr>";
           }
         });
@@ -5125,7 +5125,7 @@
       const v = confBloco(al, c);
       return '<div class="vl-bl"><div class="l">' + rot + '</div><div class="vl-seg"><button type="button" class="' + (v.estado === "ok" ? "on" : "") + '" data-sv="bl" data-c="' + c + '" data-r="ok">Ok</button>' +
         '<button type="button" class="' + (v.estado === "nao" ? "off" : "") + '" data-sv="bl" data-c="' + c + '" data-r="nao">Não ok</button></div>' +
-        (v.estado === "nao" ? '<div class="vl-blm"><div class="r">Por que não está ok? *</div><textarea data-sv="blmotivo" data-c="' + c + '">' + esc(v.motivo) + "</textarea></div>" : "") + "</div>";
+        (v.estado === "nao" ? '<div class="vl-blm"><div class="r">Por que não está ok? <span class="req">*</span></div><textarea data-sv="blmotivo" data-c="' + c + '">' + esc(v.motivo) + "</textarea></div>" : "") + "</div>";
     };
     t += '<div class="vl-caixa"><h3>Conferência do bloco</h3>' + itemBloco("bornes", "Fios conectados nos bornes (sem jump)") + itemBloco("fotos", "Conferi as fotos das abas de alarme no sistema do cliente") + "</div>";
     return t;
@@ -5174,7 +5174,7 @@
     const porTipo = function (tipo) { return pend.filter(function (p) { return tipo === "EQ" ? ["Alarmes", "Inventário"].concat(TIPOS_INV).indexOf(p.tipo) < 0 : tipo === "INV" ? TIPOS_INV.indexOf(p.tipo) >= 0 : p.tipo === tipo; }); };
     const dur = reg.analise_em && ev.em ? fmtMin((new Date(ev.em) - new Date(reg.analise_em)) / 60000) : "";
     const reab = estado.val.reabrindo && ehCoordenacao()
-      ? '<div class="vl-caixa"><h3>Reabrir validação</h3><div class="vl-mu" style="font-size:12px;margin:0 0 4px">Motivo da reabertura (obrigatório)</div><textarea id="svReabMotivo"></textarea><div class="vl-fim" style="gap:8px"><button class="bt g" data-sv="reabcancel">Cancelar</button><button class="bt" data-sv="reabconf">Reabrir</button></div></div>' : "";
+      ? '<div class="vl-caixa"><h3>Reabrir validação</h3><div class="vl-mu" style="font-size:12px;margin:0 0 4px">Motivo da reabertura <span class="req">*</span></div><textarea id="svReabMotivo"></textarea><div class="vl-fim" style="gap:8px"><button class="bt g" data-sv="reabcancel">Cancelar</button><button class="bt" data-sv="reabconf">Reabrir</button></div></div>' : "";
     const btnReab = ehCoordenacao() && !estado.val.reabrindo ? '<button class="bt g" data-sv="reabrir">Reabrir validação</button>' : "";
     return reab + '<div class="vl-caixa"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Encerramento registrado</h3>' + btnReab + '</div><div class="vl-meta">' +
       "<div><small>Encerrada por</small>" + esc(nomeDoEmail(ev.por)) + "</div><div><small>Quando</small>" + fmtDH(ev.em) + "</div><div><small>Ação</small>" + esc(REGRAS.validacao.resultados[ev.resultado] || ev.resultado) + "</div>" +
@@ -5203,7 +5203,7 @@
     const pode = forca ? true : falt.length === 0;
     t += '<div class="vl-caixa"><h3>Resultado</h3>' + tabelaPorWO(reg, porWo, pend, forca ? null : wosNaoConferidas(reg, linhas)) + '<div class="vl-ferr" style="margin-top:14px">' +
       botao("offline", "", "Encaminhar para validação offline") + "</div>" +
-      '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo (obrigatório com ressalva, devolução ou offline)</div><textarea id="svMotivo">' + esc(sugestao) + "</textarea>" +
+      '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo <span class="req">*</span></div><textarea id="svMotivo">' + esc(sugestao) + "</textarea>" +
       '<div class="vl-fim"><button class="bt enc" data-sv="encerrar"' + (pode ? "" : " disabled") + ">Encerrar Validação</button></div></div>" + historicoEncerramentos(reg, 1);
     return t;
   }
@@ -5765,15 +5765,15 @@
         const np = O.np = O.np || {}, ws = (c.wos || []), vv = (O.vals || {})[c.id], lin = (vv && vv.linhas) || [];
         const wsel = ws.find(function (w) { return w.wo === np.wo; });
         const eqs = wsel ? lin.filter(function (r) { return !ehNA(r) && woDaLinha(r, ws) === wsel; }).sort(function (a, b) { return String(a.segmento).localeCompare(String(b.segmento)) || String(a.tag).localeCompare(String(b.tag)); }) : [];
-        t += '<div style="position:fixed;inset:0;background:rgba(22,22,22,.5);z-index:9999;display:flex;align-items:center;justify-content:center"><div style="background:#fff;width:900px;max-width:94vw;max-height:90vh;overflow:auto;box-shadow:0 4px 16px rgba(0,0,0,.25)"><div style="padding:16px 20px;font-weight:600;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between"><span>Registrar pendência nova</span><span class="vl-mu" style="font-weight:400">todos os campos são obrigatórios</span></div><div style="padding:20px" id="ofNp"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"><div><div class="vl-mu" style="font-size:12px">Tipo</div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option" + (np.tipo === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
-          '<div><div class="vl-mu" style="font-size:12px">WO</div><select id="npWo"><option value="">Selecione</option>' + ws.map(function (w) { return '<option value="' + esc(w.wo) + '"' + (np.wo === w.wo ? " selected" : "") + ">" + esc(tipoCurto(w.tipo)) + " · " + esc(w.wo) + "</option>"; }).join("") + "</select></div></div>";
+        t += '<div style="position:fixed;inset:0;background:rgba(22,22,22,.5);z-index:9999;display:flex;align-items:center;justify-content:center"><div style="background:#fff;width:900px;max-width:94vw;max-height:90vh;overflow:auto;box-shadow:0 4px 16px rgba(0,0,0,.25)"><div style="padding:16px 20px;font-weight:600;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between"><span>Registrar pendência nova</span></div><div style="padding:20px" id="ofNp"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"><div><div class="vl-mu" style="font-size:12px">Tipo <span class="req">*</span></div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option" + (np.tipo === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
+          '<div><div class="vl-mu" style="font-size:12px">WO <span class="req">*</span></div><select id="npWo"><option value="">Selecione</option>' + ws.map(function (w) { return '<option value="' + esc(w.wo) + '"' + (np.wo === w.wo ? " selected" : "") + ">" + esc(tipoCurto(w.tipo)) + " · " + esc(w.wo) + "</option>"; }).join("") + "</select></div></div>";
         if (wsel) {
-          t += '<div class="vl-mu" style="font-size:12px;margin:16px 0 6px">Equipamento da WO (marque um)</div><table><tr><th style="width:50px"></th><th>Segmento</th><th>Equipamento</th><th>Planilha</th></tr>' +
+          t += '<div class="vl-mu" style="font-size:12px;margin:16px 0 6px">Equipamento da WO (marque um) <span class="req">*</span></div><table><tr><th style="width:50px"></th><th>Segmento</th><th>Equipamento</th><th>Planilha</th></tr>' +
             eqs.map(function (r) { const k = chaveEquip(r); return '<tr' + (np.eq === k ? ' style="background:#edf5ff"' : "") + '><td><input type="radio" name="npEq" value="' + esc(k) + '"' + (np.eq === k ? " checked" : "") + "></td><td>" + esc(r.segmento || "—") + "</td><td>" + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td></tr>"; }).join("") +
             '<tr' + (np.eq === "__outro" ? ' style="background:#edf5ff"' : "") + '><td><input type="radio" name="npEq" value="__outro"' + (np.eq === "__outro" ? " checked" : "") + '></td><td colspan="3" style="color:#0f62fe">Outro equipamento (não está na lista da WO)</td></tr></table>';
-          if (np.eq === "__outro") t += '<div style="margin-top:14px"><div class="vl-mu" style="font-size:12px">Qual equipamento? <b style="color:#da1e28">(obrigatório)</b></div><input type="text" id="npOutro" value="' + esc(np.outro || "") + '"></div>';
+          if (np.eq === "__outro") t += '<div style="margin-top:14px"><div class="vl-mu" style="font-size:12px">Qual equipamento? <span class="req">*</span></div><input type="text" id="npOutro" value="' + esc(np.outro || "") + '"></div>';
         }
-        t += '<div style="margin-top:16px"><div class="vl-mu" style="font-size:12px">Descrição do problema</div><textarea id="npDesc" class="auto" rows="2">' + esc(np.desc || "") + "</textarea></div>" +
+        t += '<div style="margin-top:16px"><div class="vl-mu" style="font-size:12px">Descrição do problema <span class="req">*</span></div><textarea id="npDesc" class="auto" rows="2">' + esc(np.desc || "") + "</textarea></div>" +
           '<div style="margin-top:16px"><button class="bt p" id="npGravar" data-of="gravarpend" disabled>Registrar pendência</button> <button class="bt" data-of="cancelarpend">Cancelar</button></div></div></div></div>';
       }
       t += '<div class="of-it">' + (O.novaPend ? "" : '<button class="bt" data-of="novapend">Registrar pendência nova</button> ') + '<button class="bt p" data-of="concluirconf">Concluir conferência</button></div>';
@@ -5795,7 +5795,7 @@
       (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : (sv ? '<button class="bt p" data-of="concluir"' + (todasFechadas && !precisaValidar(c) && tec ? "" : " disabled") + ">Concluir caso</button>" : "")) + "</div></div>";
     const auto = pend.map(function (p) { return p.texto; }).join(" · "), repetido = function (x) { return !x || String(x).trim() === auto || String(x).trim() === String(c.motivo || "").trim() && String(c.motivo || "").trim() === auto; };
     const semAbas = !conc && precisaValidar(c);
-    if (sv && !conc) t += '<div class="of-tit">Quem executou</div><div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Técnico que executou o serviço (obrigatório)</div><div style="display:flex;gap:12px;align-items:flex-end"><input type="text" id="ofTec" style="width:320px" value="' + esc(tec ? tec.tecnico : "") + '"><button class="bt p" data-of="tecnico">Salvar</button></div></div>';
+    if (sv && !conc) t += '<div class="of-tit">Quem executou</div><div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Técnico que executou o serviço <span class="req">*</span></div><div style="display:flex;gap:12px;align-items:flex-end"><input type="text" id="ofTec" style="width:320px" value="' + esc(tec ? tec.tecnico : "") + '"><button class="bt p" data-of="tecnico">Salvar</button></div></div>';
     if (!sv) t += resumoOnline(c);
     if (!sv && (estado.off.abaRes || "eq") === "hist") t += conferenciaOffline(c);
     if (semAbas) t += '<div class="of-tit">Abas para validar</div><div class="of-box" style="margin-bottom:24px">' + (c.wos || []).map(function (w) {
