@@ -670,6 +670,7 @@
     .vl-pg { display:flex; margin:10px 0 12px; border-bottom:1px solid #c6c6c6; }
     .vl-pg button { padding:10px 22px; background:#e0e0e0; border:0; border-right:1px solid #c6c6c6; font:inherit; font-size:13px; text-align:left; cursor:pointer; color:#161616; }
     .vl-pg button small { display:block; font-size:11px; color:#525252; }
+    .vl-pg button.bloq { color:#8d8d8d; cursor:not-allowed; } .vl-pg button.bloq small { color:#8d8d8d; }
     .vl-pg button.ativo { background:#fff; border-top:2px solid #0f62fe; font-weight:600; }
     .vl-caixa { background:#fff; padding:12px 14px; margin-top:12px; }
     .vl-tw { width:100%; border-collapse:collapse; } .vl-tw th { background:#e0e0e0; text-align:left; padding:9px 12px; font-size:13px; } .vl-tw td { padding:10px 12px; border-bottom:1px solid #e0e0e0; vertical-align:top; } .vl-am { color:#0f62fe; font-weight:600; }
@@ -3015,6 +3016,13 @@
     try {
       await carregarExpurgos();
       const resultados = await Promise.all([carregarEmCampo(), carregarSaidasDeHoje(), carregarSaidasPendentes()]);
+      // Depois da meia-noite, quem ainda está "No site" de um dia anterior vai para Saídas a ajustar e o caso segue para a Validação offline.
+      const hojeIso = hoje(), viraram = resultados[0].filter(function (v) { return v.situacao === REGRAS.situacaoNoSite && v.hora_entrada && dataLocalDe(v.hora_entrada) < hojeIso; });
+      if (viraram.length) {
+        resultados[0] = resultados[0].filter(function (v) { return viraram.indexOf(v) < 0; });
+        viraram.forEach(function (v) { v._meiaNoite = true; resultados[2].push(v); });
+        for (const v of viraram) { try { await enviarSemPedidoParaOffline(v.id, "Esse site não passou pela validação online"); } catch (e) { /* tenta de novo na próxima leitura */ } }
+      }
       estado.emCampo = resultados[0];
       estado.saidasPendentes = resultados[2];
       const digitando = $("gradeCampo").contains(document.activeElement) || $("gradeCampo").querySelector("details[open]");
@@ -3175,7 +3183,7 @@
     return '<div class="cp-item" data-lin="ajustar:' + esc(v.id) + '"><div class="cp-l" style="--cols:' + COLS_AJUSTAR + '">' +
       '<div><i class="seta"></i><span class="cp-site">' + esc(v.site) + "</span></div><div>" + esc(v.equipe) + "</div>" +
       "<div>" + (v.hora_entrada ? new Date(v.hora_entrada).toLocaleDateString("pt-BR") : "—") + "</div><div>" + horaCurta(v.hora_entrada) + "</div>" +
-      "<div>" + pill(v.atividade, "p-cinza") + "</div>" +
+      "<div>" + pill(v.atividade, "p-cinza") + (v._meiaNoite ? ' <span class="pill p-cinza">Esse site não passou pela validação online</span>' : "") + "</div>" +
       '<div class="cp-acoes"><button class="principal" data-acao="ajustar" data-id="' + esc(v.id) + '">Informar saída</button></div></div>' +
       '<div class="cp-det">' + listaWOsCartao(v) + (v.observacao ? '<div class="extras"><div class="cp-sub">Obs.: ' + esc(v.observacao) + "</div></div>" : "") + "</div></div>";
   }
@@ -3207,7 +3215,7 @@
     if (!quando) return;
     botao.disabled = true;
     try {
-      await atualizarVisita(visita.id, { hora_saida: quando });
+      await atualizarVisita(visita.id, visita._meiaNoite ? { situacao: REGRAS.situacaoSaiu, hora_saida: quando } : { hora_saida: quando });
       mostrarAviso("Saída registrada.");
       atualizarCampo();
     } catch (err) {
@@ -3216,6 +3224,22 @@
     }
   });
 
+  // Pergunta binária ao registrar a saída: o técnico solicitou a validação? Devolve "sim", "nao" ou null (cancelou).
+  function perguntarPedidoValidacao(visita) {
+    return new Promise(function (resolve) {
+      const fundo = document.createElement("div");
+      fundo.style.cssText = "position:fixed;inset:0;background:rgba(22,22,22,.5);z-index:9999;display:flex;align-items:center;justify-content:center";
+      fundo.innerHTML = '<div style="background:#fff;width:460px;max-width:92vw;box-shadow:0 4px 16px rgba(0,0,0,.25)"><div style="padding:16px 20px;font-weight:600;border-bottom:1px solid #e0e0e0">Saída · ' + esc(visita.site) + " · " + esc(visita.equipe) + '</div>' +
+        '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px"><button data-r="sim" style="text-align:left;padding:14px 16px;border:1px solid #8d8d8d;background:#fff;font:inherit;cursor:pointer">Técnico solicitou a validação</button>' +
+        '<button data-r="nao" style="text-align:left;padding:14px 16px;border:1px solid #8d8d8d;background:#fff;font:inherit;cursor:pointer">Técnico não solicitou a validação</button></div>' +
+        '<div style="padding:0 20px 16px"><button data-r="cancelar" style="padding:10px 18px;border:1px solid #0f62fe;background:#fff;color:#0f62fe;font:inherit;cursor:pointer">Cancelar</button></div></div>';
+      fundo.addEventListener("click", function (ev) {
+        const b = ev.target.closest("button[data-r]"); if (!b) return;
+        document.body.removeChild(fundo); resolve(b.dataset.r === "cancelar" ? null : b.dataset.r);
+      });
+      document.body.appendChild(fundo);
+    });
+  }
   // Pergunta o horário (padrão: agora). Devolve uma data ISO, ou null se cancelou.
   function perguntarHorario(rotulo, minimoIso) {
     const agora = new Date();
@@ -3276,7 +3300,7 @@
     const visita = estado.emCampo.find(function (v) { return String(v.id) === botao.dataset.id; });
     if (!visita) return;
     if (botao.dataset.acao === "expurgo") { await registrarExpurgo(visita, botao); return; }
-    let campos = null;
+    let campos = null, pedido = null;
     if (botao.dataset.acao === "chegada") {
       const quando = perguntarHorario("Hora da chegada no site", visita.hora_aviso);
       if (!quando) return;
@@ -3308,6 +3332,8 @@
       const entradaOutroDia = visita.hora_entrada && new Date(visita.hora_entrada).toDateString() !== new Date().toDateString();
       const quando = entradaOutroDia ? perguntarSaidaAjuste(visita) : perguntarHorario("Hora da saída do site", visita.hora_entrada);
       if (!quando) return;
+      const valAberta = conferir(await banco.from("validacoes").select("id").eq("visita_id", String(visita.id)).eq("situacao", "em_campo").limit(1));
+      if (valAberta.length) { pedido = await perguntarPedidoValidacao(visita); if (!pedido) return; }
       campos = { situacao: REGRAS.situacaoSaiu, hora_saida: quando };
     } else if (botao.dataset.acao === "semexec") {
       const caixa = botao.closest("details");
@@ -3339,13 +3365,16 @@
       await atualizarVisita(visita.id, campos);
       if (botao.dataset.acao === "cancelar" || botao.dataset.acao === "semexec") await cancelarValidacaoDaVisita(visita.id);
       let enviouOffline = false;
-      if (botao.dataset.acao === "saida") {
-        try { enviouOffline = await enviarSemPedidoParaOffline(visita.id); }
+      if (botao.dataset.acao === "saida" && pedido === "nao") {
+        try { enviouOffline = await enviarSemPedidoParaOffline(visita.id, "Técnico não solicitou a validação"); }
         catch (e) { mostrarAviso("Saída registrada, mas não consegui enviar o caso para a validação offline: " + e.message, "erro"); }
+      } else if (botao.dataset.acao === "saida" && pedido === "sim") {
+        try { conferir(await banco.from("validacoes").update({ situacao: "aba_pedida", aba_pedida_em: new Date().toISOString() }).eq("visita_id", String(visita.id)).eq("situacao", "em_campo")); }
+        catch (e) { mostrarAviso("Saída registrada, mas não consegui colocar a validação na fila: " + e.message, "erro"); }
       }
       const aberta = botao.closest("details");
       if (aberta) aberta.open = false;
-      mostrarAviso(botao.dataset.acao === "semexec" ? "Saída sem execução registrada." : enviouOffline ? "Saída registrada. Sem aba pedida: caso enviado para a Validação offline." : "Registrado.");
+      mostrarAviso(botao.dataset.acao === "semexec" ? "Saída sem execução registrada." : enviouOffline ? "Saída registrada. Técnico não solicitou: caso enviado para a Validação offline." : "Registrado.");
       atualizarCampo();
     } catch (err) {
       botao.disabled = false;
@@ -4152,8 +4181,8 @@
   // ==== VALIDAÇÃO PREVENTIVA ====================================================
   REGRAS.validacao = {
     inicio: "2026-10-30",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
-    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente", "Local diferente do site", "Aba duplicada", "Inventário duplicado"],
-    pendencias: ["Aba em aberto", "Não inventariado", "Preenchimento incorreto", "Aba duplicada", "Inventário duplicado", "Outro"],
+    fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente", "Local diferente do site", "Inventário excluído"],
+    pendencias: ["Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"],
     inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
     toleranciaPermanenciaMin: 15,
@@ -4163,7 +4192,7 @@
     rajada: { segundos: 3, minimo: 6 },
     // Preventiva só de climatização: só estes alarmes são cobrados (pedaço do texto, sem acento, em maiúsculas). Energia cobra todos.
     alarmesClima: ["TROCADOR", "AR[ -]?COND", "CLIMA", "\\bPLC\\b", "\\bPORTA\\b", "TEMPERATURA", "\\bTEMP\\b", "HVAC"],
-    resultados: { validada: "Validada", ressalva: "Validada com ressalva", devolvida: "Devolvida ao técnico", offline: "Para validação offline" }
+    resultados: { validada: "Validada", ressalva: "Validada com ressalva", devolvida: "Offline", offline: "Para validação offline" }
   };
   estado.val = { lista: [], filtro: "agir", periodo: "hoje", limite: 15, setor: "", atual: null, pagina: "equip", equip: [], equipAviso: "", colar: null, pendente: null };
 
@@ -4310,7 +4339,7 @@
     return { estado: "", motivo: "" };
   }
   // Tudo o que, até agora, impede a WO de ser validada limpa.
-  const DUPS = ["Aba duplicada", "Inventário duplicado"];
+  const DUPS = ["Aba duplicada", "Inventário duplicado", "Inventário excluído"];
   function fotoComProblema(e) { return !!(e && e.fotos && e.fotos !== "Ok" && DUPS.indexOf(e.fotos) < 0 && DUPS.indexOf(e.pend) < 0); }
   function obsFotoDe(e) { return String((e && (e.obs_foto != null ? e.obs_foto : e.obs)) || "").trim(); }
   function obsPendDe(e) { return String((e && (e.obs_pend != null ? e.obs_pend : e.obs)) || "").trim(); }
@@ -4340,14 +4369,17 @@
     if (forca) return forca;
     return Object.keys(porWo).some(function (k) { return porWo[k] === "ressalva"; }) ? "ressalva" : "validada";
   }
+  const TIPOS_PEND_ANTIGOS = { "Aba em aberto": "Pendência não apontada no Relatório", "Preenchimento incorreto": "Pendência não apontada no Relatório", "Outro": "Pendência não apontada no Relatório", "Aba duplicada": "Inventário excluído", "Inventário duplicado": "Inventário excluído" };
+  function tipoPendNovo(v) { return TIPOS_PEND_ANTIGOS[v] || v; }
+  const TIPOS_INV = ["Não inventariado", "Inventário excluído", "Inventário"];
   function pendenciasDe(reg) {
     const p = [];
     const eq = reg.equipamentos || {};
     const alW = wosDosAlarmes(reg);
     Object.keys(eq).forEach(function (k) {
       const e = eq[k], wk = wosDoEquip(reg, k), n0 = p.length;
-      if (e.pend) p.push({ tipo: (e.pend === "Não inventariado" || e.pend === "Inventário duplicado") ? "Inventário" : (e.pend === "Aba em aberto" ? "Aba em aberto" : (e.pend === "Aba duplicada" ? "Aba duplicada" : "Outros")), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e), por: e.obs_pend_por || estado.usuarioEmail });
-      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado") p.push({ tipo: "Foto", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e), por: e.obs_foto_por || estado.usuarioEmail });
+      if (e.pend) p.push({ tipo: tipoPendNovo(e.pend), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e), por: e.obs_pend_por || estado.usuarioEmail });
+      if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.fotos !== "Inventário excluído" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado" && e.pend !== "Inventário excluído") p.push({ tipo: "Foto fora do Padrão", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e), por: e.obs_foto_por || estado.usuarioEmail });
       for (let i = n0; i < p.length; i++) p[i].wos = wk;
     });
     const inv = reg.inventario || {};
@@ -4456,10 +4488,10 @@
     lista.forEach(function (v) {
       (v.historico || []).forEach(function (e) {
         if (e.tipo !== "encerramento") return;
-        if (!e.por_wo) { ev.push(Object.assign({ setor: v.setor, reg: v }, e)); return; }
+        if (!e.por_wo) { ev.push(Object.assign({ setor: v.setor, reg: v }, e, e.resultado === "devolvida" ? { resultado: "offline" } : {})); return; }
         // Resultado por WO: um evento para cada resultado, com só as WOs dele
         const grupos = {};
-        Object.keys(e.por_wo).forEach(function (w) { (grupos[e.por_wo[w]] = grupos[e.por_wo[w]] || []).push(w); });
+        Object.keys(e.por_wo).forEach(function (w) { (grupos[e.por_wo[w] === "devolvida" ? "offline" : e.por_wo[w]] = grupos[e.por_wo[w] === "devolvida" ? "offline" : e.por_wo[w]] || []).push(w); });
         Object.keys(grupos).forEach(function (r) {
           const ids = grupos[r];
           ev.push(Object.assign({ setor: v.setor, reg: v }, e, { resultado: r, wo_ids: ids, wos: ids.length,
@@ -4482,7 +4514,6 @@
     const n = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
     lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
     const encHoje = lista.filter(function (v) { return v.situacao === "encerrada" && v.encerrada_em && dataLocalDe(v.encerrada_em) === h; }).length;
-    const devHoje = eventosFinaisDoDia(lista, h).filter(function (e) { return e.resultado === "devolvida"; }).length;
     const f = estado.val.filtro, q = String(estado.val.busca || "").trim().toUpperCase();
     const listaB = q ? lista.filter(function (v) { return String(v.site || "").toUpperCase().indexOf(q) >= 0; }) : lista;
     const nB = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
@@ -4506,8 +4537,7 @@
       '<div class="vl-c"><div class="r">Em campo</div><div class="v">' + n.em_campo + "</div></div>" +
       '<div class="vl-c amar"><div class="r">Aba pedida</div><div class="v">' + n.aba_pedida + "</div></div>" +
       '<div class="vl-c"><div class="r">Em análise</div><div class="v">' + n.em_analise + "</div></div>" +
-      '<div class="vl-c verde"><div class="r">Encerradas hoje</div><div class="v">' + encHoje + "</div></div>" +
-      '<div class="vl-c verm"><div class="r">Devolvidas ao técnico hoje</div><div class="v">' + devHoje + "</div></div></div>";
+      '<div class="vl-c verde"><div class="r">Encerradas hoje</div><div class="v">' + encHoje + "</div></div>" + "</div>";
     t += '<input id="flBusca" class="of-busca" type="search" placeholder="Pesquisar site" value="' + esc(estado.val.busca || "") + '">';
     t += '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap"><div class="vl-chips" id="flChips">' + chips.map(function (c) {
       return '<button data-f="' + c[0] + '"' + (c[0] === f ? ' class="ativo"' : "") + ">" + c[1] + " · " + c[2] + "</button>";
@@ -4812,7 +4842,7 @@
         nm(d.mopExec, "Total executadas", fmt(d.campoNaBase) + " em campo" + (d.execSemCampo ? " · " + fmt(d.execSemCampo) + " sem visita de campo " + lk("ver", "wlista", "exec:semcampo") : "") + "<br>" + lk("ver lista", "wlista", "exec:todas")) +
         nm(d.campo, "Executadas em campo", (d.campo ? fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise " + lk("ver", "semval") : "")) +
         nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo" + (A.exec ? "<br>" + lk("ver lista", "vlista", "periodo:todas") : "")) + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
-        nm(pendTot, "Com pendências", fmt(A.dev) + " devolvidas · " + fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Offline"), true) + "</div></div>";
+        nm(pendTot, "Com pendências", fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Offline"), true) + "</div></div>";
       t += barras;
       t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m4">' +
         nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva", d.sem ? lk("ver lista", "vlista", "dia:validada") : "") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
@@ -4868,7 +4898,7 @@
     const tk = Object.keys(d.tipos).sort(function (a, b) { return d.tipos[b] - d.tipos[a]; });
     return "Resumo da validação · " + dataBR(d.dia).slice(0, 5) + (s ? " · " + NOME_SETOR[s] : "") + "\n" +
       "WOs analisadas: " + d.exec + "\nValidadas sem pendência: " + d.sem + "\nCom pendência: " + d.com +
-      " (" + d.dev + " devolvidas ao técnico · " + d.res + " com ressalva · " + d.off + " para validação offline)" +
+      " (" + d.res + " com ressalva · " + d.off + " para validação offline)" +
       "\nPara validação offline: " + d.filaOff + (d.filaOffSem ? " (" + d.filaOffSem + " sem análise online)" : "") +
       (tk.length ? "\nPendências: " + tk.map(function (k) { return k + " " + d.tipos[k]; }).join(" · ") : "");
   }
@@ -4959,8 +4989,8 @@
       "<div><span>Em análise</span>" + (reg.analista ? esc(reg.analista.split("@")[0]) + ", desde " + horaDe(reg.analise_em) : "—") + "</div></div>" +
       '<div class="vl-pg">' +
       '<button data-sv="pg" data-p="equip" class="' + (pg === "equip" ? "ativo" : "") + '">Equipamentos e fotos<small>' + (linhas.length ? feitos + " de " + reaisCab.length + " conferidos" + (nNA ? " · " + nNA + " não existem no site" : "") : "sem equipamentos na planilha") + "</small></button>" +
-      '<button data-sv="pg" data-p="alarmes" class="' + (pg === "alarmes" ? "ativo" : "") + '">Alarmes<small>' + partes + " de 2 colados" + (function () { const bb = batimentoDoRegistro(reg); if (!bb) return ""; const nn = bb.itens.filter(function (i) { return !i.externou; }).length; return " · " + nn + (nn === 1 ? " não externou" : " não externaram"); })() + "</small></button>" +
-      '<button data-sv="pg" data-p="enc" class="' + (pg === "enc" ? "ativo" : "") + '">Encerrar<small>resumo do que foi conferido</small></button></div>';
+      '<button data-sv="pg" data-p="alarmes" class="' + (pg === "alarmes" ? "ativo" : "") + (bloqueioAba(reg, linhas, "alarmes") ? " bloq" : "") + '">Alarmes<small>' + (bloqueioAba(reg, linhas, "alarmes") ? "bloqueada · " : "") + partes + " de 2 colados" + (function () { const bb = batimentoDoRegistro(reg); if (!bb) return ""; const nn = bb.itens.filter(function (i) { return !i.externou; }).length; return " · " + nn + (nn === 1 ? " não externou" : " não externaram"); })() + "</small></button>" +
+      '<button data-sv="pg" data-p="enc" class="' + (pg === "enc" ? "ativo" : "") + (bloqueioAba(reg, linhas, "enc") ? " bloq" : "") + '">Encerrar<small>' + (bloqueioAba(reg, linhas, "enc") ? "bloqueada" : "resumo do que foi conferido") + "</small></button></div>";
   }
 
   function paginaEquip(reg, linhas) {
@@ -5054,7 +5084,6 @@
       b.ordem.forEach(function (o) { if (o.status !== "ok") t += '<div class="vl-alerta' + (o.status === "violada" ? "" : " am") + '"><b>' + (o.status === "violada" ? "Regra de ordem:" : "Ordem:") + "</b> " + esc(o.texto) + "</div>"; });
       b.rajadas.forEach(function (j) { t += '<div class="vl-alerta am"><b>Atenção:</b> ' + j.qtd + " alarmes externaram entre " + horaSegDe(j.de) + " e " + horaSegDe(j.ate) + ". Confira os bornes.</div>"; });
       t += desenharPermanencia(analisePermanencia(reg));
-      if (falt.length) t += '<div class="vl-aptodos"><span>Apontamento do técnico para todos os alarmes que faltaram:</span><select id="svApontTodos">' + opcoesHtml(REGRAS.validacao.apontamentos, "", "Escolha...") + '</select><button class="bt" data-sv="apontTodos">Aplicar a todos</button></div>';
       t += "<table><tr><th>Bloco</th><th>Alarme configurado</th><th>Severidade</th><th>Resultado</th><th>Hora no equipamento</th><th>Permanência</th><th>Apontamento do técnico</th></tr>";
       const anP = analisePermanencia(reg);
       const agoraHist = reg.alarmes && reg.alarmes.hist && reg.alarmes.hist.em ? new Date(reg.alarmes.hist.em).getTime() : Date.now();
@@ -5104,11 +5133,21 @@
   function fmtMin(m) { m = Math.max(0, Math.round(m)); return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60 ? m % 60 + " min" : ""); }
   function classeRes(r) { return r === "validada" ? "vl-ok" : r === "ressalva" ? "vl-am" : "vl-no"; }
   function areaDaWO(w) { return ehClima(w) ? "Climatização" : "Energia"; }
-  function tabelaPorWO(reg, porWo, pend) {
+  // WOs com algo ainda sem conferir (equipamento sem marcação, inventário crítico, alarmes): não podem aparecer como "Validada".
+  function wosNaoConferidas(reg, linhas) {
+    const s = {}, add = function (l) { (l || []).forEach(function (w) { s[w] = true; }); };
+    (linhas || []).forEach(function (r) { if (ehNA(r)) return; const e = (reg.equipamentos || {})[chaveEquip(r)]; if (!(e && (e.fotos || e.pend))) add(wosDoEquip(reg, chaveEquip(r))); });
+    if ((reg.wos || []).some(ehClima) && REGRAS.validacao.inventarioCritico.some(function (i) { return !(reg.inventario || {})[i]; })) add(wosDoInventario(reg));
+    const al = reg.alarmes || {};
+    if (!al.semConfig && (!al.config || !al.hist)) add(wosDosAlarmes(reg));
+    wosSemEquip(reg, linhas || []).forEach(function (w) { s[w.wo] = true; });
+    return s;
+  }
+  function tabelaPorWO(reg, porWo, pend, semConf) {
     const ws = reg.wos || [];
     return '<table class="vl-tw"><tr><th>WO</th><th>Área</th><th>Resultado</th><th>Pendências que pesaram</th></tr>' + ws.filter(function (w) { return porWo[w.wo]; }).map(function (w) {
       const ps = pend.filter(function (q) { return !q.wos || q.wos.indexOf(w.wo) >= 0; });
-      return "<tr><td><b>" + esc(w.wo) + "</b></td><td>" + areaDaWO(w) + '</td><td class="' + classeRes(porWo[w.wo]) + '">' + esc(REGRAS.validacao.resultados[porWo[w.wo]]) + "</td><td>" + (ps.length ? esc(ps.map(function (q) { return q.texto; }).join(" · ")) : "—") + "</td></tr>";
+      return "<tr><td><b>" + esc(w.wo) + "</b></td><td>" + areaDaWO(w) + '</td><td class="' + (semConf && semConf[w.wo] && porWo[w.wo] === "validada" ? "vl-no" : classeRes(porWo[w.wo])) + '">' + (semConf && semConf[w.wo] && porWo[w.wo] === "validada" ? "Ainda não conferida" : esc(REGRAS.validacao.resultados[porWo[w.wo]])) + "</td><td>" + (ps.length ? esc(ps.map(function (q) { return q.texto; }).join(" · ")) : "—") + "</td></tr>";
     }).join("") + "</table>";
   }
   function linhaConf(rot, itens, vazioOk) {
@@ -5130,7 +5169,7 @@
     const porWo = ev.por_wo || {};
     if (!ev.por_wo) (ev.wo_ids || (reg.wos || []).map(function (w) { return w.wo; })).forEach(function (w) { porWo[w] = ev.resultado; });
     const pend = ev.pendencias || [];
-    const porTipo = function (tipo) { return pend.filter(function (p) { return p.tipo === tipo; }); };
+    const porTipo = function (tipo) { return pend.filter(function (p) { return tipo === "EQ" ? ["Alarmes", "Inventário"].concat(TIPOS_INV).indexOf(p.tipo) < 0 : tipo === "INV" ? TIPOS_INV.indexOf(p.tipo) >= 0 : p.tipo === tipo; }); };
     const dur = reg.analise_em && ev.em ? fmtMin((new Date(ev.em) - new Date(reg.analise_em)) / 60000) : "";
     const reab = estado.val.reabrindo && ehCoordenacao()
       ? '<div class="vl-caixa"><h3>Reabrir validação</h3><div class="vl-mu" style="font-size:12px;margin:0 0 4px">Motivo da reabertura (obrigatório)</div><textarea id="svReabMotivo"></textarea><div class="vl-fim" style="gap:8px"><button class="bt g" data-sv="reabcancel">Cancelar</button><button class="bt" data-sv="reabconf">Reabrir</button></div></div>' : "";
@@ -5140,17 +5179,17 @@
       (dur ? "<div><small>Tempo em análise</small>" + dur + "</div>" : "") + "</div>" + tabelaPorWO(reg, porWo, pend) +
       (ev.motivo ? '<div class="vl-mu" style="font-size:12px;margin:14px 0 4px">Motivo informado</div><div class="vl-cm">' + esc(ev.motivo) + "</div>" : "") +
       '<div class="vl-mu" style="font-size:12px;margin:14px 0 4px">Conferência no momento do encerramento</div>' +
-      linhaConf("Equipamentos e fotos", porTipo("Aba em aberto").concat(porTipo("Aba duplicada"), porTipo("Foto"), porTipo("Outros")), "Sem pendência") +
-      linhaConf("Inventário crítico e equipamentos", porTipo("Inventário"), "Sem pendência") +
+      linhaConf("Equipamentos e fotos", porTipo("EQ"), "Sem pendência") +
+      linhaConf("Inventário crítico e equipamentos", porTipo("INV"), "Sem pendência") +
       linhaConf("Alarmes · batimento", porTipo("Alarmes"), "Sem pendência") + "</div>" + historicoEncerramentos(reg, 2);
   }
   function paginaEncerrar(reg, linhas) {
     if (reg.situacao === "encerrada" && !estado.val.voltarOffline) return paginaEncerrada(reg);
     const pend = pendenciasDe(reg), falt = faltasDe(reg, linhas);
-    const porTipo = function (tipo) { return pend.filter(function (p) { return p.tipo === tipo; }); };
+    const porTipo = function (tipo) { return pend.filter(function (p) { return tipo === "EQ" ? ["Alarmes", "Inventário"].concat(TIPOS_INV).indexOf(p.tipo) < 0 : tipo === "INV" ? TIPOS_INV.indexOf(p.tipo) >= 0 : p.tipo === tipo; }); };
     let t = '<div class="vl-caixa"><h3>Resumo da conferência</h3>' +
-      linhaConf("Equipamentos e fotos", porTipo("Aba em aberto").concat(porTipo("Aba duplicada"), porTipo("Foto"), porTipo("Outros")), "Sem pendência") +
-      linhaConf("Inventário crítico e equipamentos", porTipo("Inventário"), "Sem pendência") +
+      linhaConf("Equipamentos e fotos", porTipo("EQ"), "Sem pendência") +
+      linhaConf("Inventário crítico e equipamentos", porTipo("INV"), "Sem pendência") +
       linhaConf("Alarmes · batimento", porTipo("Alarmes"), "Sem pendência") +
       '<div class="vl-r"><span>Etapas não feitas</span><span class="' + (falt.length ? "vl-no" : "vl-ok") + '">' + (falt.length ? esc(falt.join(" · ")) : "Todas feitas") + "</span></div></div>";
     const sugestao = estado.val.motivo != null ? estado.val.motivo : pend.map(function (p) { return p.texto; }).join(" · ");
@@ -5160,7 +5199,7 @@
     const porWo = resultadoPorWO(reg, pend, forca, falt.length > 0);
     const botao = function (r, classe, rot) { return '<button class="bt ' + classe + (forca === r ? " sel" : "") + '" data-sv="res" data-r="' + r + '"' + (semCom ? " disabled" : "") + ">" + rot + "</button>"; };
     const pode = forca ? true : falt.length === 0;
-    t += '<div class="vl-caixa"><h3>Resultado</h3>' + tabelaPorWO(reg, porWo, pend) + '<div class="vl-ferr" style="margin-top:14px">' +
+    t += '<div class="vl-caixa"><h3>Resultado</h3>' + tabelaPorWO(reg, porWo, pend, forca ? null : wosNaoConferidas(reg, linhas)) + '<div class="vl-ferr" style="margin-top:14px">' +
       botao("offline", "", "Encaminhar para validação offline") + "</div>" +
       '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo (obrigatório com ressalva, devolução ou offline)</div><textarea id="svMotivo">' + esc(sugestao) + "</textarea>" +
       '<div class="vl-fim"><button class="bt enc" data-sv="encerrar"' + (pode ? "" : " disabled") + ">Encerrar Validação</button></div></div>" + historicoEncerramentos(reg, 1);
@@ -5168,6 +5207,21 @@
   }
 
   // Validação encerrada não se edita: só a revalidação pela Validação offline reabre as abas.
+  // Cada aba só abre quando a anterior está toda preenchida.
+  function bloqueioAba(reg, linhas, destino) {
+    if (!reg || validacaoTravada(reg) || destino === "equip") return "";
+    const f = faltasDe(reg, linhas || []);
+    const fe = f.filter(function (x) { return /^(Equipamentos|Inventário crítico)/.test(x); });
+    if (fe.length) {
+      const m = /faltam conferir (\d+)/.exec(fe.join(" ")), c = /faltam (\d+) comentário/.exec(fe.join(" "));
+      return m ? "Faltam conferir " + m[1] + (m[1] === "1" ? " equipamento" : " equipamentos") + " para abrir " + (destino === "enc" ? "Encerrar" : "Alarmes") : c ? "Faltam " + c[1] + " comentário(s) em Equipamentos e fotos para abrir " + (destino === "enc" ? "Encerrar" : "Alarmes") : "Termine Equipamentos e fotos para abrir " + (destino === "enc" ? "Encerrar" : "Alarmes");
+    }
+    if (destino === "enc") {
+      const fa = f.filter(function (x) { return /^Alarmes/.test(x); });
+      if (fa.length) return "Termine Alarmes para abrir Encerrar: " + fa[0].replace(/^Alarmes: /, "").toLowerCase();
+    }
+    return "";
+  }
   function validacaoTravada(reg) { return !!reg && reg.situacao === "encerrada" && !estado.val.voltarOffline; }
   function desenharSiteVal() {
     const reg = estado.val.atual;
@@ -5210,7 +5264,7 @@
     if (!el) return;
     const reg = estado.val.atual, a = el.dataset.sv;
     if (a === "voltar") { if (estado.val.voltarOffline) { estado.val.voltarOffline = false; estado.off.vals = {}; irParaTela("Offline"); } else irParaTela("FilaVal"); return; }
-    if (a === "pg") { estado.val.pagina = el.dataset.p; if (estado.val.motivo == null && rascunhoDe(reg) && rascunhoDe(reg).motivo != null) estado.val.motivo = rascunhoDe(reg).motivo; desenharSiteVal(); return; }
+    if (a === "pg") { const bq = bloqueioAba(reg, estado.val.equip, el.dataset.p); if (bq) { mostrarAviso(bq + ".", "erro"); return; } estado.val.pagina = el.dataset.p; if (estado.val.motivo == null && rascunhoDe(reg) && rascunhoDe(reg).motivo != null) estado.val.motivo = rascunhoDe(reg).motivo; desenharSiteVal(); return; }
     if (reg && a === "reabrir" && ehCoordenacao()) { estado.val.reabrindo = true; desenharSiteVal(); return; }
     if (reg && a === "reabcancel") { estado.val.reabrindo = false; desenharSiteVal(); return; }
     if (reg && a === "reabconf" && ehCoordenacao()) {
@@ -5294,7 +5348,7 @@
         const tr = el.closest("tr"), k = tr.dataset.k;
         const eq = JSON.parse(JSON.stringify(reg.equipamentos || {}));
         const x = eq[k] || { tag: tr.dataset.tag, segmento: tr.dataset.seg };
-        const DUP = ["Aba duplicada", "Inventário duplicado"], campo = el.dataset.c, antigo = x[campo];
+        const DUP = ["Aba duplicada", "Inventário duplicado", "Inventário excluído"], campo = el.dataset.c, antigo = x[campo];
         x[campo] = el.value;
         const outro = campo === "fotos" ? "pend" : (campo === "pend" ? "fotos" : "");
         if (outro) {
@@ -5551,7 +5605,7 @@
     if (!c || !c.validacao_id || O.vals[c.id] !== undefined) return;
     O.vals[c.id] = null;
     try {
-      const r = conferir(await banco.from("validacoes").select("equipamentos,alarmes").eq("id", c.validacao_id).limit(1));
+      const r = conferir(await banco.from("validacoes").select("equipamentos,alarmes,inventario,historico,resultado,analista,wos").eq("id", c.validacao_id).limit(1));
       O.vals[c.id] = r[0] || null;
     } catch (e) { O.vals[c.id] = null; }
   }
@@ -5574,6 +5628,78 @@
     if (/^Fotos das abas de alarme/.test(p.texto)) return String(confBloco(al, "fotos").motivo || "").trim();
     return "";
   }
+  const CONF_ITENS = [["eq", "Equipamentos e fotos conferidos"], ["al", "Alarmes conferidos"], ["rel", "Relatório do técnico recebido e conferido"], ["pend", "Pendências do online tratadas"]];
+  const TIPOS_NOVA_PEND = ["Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"];
+  function confDoCaso(c) { const h = c.historico || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].conf) return h[i].conf; return {}; }
+  function resumoOnline(c) {
+    const O = estado.off, v = (O.vals || {})[c.id], aba = O.abaRes || "eq";
+    if (!c.validacao_id) return "";
+    if (!v) return '<div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu">Carregando a validação online…</div></div>';
+    const ro = resultadoOnline(c), vz = (O.valsLista || {})[c.validacao_id];
+    const eq = v.equipamentos || {}, ks = Object.keys(eq);
+    const apont = function (e) { return !!((e.fotos && e.fotos !== "Ok") || e.pend || e.obs || e.obs_foto || e.obs_pend); };
+    const nAp = ks.filter(function (k) { return apont(eq[k]); }).length;
+    let bat = null; try { bat = batimentoDoRegistro({ alarmes: v.alarmes, wos: v.wos || c.wos || [] }); } catch (e) { bat = null; }
+    const nApAl = bat ? bat.itens.filter(function (i) { return i.apontamento && i.apontamento !== "Sem apontamento"; }).length : 0;
+    const hv = v.historico || [], enc = hv.filter(function (e) { return e.tipo === "encerramento"; }), ult = enc[enc.length - 1];
+    const compl = vz && vz.completa !== null && vz.completa !== undefined ? vz.completa : null;
+    let t = '<div class="of-box" style="margin-bottom:24px"><div class="of-it" style="display:flex;justify-content:space-between"><b>Resumo da validação online</b><span class="vl-mu">somente leitura</span></div>' +
+      '<div class="of-it" style="display:flex;gap:48px;flex-wrap:wrap"><div><div class="vl-mu" style="font-size:12px">Resultado online</div><span class="vl-tag ' + (ro === "validada" ? "v4" : ro === "ressalva" ? "v3" : "v6") + '">' + (ro === "validada" ? "Validada" : ro === "ressalva" ? "Com ressalva" : "Offline") + "</span></div>" +
+      '<div><div class="vl-mu" style="font-size:12px">Validadora</div><b>' + esc(ult ? nomeDoEmail(ult.por) : (v.analista ? nomeDoEmail(v.analista) : "—")) + "</b></div>" +
+      '<div><div class="vl-mu" style="font-size:12px">Encerrada em</div><b>' + (ult ? dataBR(dataLocalDe(ult.em)).slice(0, 5) + " " + horaDe(ult.em) : "—") + "</b></div>" +
+      '<div><div class="vl-mu" style="font-size:12px">Conferência online</div>' + (compl === null ? "—" : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta") + "</span>") + "</div></div>" +
+      (ult && ult.motivo ? '<div class="of-it"><div class="of-cm" style="margin:0"><small>Motivo informado pela validadora</small>' + esc(ult.motivo) + "</div></div>" : "") + "</div>";
+    t += '<div class="vl-chips" id="ofAbaRes" style="margin-bottom:0">' + [["eq", "Equipamentos e fotos · " + nAp + " apontamento(s)"], ["al", "Alarmes · " + nApAl + " apontamento(s)"], ["inv", "Inventário e bornes"], ["hist", "Histórico"]].map(function (a) { return '<button data-of="abares" data-a="' + a[0] + '"' + (aba === a[0] ? ' class="ativo"' : "") + ">" + a[1] + "</button>"; }).join("") + "</div>";
+    t += '<div class="of-box" style="margin-bottom:24px">';
+    const amarelo = ' style="background:#fcf4d6"';
+    if (aba === "eq") {
+      const so = !!O.soApont, ls = ks.filter(function (k) { return !so || apont(eq[k]); });
+      t += '<div class="of-it"><label><input type="checkbox" data-of="soapont"' + (so ? " checked" : "") + "> Só apontamentos</label></div>";
+      t += ls.length ? "<table><tr><th>Equipamento</th><th>Segmento</th><th>Foto</th><th>Pendência</th><th>Comentário</th></tr>" + ls.map(function (k) {
+        const e = eq[k], ap = apont(e), cm = [obsFotoDe(e), obsPendDe(e)].filter(function (x, i, a) { return x && a.indexOf(x) === i; }).join(" · ");
+        return "<tr" + (ap ? amarelo : "") + "><td>" + esc(e.tag || k) + "</td><td>" + esc(e.segmento || "—") + "</td><td>" + esc(e.fotos || "—") + "</td><td>" + esc(e.pend ? tipoPendNovo(e.pend) : "—") + "</td><td>" + esc(cm || "—") + "</td></tr>";
+      }).join("") + "</table>" : '<div class="of-it vl-mu">Nenhum equipamento marcado nesta validação.</div>';
+    } else if (aba === "al") {
+      if (!bat) t += '<div class="of-it vl-mu">Sem configuração ou histórico de alarmes nesta validação.</div>';
+      else {
+        const r = bat.resumo || {}, al = v.alarmes || {};
+        t += '<div class="of-it" style="display:flex;gap:48px;flex-wrap:wrap"><div><div class="vl-mu" style="font-size:12px">Para externar</div><b>' + (bat.itens || []).length + '</b></div><div><div class="vl-mu" style="font-size:12px">Faltaram</div><b>' + (r.faltaram || 0) + '</b></div><div><div class="vl-mu" style="font-size:12px">Bornes</div><b>' + (confBloco(al, "bornes").estado === "ok" ? "Ok" : confBloco(al, "bornes").estado === "nao" ? "Não ok" : "—") + '</b></div><div><div class="vl-mu" style="font-size:12px">Fotos das abas de alarme</div><b>' + (confBloco(al, "fotos").estado === "ok" ? "Ok" : confBloco(al, "fotos").estado === "nao" ? "Não ok" : "—") + "</b></div></div>";
+        t += "<table><tr><th>Bloco</th><th>Alarme</th><th>Externou</th><th>Apontamento</th></tr>" + bat.itens.map(function (i) {
+          const ap = i.apontamento && i.apontamento !== "Sem apontamento";
+          return "<tr" + (!i.externou && !ap ? amarelo : ap ? amarelo : "") + "><td>" + esc(i.bloco || "—") + "</td><td>" + esc(i.texto) + "</td><td>" + (i.externou ? "Sim" : "Não") + "</td><td>" + esc(ap ? i.apontamento : "—") + "</td></tr>";
+        }).join("") + "</table>";
+      }
+    } else if (aba === "inv") {
+      const inv = v.inventario || {}, al = v.alarmes || {}, ik = Object.keys(inv);
+      t += '<table><tr><th>Item</th><th>Situação</th></tr>' + (ik.length ? ik.map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(inv[k]) + "</td></tr>"; }).join("") : '<tr><td colspan="2" class="vl-mu">Sem inventário crítico nesta validação.</td></tr>') +
+        "<tr><td>Bornes</td><td>" + esc(confBloco(al, "bornes").estado === "ok" ? "Ok" : confBloco(al, "bornes").estado === "nao" ? "Não ok" + (confBloco(al, "bornes").motivo ? " · " + confBloco(al, "bornes").motivo : "") : "Não conferido") + "</td></tr></table>";
+    } else {
+      t += hv.length ? '<div class="of-tl" style="padding:12px 16px">' + hv.slice().reverse().map(function (e) {
+        const tx = e.tipo === "encerramento" ? "Encerrada · " + (REGRAS.validacao.resultados[e.resultado] || e.resultado) + (e.motivo ? " · " + e.motivo : "") : (e.acao || e.tipo || "Registro");
+        return "<div><b>" + dataBR(dataLocalDe(e.em)).slice(0, 5) + " · " + horaDe(e.em) + " · " + esc(nomeDoEmail(e.por)) + "</b> · " + esc(tx) + "</div>";
+      }).join("") + "</div>" : '<div class="of-it vl-mu">Sem histórico.</div>';
+    }
+    return t + "</div>";
+  }
+  function conferenciaOffline(c) {
+    const O = estado.off, conf = confDoCaso(c), conc = !!c.concluido_em;
+    const abertas = (c.pendencias || []).filter(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa"; }).length;
+    let t = '<div class="of-box" style="margin-bottom:24px"><div class="of-it" style="display:flex;justify-content:space-between"><b>Conferência offline</b><span class="vl-mu">feita por quem trata o caso</span></div>' +
+      CONF_ITENS.map(function (i) { return '<div class="of-it"><label><input type="checkbox" data-of="conf" data-k="' + i[0] + '"' + (conf[i[0]] ? " checked" : "") + (conc ? " disabled" : "") + "> " + i[1] + (i[0] === "pend" && abertas ? " (" + abertas + " em aberto)" : "") + "</label></div>"; }).join("");
+    if (!conc) {
+      t += '<div class="of-it"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Observação da conferência</div><textarea id="ofObs" class="auto" rows="2" placeholder="Observação"></textarea></div>';
+      if (O.novaPend) {
+        const ws = (c.wos || []);
+        t += '<div class="of-it"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"><div><div class="vl-mu" style="font-size:12px">Tipo</div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option>" + x + "</option>"; }).join("") + "</select></div>" +
+          '<div><div class="vl-mu" style="font-size:12px">WO</div><select id="npWo"><option value="">Todas</option>' + ws.map(function (w) { return '<option value="' + esc(w.wo) + '">' + esc(tipoCurto(w.tipo)) + " · " + esc(w.wo) + "</option>"; }).join("") + "</select></div>" +
+          '<div><div class="vl-mu" style="font-size:12px">Equipamento (opcional)</div><input type="text" id="npEq"></div></div>' +
+          '<div style="margin-top:12px"><div class="vl-mu" style="font-size:12px">Descrição</div><textarea id="npDesc" class="auto" rows="2"></textarea></div>' +
+          '<div style="margin-top:12px"><button class="bt p" data-of="gravarpend">Registrar pendência</button> <button class="bt" data-of="cancelarpend">Cancelar</button></div></div>';
+      }
+      t += '<div class="of-it">' + (O.novaPend ? "" : '<button class="bt" data-of="novapend">Registrar pendência nova</button> ') + '<button class="bt p" data-of="concluirconf">Concluir conferência</button></div>';
+    }
+    return t + "</div>";
+  }
   function painelCaso(c, nomes) {
     const me = nomeDoEmail(estado.usuarioEmail), pend = c.pendencias || [];
     const conc = !!c.concluido_em;
@@ -5586,10 +5712,12 @@
         : (c.equipe ? "Equipe " + esc(c.equipe) + " · " : "") + esc(REGRAS.offline.origens[c.origem] || c.origem) + " em " + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (h[0] ? " por " + esc(nomeDoEmail(h[0].por)) : "")) + "</div></div><div class=\"vl-ferr\">" +
       '<select data-of="resp"><option value="">Sem responsável</option>' + lista.map(function (n) { return '<option value="' + esc(n) + '"' + (c.responsavel === n ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("") + "</select>" +
       (c.responsavel !== me && !conc ? '<button class="bt peq" data-of="assumir">Assumir</button>' : "") +
-      (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : '<button class="bt p" data-of="concluir"' + (todasFechadas && !precisaValidar(c) && (!sv || tec) ? "" : " disabled") + ">Concluir caso</button>") + "</div></div>";
+      (conc ? '<span class="vl-tag v1">Concluído em ' + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) + '</span><button class="bt" data-of="reabrir">Reabrir caso</button>' : (sv ? '<button class="bt p" data-of="concluir"' + (todasFechadas && !precisaValidar(c) && tec ? "" : " disabled") + ">Concluir caso</button>" : "")) + "</div></div>";
     const auto = pend.map(function (p) { return p.texto; }).join(" · "), repetido = function (x) { return !x || String(x).trim() === auto || String(x).trim() === String(c.motivo || "").trim() && String(c.motivo || "").trim() === auto; };
     const semAbas = !conc && precisaValidar(c);
     if (sv && !conc) t += '<div class="of-tit">Quem executou</div><div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Técnico que executou o serviço (obrigatório)</div><div style="display:flex;gap:12px;align-items:flex-end"><input type="text" id="ofTec" style="width:320px" value="' + esc(tec ? tec.tecnico : "") + '"><button class="bt p" data-of="tecnico">Salvar</button></div></div>';
+    if (!sv) t += resumoOnline(c);
+    if (!sv) t += conferenciaOffline(c);
     if (semAbas) t += '<div class="of-tit">Abas para validar</div><div class="of-box" style="margin-bottom:24px">' + (c.wos || []).map(function (w) {
       return '<div class="of-it" style="display:flex;justify-content:space-between;align-items:center"><span><b>' + esc(tipoCurto(w.tipo)) + '</b> <span class="vl-mu">· WO ' + esc(w.wo) + '</span></span><span class="vl-tag v2">Não validada</span></div>';
     }).join("") + '<div style="padding:12px 16px"><button class="bt p" data-of="validarabas">Validar abas agora</button></div></div>';
@@ -5603,7 +5731,7 @@
         try { const bb = vv && batimentoDoRegistro({ alarmes: vv.alarmes, wos: c.wos || [] }); if (bb) p.lista = bb.itens.filter(function (i) { return !i.externou; }).map(function (i) { return (i.bloco ? i.bloco + " · " : "") + i.texto + (i.dispensado ? " — apontamento: " + i.apontamento : ""); }); } catch (e) { /* sem lista */ }
       }
       let nome = p.eq;
-      if (!nome && ["Foto", "Outros", "Aba em aberto", "Aba duplicada", "Inventário"].indexOf(p.tipo) >= 0 && String(p.texto).indexOf(" · ") > 0) nome = String(p.texto).split(" · ")[0];
+      if (!nome && p.tipo !== "Alarmes" && p.tipo !== "Saída sem pedido" && String(p.texto).indexOf(" · ") > 0) nome = String(p.texto).split(" · ")[0];
       const gk = nome || p.tipo;
       if (idx[gk] === undefined) { idx[gk] = grupos.length; grupos.push({ nome: nome || p.tipo, alarme: !nome, itens: [] }); }
       p.sub = nome ? String(p.texto).slice(String(p.texto).indexOf(" · ") + 3) : p.texto;
@@ -5614,7 +5742,7 @@
       return '<div class="of-it"><div style="font-weight:600;margin-bottom:6px">' + esc(g.nome) + "</div>" + g.itens.map(function (p) {
         const mostra = p.obs && !vistos[p.obs]; if (p.obs) vistos[p.obs] = 1;
         const tr = O.trat && O.trat.id === p.id ? O.trat : null, valor = tr ? tr.valor : p.estado;
-        return '<div class="vl-it" data-p="' + esc(p.id) + '" style="border:0;padding:4px 0"><span style="flex:1"><span class="vl-tag ' + (p.tipo === "Foto" ? "v2" : "v5") + '">' + esc(p.tipo) + "</span> " + esc(p.sub.charAt(0).toUpperCase() + p.sub.slice(1)) +
+        return '<div class="vl-it" data-p="' + esc(p.id) + '" style="border:0;padding:4px 0"><span style="flex:1"><span class="vl-tag ' + (p.tipo === "Foto" || p.tipo === "Foto fora do Padrão" ? "v2" : "v5") + '">' + esc(p.tipo) + "</span> " + esc(p.sub.charAt(0).toUpperCase() + p.sub.slice(1)) +
           (mostra ? '<div class="of-cm"><small>Comentário inserido na validação online por: ' + esc(nomeDoEmail(p.por || (h[0] && h[0].por) || "")) + "</small>" + esc(p.obs) + "</div>" : "") +
           (p.lista && p.lista.length ? '<ul class="of-lista">' + p.lista.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
           (p.resposta && !tr ? '<div class="of-cm of-tr"><small>Tratativa · ' + esc(nomeDoEmail(p.resposta.por)) + " · " + dataBR(dataLocalDe(p.resposta.em)).slice(0, 5) + " " + horaDe(p.resposta.em) + "</small>" + esc(p.resposta.texto) + "</div>" : "") +
@@ -5676,6 +5804,27 @@
         estado.off.trat = null;
       }
       else if (a === "assumir") { await salvarCaso(c, { responsavel: nomeDoEmail(quem), historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Responsável: " + nomeDoEmail(quem) }]) }); }
+      else if (a === "abares") { estado.off.abaRes = el.dataset.a; }
+      else if (a === "novapend") { estado.off.novaPend = true; }
+      else if (a === "cancelarpend") { estado.off.novaPend = false; }
+      else if (a === "gravarpend") {
+        const tp = $("npTipo").value, ds = ($("npDesc").value || "").trim(), eqn = ($("npEq").value || "").trim(), wo = $("npWo").value;
+        if (!tp) { mostrarAviso("Escolha o tipo da pendência.", "erro"); return; }
+        if (!ds) { mostrarAviso("Escreva a descrição da pendência.", "erro"); return; }
+        const wr = (c.wos || []).find(function (w) { return w.wo === wo; });
+        const np = { id: "m" + Date.now(), tipo: tp, texto: (eqn ? eqn + " · " : "") + ds, eq: eqn || undefined, wos: wo ? [wo] : undefined, por: quem, estado: "Aberta", manual: true };
+        await salvarCaso(c, { pendencias: (c.pendencias || []).concat([np]), concluido_em: null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Pendência registrada", itens: [tp + " · " + np.texto + (wr ? " (" + tipoCurto(wr.tipo) + ")" : "")] }]) });
+        estado.off.novaPend = false;
+      }
+      else if (a === "concluirconf") {
+        const cf = confDoCaso(c), falta = CONF_ITENS.filter(function (i) { return !cf[i[0]]; });
+        if (falta.length) { mostrarAviso("Falta marcar: " + falta.map(function (i) { return i[1].toLowerCase(); }).join("; ") + ".", "erro"); return; }
+        const ab = (c.pendencias || []).filter(function (p) { return !((p.estado === "Resolvida" || p.estado === "Não resolvida") && p.resposta && p.resposta.texto); }).length;
+        if (ab) { mostrarAviso("Ainda há " + ab + " pendência(s) sem tratativa.", "erro"); return; }
+        if (precisaValidar(c)) { mostrarAviso("Valide as abas antes de concluir a conferência.", "erro"); return; }
+        const ob = (($("ofObs") || {}).value || "").trim();
+        await salvarCaso(c, { concluido_em: agora, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Conferência concluída", texto: ob || undefined }]) });
+      }
       else if (a === "passo") { estado.off.passo = true; }
       else if (a === "cancelarpasso") { estado.off.passo = false; }
       else if (a === "gravarpasso") {
@@ -5697,6 +5846,20 @@
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
   });
   $("ofCorpo").addEventListener("change", async function (e) {
+    const ck = e.target.closest("input[type=checkbox][data-of]");
+    if (ck) {
+      const c0 = casoSel(); if (!c0) return;
+      try {
+        if (ck.dataset.of === "soapont") { estado.off.soApont = ck.checked; desenharOffline(); return; }
+        if (ck.dataset.of === "conf") {
+          const nv = Object.assign({}, confDoCaso(c0)); nv[ck.dataset.k] = ck.checked;
+          const it = CONF_ITENS.find(function (i) { return i[0] === ck.dataset.k; });
+          await salvarCaso(c0, { historico: (c0.historico || []).concat([{ em: new Date().toISOString(), por: estado.usuarioEmail, acao: (ck.checked ? "Conferido: " : "Desmarcado: ") + (it ? it[1] : ""), conf: nv }]) });
+          desenharOffline();
+        }
+      } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
+      return;
+    }
     const el = e.target.closest("select[data-of]");
     if (!el) return;
     const c = casoSel(); if (!c) return;
@@ -5727,10 +5890,10 @@
   $("ofAtualizar").addEventListener("click", atualizarOffline);
 
   // A equipe saiu do site e a aba nunca foi pedida: o caso vai direto para a validação offline.
-  async function enviarSemPedidoParaOffline(visitaId) {
+  async function enviarSemPedidoParaOffline(visitaId, motivoTxt) {
     const rs = conferir(await banco.from("validacoes").select("*").eq("visita_id", String(visitaId)).eq("situacao", "em_campo").limit(1));
     if (!rs.length) return false;
-    const reg = rs[0], agora = new Date().toISOString(), motivo = "Técnico saiu do site sem solicitar a validação";
+    const reg = rs[0], agora = new Date().toISOString(), motivo = motivoTxt || "Técnico não solicitou a validação";
     const pend = [{ tipo: "Saída sem pedido", texto: motivo }];
     const ev = { tipo: "encerramento", em: agora, por: estado.usuarioEmail, resultado: "offline", motivo: motivo, pendencias: pend, completa: false,
                  wos: (reg.wos || []).length, wo_ids: (reg.wos || []).map(function (w) { return w.wo; }), equipe: reg.equipe, site: reg.site, na: [] };
