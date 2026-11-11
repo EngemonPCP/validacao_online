@@ -705,7 +705,9 @@
     .of-lista { columns:2; column-gap:24px; margin:6px 0 0 18px; padding:0; font-size:13px; color:#393939; } .of-lista li { margin:2px 0; }
     .of-voltar { color:#0f62fe; cursor:pointer; font-size:13px; margin-bottom:10px; } .of-voltar:hover { text-decoration:underline; }
     .of-cab { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:16px; } .of-cab h1 { margin:0; }
-    .of-caso { max-width:1000px; margin:0 auto; } .of-duas-x { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
+    main:has(#telaOffline:not(.oculto)) { max-width:none; }
+    #ofAbaRes { gap:0; } #ofAbaRes button { background:#e0e0e0; color:#161616; border:0; border-top:2px solid transparent; padding:12px 20px; } #ofAbaRes button.ativo { background:#fff; color:#161616; border-top:2px solid #0f62fe; font-weight:600; }
+    .of-caso { max-width:none; margin:0;} .of-duas-x { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; } @media (max-width:1000px) { .of-duas { grid-template-columns:1fr; } }
     .of-tit { font-size:12px; font-weight:600; color:#525252; text-transform:uppercase; letter-spacing:.3px; margin-bottom:8px; }
     .of-box { background:#fff; } .of-it { padding:12px 16px; border-bottom:1px solid #e0e0e0; } .of-box textarea { width:100%; }
     .of-tl { margin-top:18px; border-left:2px solid #e0e0e0; padding-left:14px; margin-left:4px; font-size:13px; } .of-tl > div { margin-bottom:14px; color:#525252; } .of-tl > div.m { color:#161616; } .of-tl p { background:#f4f4f4; padding:8px 12px; margin:4px 0 0; white-space:pre-wrap; }
@@ -5593,8 +5595,9 @@
     }).join("") + "</table>";
     t += "</div></div>";
     const cs = casoSel(), topo = document.querySelector("#telaOffline .vl-topo");
-    if (cs && O.aberto) { topo.style.display = "none"; $("ofCorpo").innerHTML = '<div class="of-caso">' + painelCaso(cs, nomes) + "</div>"; return; }
+    if (cs && O.aberto) { topo.style.display = "none"; { const bc = document.querySelector("#telaOffline .tr span"); if (bc) bc.textContent = "Validação offline / " + cs.site; } $("ofCorpo").innerHTML = '<div class="of-caso">' + painelCaso(cs, nomes) + "</div>"; return; }
     topo.style.display = "";
+    { const bc = document.querySelector("#telaOffline .tr span"); if (bc) bc.textContent = "Validação offline"; }
     $("ofCorpo").innerHTML = t;
     if (O.focoBusca) { const b = $("ofBusca"); if (b) { b.focus(); const n = b.value.length; b.setSelectionRange(n, n); } O.focoBusca = false; }
   }
@@ -5605,8 +5608,26 @@
     if (!c || !c.validacao_id || O.vals[c.id] !== undefined) return;
     O.vals[c.id] = null;
     try {
-      const r = conferir(await banco.from("validacoes").select("equipamentos,alarmes,inventario,historico,resultado,analista,wos").eq("id", c.validacao_id).limit(1));
+      const r = conferir(await banco.from("validacoes").select("equipamentos,alarmes,inventario,historico,resultado,analista,wos,visita_id,site_chave,analise_em,encerrada_em,grupos_ok").eq("id", c.validacao_id).limit(1));
       O.vals[c.id] = r[0] || null;
+      try {
+        if (r[0] && r[0].site_chave) {
+          const todas = conferir(await banco.from("equipamentos_base").select("*").eq("site_chave", r[0].site_chave).order("segmento").order("tag").order("id"));
+          const wz = r[0].wos || c.wos || [];
+          let casam = todas.filter(function (x) { return wz.some(function (w) { return tipoCasa(x.tipo, w.tipo); }); });
+          if (!casam.length && todas.length) casam = todas;
+          const vk = {};
+          casam.forEach(function (x) { const b0 = alNorm(x.tipo) + "|" + (x.tag ? alNorm(x.tag) : "SEG:" + alNorm(x.segmento)); vk[b0] = (vk[b0] || 0) + 1; x._k = vk[b0] > 1 ? b0 + "#" + vk[b0] : b0; });
+          r[0].linhas = casam;
+        }
+      } catch (e1) { /* sem planilha */ }
+      try {
+        if (r[0] && r[0].visita_id) {
+          const vs = conferir(await banco.from("visitas").select("hora_entrada,hora_saida").eq("id", r[0].visita_id).limit(1));
+          estado.val.visitaHoras = estado.val.visitaHoras || {};
+          if (vs.length) estado.val.visitaHoras[c.validacao_id] = { ent: vs[0].hora_entrada ? new Date(vs[0].hora_entrada).getTime() : null, sai: vs[0].hora_saida ? new Date(vs[0].hora_saida).getTime() : null };
+        }
+      } catch (e2) { /* sem horário */ }
     } catch (e) { O.vals[c.id] = null; }
   }
   function obsDaPendencia(c, p, usados) {
@@ -5638,32 +5659,69 @@
     const ro = resultadoOnline(c), vz = (O.valsLista || {})[c.validacao_id];
     const eq = v.equipamentos || {}, ks = Object.keys(eq);
     const apont = function (e) { return !!((e.fotos && e.fotos !== "Ok") || e.pend || e.obs || e.obs_foto || e.obs_pend); };
-    const nAp = ks.filter(function (k) { return apont(eq[k]); }).length;
+    const nAp = v.linhas ? v.linhas.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !e || !(e.fotos || e.pend) || apont(e); }).length : ks.filter(function (k) { return apont(eq[k]); }).length;
     let bat = null; try { bat = batimentoDoRegistro({ alarmes: v.alarmes, wos: v.wos || c.wos || [] }); } catch (e) { bat = null; }
     const nApAl = bat ? bat.itens.filter(function (i) { return i.apontamento && i.apontamento !== "Sem apontamento"; }).length : 0;
+    let motivoInc = "";
+    try {
+      if (v.linhas) {
+        const fl = faltasDe({ equipamentos: v.equipamentos, alarmes: v.alarmes, inventario: v.inventario, wos: v.wos || c.wos || [], grupos_ok: v.grupos_ok }, v.linhas);
+        const mm = /faltam conferir (\d+)/.exec(fl.join(" "));
+        motivoInc = mm ? mm[1] + (mm[1] === "1" ? " equipamento sem marcação" : " equipamentos sem marcação") : fl.length ? fl[0].toLowerCase() : "";
+      }
+    } catch (e4) { motivoInc = ""; }
     const hv = v.historico || [], enc = hv.filter(function (e) { return e.tipo === "encerramento"; }), ult = enc[enc.length - 1];
     const compl = vz && vz.completa !== null && vz.completa !== undefined ? vz.completa : null;
     let t = '<div class="of-box" style="margin-bottom:24px"><div class="of-it" style="display:flex;justify-content:space-between"><b>Resumo da validação online</b><span class="vl-mu">somente leitura</span></div>' +
       '<div class="of-it" style="display:flex;gap:48px;flex-wrap:wrap"><div><div class="vl-mu" style="font-size:12px">Resultado online</div><span class="vl-tag ' + (ro === "validada" ? "v4" : ro === "ressalva" ? "v3" : "v6") + '">' + (ro === "validada" ? "Validada" : ro === "ressalva" ? "Com ressalva" : "Offline") + "</span></div>" +
       '<div><div class="vl-mu" style="font-size:12px">Validadora</div><b>' + esc(ult ? nomeDoEmail(ult.por) : (v.analista ? nomeDoEmail(v.analista) : "—")) + "</b></div>" +
       '<div><div class="vl-mu" style="font-size:12px">Encerrada em</div><b>' + (ult ? dataBR(dataLocalDe(ult.em)).slice(0, 5) + " " + horaDe(ult.em) : "—") + "</b></div>" +
-      '<div><div class="vl-mu" style="font-size:12px">Conferência online</div>' + (compl === null ? "—" : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta") + "</span>") + "</div></div>" +
+      '<div><div class="vl-mu" style="font-size:12px">Tempo em análise</div><b>' + (v.analise_em && ult ? Math.max(0, Math.round((new Date(ult.em) - new Date(v.analise_em)) / 60000)) + " min" : "—") + "</b></div>" +
+      '<div><div class="vl-mu" style="font-size:12px">Conferência online</div>' + (compl === null ? "—" : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta" + (motivoInc ? " · " + esc(motivoInc) : "")) + "</span>") + "</div></div>" +
       (ult && ult.motivo ? '<div class="of-it"><div class="of-cm" style="margin:0"><small>Motivo informado pela validadora</small>' + esc(ult.motivo) + "</div></div>" : "") + "</div>";
     t += '<div class="vl-chips" id="ofAbaRes" style="margin-bottom:0">' + [["eq", "Equipamentos e fotos · " + nAp + " apontamento(s)"], ["al", "Alarmes · " + nApAl + " apontamento(s)"], ["inv", "Inventário e bornes"], ["hist", "Histórico"]].map(function (a) { return '<button data-of="abares" data-a="' + a[0] + '"' + (aba === a[0] ? ' class="ativo"' : "") + ">" + a[1] + "</button>"; }).join("") + "</div>";
     t += '<div class="of-box" style="margin-bottom:24px">';
     const amarelo = ' style="background:#fcf4d6"';
     if (aba === "eq") {
-      const so = !!O.soApont, ls = ks.filter(function (k) { return !so || apont(eq[k]); });
+      const so = !!O.soApont, wz = v.wos || c.wos || [], linhas = v.linhas || [];
       t += '<div class="of-it"><label><input type="checkbox" data-of="soapont"' + (so ? " checked" : "") + "> Só apontamentos</label></div>";
-      t += ls.length ? "<table><tr><th>Equipamento</th><th>Segmento</th><th>Foto</th><th>Pendência</th><th>Comentário</th></tr>" + ls.map(function (k) {
-        const e = eq[k], ap = apont(e), cm = [obsFotoDe(e), obsPendDe(e)].filter(function (x, i, a) { return x && a.indexOf(x) === i; }).join(" · ");
-        return "<tr" + (ap ? amarelo : "") + "><td>" + esc(e.tag || k) + "</td><td>" + esc(e.segmento || "—") + "</td><td>" + esc(e.fotos || "—") + "</td><td>" + esc(e.pend ? tipoPendNovo(e.pend) : "—") + "</td><td>" + esc(cm || "—") + "</td></tr>";
-      }).join("") + "</table>" : '<div class="of-it vl-mu">Nenhum equipamento marcado nesta validação.</div>';
+      if (!linhas.length) {
+        t += ks.length ? "<table><tr><th>Equipamento</th><th>Segmento</th><th>Foto</th><th>Pendência</th><th>Comentário</th></tr>" + ks.map(function (k) {
+          const e = eq[k], ap = apont(e), cm = [obsFotoDe(e), obsPendDe(e)].filter(function (x, i, a) { return x && a.indexOf(x) === i; }).join(" · ");
+          return "<tr" + (ap ? amarelo : "") + "><td>" + esc(e.tag || k) + "</td><td>" + esc(e.segmento || "—") + "</td><td>" + esc(e.fotos || "—") + "</td><td>" + esc(e.pend ? tipoPendNovo(e.pend) : "—") + "</td><td>" + esc(cm || "—") + "</td></tr>";
+        }).join("") + "</table>" : '<div class="of-it vl-mu">Sem planilha de equipamentos para este site.</div>';
+      } else {
+        const grupos = wz.map(function (w) { return { w: w, rows: linhas.filter(function (r) { return woDaLinha(r, wz) === w; }) }; });
+        const soltas = linhas.filter(function (r) { return !woDaLinha(r, wz); });
+        if (soltas.length) grupos.push({ w: { wo: "", tipo: "Outros equipamentos" }, rows: soltas });
+        grupos.forEach(function (g) {
+          const reais = g.rows.filter(function (r) { return !ehNA(r); }), nas = g.rows.filter(ehNA);
+          const feitos = reais.filter(function (r) { const e = eq[chaveEquip(r)]; return e && (e.fotos || e.pend); }).length;
+          const rows = g.rows.slice().sort(function (a, b) { return String(a.segmento).localeCompare(String(b.segmento)) || String(a.tag).localeCompare(String(b.tag)); }).filter(function (r) {
+            if (!so) return true; if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !e || !(e.fotos || e.pend) || apont(e);
+          });
+          t += '<div class="of-it" style="background:#f4f4f4;font-weight:600">' + esc(tipoCurto(g.w.tipo)) + (g.w.wo ? " · " + esc(g.w.wo) : "") + " · " + feitos + " de " + reais.length + " conferidos" + (nas.length ? " · " + nas.length + " não existem no site" : "") + "</div>";
+          if (!rows.length) { t += '<div class="of-it vl-mu">' + (so ? "Nenhum apontamento nesta WO." : "Sem equipamentos na planilha para esta WO.") + "</div>"; return; }
+          t += "<table><tr><th>Segmento</th><th>Equipamento</th><th>Planilha</th><th>Foto</th><th>Pendência</th><th>Comentário</th></tr>" + rows.map(function (r) {
+            if (ehNA(r)) return "<tr><td>" + esc(r.segmento || "—") + "</td><td>Não existe no site</td><td>N/A</td><td class=\"vl-mu\">Não se aplica</td><td></td><td></td></tr>";
+            const e = eq[chaveEquip(r)] || {}, marcado = !!(e.fotos || e.pend), ap = !marcado || apont(e);
+            const cm = [obsFotoDe(e), obsPendDe(e)].filter(function (x, i, a) { return x && a.indexOf(x) === i; }).join(" · ");
+            const ft = !e.fotos ? '<span class="vl-tag v3">Sem marcação</span>' : e.fotos === "Ok" ? '<span class="vl-tag v1">Ok</span>' : '<span class="vl-tag v3">' + esc(e.fotos) + "</span>";
+            return "<tr" + (ap ? amarelo : "") + "><td>" + esc(r.segmento || "—") + "</td><td>" + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td><td>" + ft + "</td><td>" + (e.pend ? esc(tipoPendNovo(e.pend)) : "—") + "</td><td>" + (cm ? esc(cm) : "—") + "</td></tr>";
+          }).join("") + "</table>";
+        });
+        t += '<div class="of-it vl-mu" style="font-size:12px">Linhas em amarelo são apontamentos: foto com problema, pendência, comentário ou equipamento sem marcação. Há um filtro "Só apontamentos".</div>';
+      }
     } else if (aba === "al") {
       if (!bat) t += '<div class="of-it vl-mu">Sem configuração ou histórico de alarmes nesta validação.</div>';
       else {
         const r = bat.resumo || {}, al = v.alarmes || {};
-        t += '<div class="of-it" style="display:flex;gap:48px;flex-wrap:wrap"><div><div class="vl-mu" style="font-size:12px">Para externar</div><b>' + (bat.itens || []).length + '</b></div><div><div class="vl-mu" style="font-size:12px">Faltaram</div><b>' + (r.faltaram || 0) + '</b></div><div><div class="vl-mu" style="font-size:12px">Bornes</div><b>' + (confBloco(al, "bornes").estado === "ok" ? "Ok" : confBloco(al, "bornes").estado === "nao" ? "Não ok" : "—") + '</b></div><div><div class="vl-mu" style="font-size:12px">Fotos das abas de alarme</div><b>' + (confBloco(al, "fotos").estado === "ok" ? "Ok" : confBloco(al, "fotos").estado === "nao" ? "Não ok" : "—") + "</b></div></div>";
+        let pm = null; try { pm = analisePermanencia({ id: c.validacao_id, alarmes: al, wos: v.wos || c.wos || [] }); } catch (e3) { pm = null; }
+        const cel = function (rot, val, grande) { return '<div style="flex:1;min-width:140px"><div class="vl-mu" style="font-size:12px">' + rot + '</div>' + (grande ? '<div style="font-size:28px;line-height:1.3">' + val + "</div>" : "<b>" + val + "</b>") + "</div>"; };
+        const bo = confBloco(al, "bornes"), fo = confBloco(al, "fotos"), okx = function (x) { return x.estado === "ok" ? "Ok" : x.estado === "nao" ? "Não ok" + (x.motivo ? " · " + esc(x.motivo) : "") : "—"; };
+        t += '<div class="of-it" style="display:flex;gap:24px;flex-wrap:wrap">' + cel("Configurados", r.configurados != null ? r.configurados : "—", 1) + cel("Isentos", r.isentos != null ? r.isentos : "—", 1) + cel("Para externar", r.paraExternar != null ? r.paraExternar : bat.itens.length, 1) + cel("Externaram", r.externaram != null ? r.externaram : "—", 1) + cel("Faltaram", r.faltaram || 0, 1) + "</div>" +
+          '<div class="of-it" style="display:flex;gap:24px;flex-wrap:wrap">' + cel("Permanência", pm && !pm.semHorario ? hmDe(pm.ent) + " a " + hmDe(pm.sai) + " · " + duracaoDe(pm.sai - pm.ent) : "Sem horário da visita") + cel("Eventos dentro / fora da janela", pm && !pm.semHorario ? pm.dentro + " / " + pm.fora.length : "—") + cel("Bornes", okx(bo)) + cel("Fotos das abas de alarme", okx(fo)) + "</div>" +
+          (pm && !pm.semHorario ? desenharPermanencia(pm) : "");
         t += "<table><tr><th>Bloco</th><th>Alarme</th><th>Externou</th><th>Apontamento</th></tr>" + bat.itens.map(function (i) {
           const ap = i.apontamento && i.apontamento !== "Sem apontamento";
           return "<tr" + (!i.externou && !ap ? amarelo : ap ? amarelo : "") + "><td>" + esc(i.bloco || "—") + "</td><td>" + esc(i.texto) + "</td><td>" + (i.externou ? "Sim" : "Não") + "</td><td>" + esc(ap ? i.apontamento : "—") + "</td></tr>";
@@ -5707,8 +5765,8 @@
     const O = estado.off, lista = nomes.slice(); if (lista.indexOf(me) < 0) lista.push(me); lista.sort();
     const h = c.historico || [], abertas = pend.filter(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa"; }).length;
     const sv = c.origem === "sem_visita", tec = tecnicoDe(c);
-    let t = '<div class="of-voltar" data-of="voltar">← Voltar para a lista</div><div class="of-cab"><div><h1>' + esc(c.site) + " · " + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + '</h1><div class="sub">' +
-      (sv ? (tec ? "Técnico: " + esc(tec.tecnico) + " · informado por " + esc(nomeDoEmail(tec.por)) + " em " + dataBR(dataLocalDe(tec.em)).slice(0, 5) + " " + horaDe(tec.em) : "Executada na base" + (h[0] && h[0].base_data ? " em " + dataBR(h[0].base_data).slice(0, 5) : "") + " · sem visita registrada no sistema")
+    let t = '<div class="of-voltar" data-of="voltar">← Voltar para a lista</div><div class="of-cab"><div><h1>' + esc(c.site) + " · " + esc(!sv && c.equipe ? c.equipe : (c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + '</h1><div class="sub">' +
+      (!sv ? "Preventiva " + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + " · caso aberto em " + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) : sv ? (tec ? "Técnico: " + esc(tec.tecnico) + " · informado por " + esc(nomeDoEmail(tec.por)) + " em " + dataBR(dataLocalDe(tec.em)).slice(0, 5) + " " + horaDe(tec.em) : "Executada na base" + (h[0] && h[0].base_data ? " em " + dataBR(h[0].base_data).slice(0, 5) : "") + " · sem visita registrada no sistema")
         : (c.equipe ? "Equipe " + esc(c.equipe) + " · " : "") + esc(REGRAS.offline.origens[c.origem] || c.origem) + " em " + dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em) + (h[0] ? " por " + esc(nomeDoEmail(h[0].por)) : "")) + "</div></div><div class=\"vl-ferr\">" +
       '<select data-of="resp"><option value="">Sem responsável</option>' + lista.map(function (n) { return '<option value="' + esc(n) + '"' + (c.responsavel === n ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("") + "</select>" +
       (c.responsavel !== me && !conc ? '<button class="bt peq" data-of="assumir">Assumir</button>' : "") +
