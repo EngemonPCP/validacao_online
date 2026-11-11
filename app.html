@@ -4753,15 +4753,23 @@
       const ids = L.modo === "exec" ? Object.keys(d.baseMapa).filter(function (w) { return ehExecutadaBase(d.baseMapa[w]); }) : Object.keys(d.campoMapa);
       const itens = ids.map(function (w) {
         const l = d.baseMapa[w], v = d.campoMapa[w], ult = d.ult[w], naBase = ehExecutadaBase(l);
-        return { l: l, w: w, emCampo: !!v, naBase: naBase, equipe: v ? v.equipe : (l.equipe_engemon || ""), ult: ult };
+        return { l: l, v: v, w: w, emCampo: !!v, naBase: naBase, equipe: v ? v.equipe : (l.equipe_engemon || ""), ult: ult };
       }).sort(function (a, b) { return String(a.l.programado_infratel || a.l.clr_sdr_site_helix || "").localeCompare(String(b.l.programado_infratel || b.l.clr_sdr_site_helix || "")); });
       const R2 = L.modo === "exec" ? { todas: "Todas", campo: "Em campo", semcampo: "Sem visita de campo" } : { todas: "Todas", nabase: "Já executadas na base", basepend: "Base ainda pendente" };
       const ok2 = function (x, k) { return k === "todas" || (k === "campo" && x.emCampo) || (k === "semcampo" && !x.emCampo) || (k === "nabase" && x.naBase) || (k === "basepend" && !x.naBase); };
       const vis2 = itens.filter(function (x) { return ok2(x, L.filtro); });
-      return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>" + (L.modo === "exec" ? "Total executadas" : "Executadas em campo") + " · " + esc(nomeP) + " · " + fmt(itens.length) + " WOs</span></div>" +
+      const dh = function (h) { return h ? dataBR(dataLocalDe(h)).slice(0, 5) + " " + horaDe(h) : "—"; };
+      estado.val.rvExport = { nome: (L.modo === "exec" ? "total_executadas" : "executadas_em_campo") + "_" + (L.filtro || "todas"), linhas: vis2.map(function (x) {
+        return { "Site": x.l.programado_infratel || x.l.clr_sdr_site_helix || "", "WO": x.w, "Tipo": tipoCurto(x.l.tipo), "Equipe": x.equipe || "",
+          "Data da visita": x.v && x.v.data_execucao ? dataBR(x.v.data_execucao) : "", "Entrada no site": x.v && x.v.hora_entrada ? dataBR(dataLocalDe(x.v.hora_entrada)) + " " + horaDe(x.v.hora_entrada) : "",
+          "Saída registrada em": x.v && x.v.hora_saida ? dataBR(dataLocalDe(x.v.hora_saida)) + " " + horaDe(x.v.hora_saida) : "",
+          "Situação na base": x.l.status_final || "", "Data na base": x.l.data_fim ? dataBR(x.l.data_fim) : "", "Campo": x.emCampo ? "Visita de campo" : "Sem visita de campo",
+          "Análise": x.ult ? (REGRAS.validacao.resultados[x.ult.resultado] || x.ult.resultado) : "Sem análise", "Análise registrada em": x.ult ? dataBR(dataLocalDe(x.ult.em)) + " " + horaDe(x.ult.em) : "" };
+      }) };
+      return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>" + (L.modo === "exec" ? "Total executadas" : "Executadas em campo") + " · " + esc(nomeP) + " · " + fmt(itens.length) + ' WOs · <a class="rv-lk" data-vl="excel">Exportar Excel →</a></span></div>' +
         '<div class="rv-chips">' + Object.keys(R2).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + R2[k] + " · " + itens.filter(function (x) { return ok2(x, k); }).length + "</button>"; }).join("") + "</div>" +
-        (vis2.length ? '<div class="rv-tab"><table><tr><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Na base</th><th>Campo</th><th>Análise</th></tr>' + vis2.slice(0, 400).map(function (x) {
-          return "<tr><td><b>" + esc(x.l.programado_infratel || x.l.clr_sdr_site_helix || "") + "</b></td><td>" + esc(x.w) + "</td><td>" + esc(tipoCurto(x.l.tipo)) + "</td><td>" + esc(x.equipe || "—") + '</td><td><span class="rv-tg">' + esc(x.l.status_final || "—") + "</span></td><td>" + (x.emCampo ? "Visita de campo" : "Sem visita de campo") + "</td><td>" +
+        (vis2.length ? '<div class="rv-tab"><table><tr><th>Site</th><th>WO</th><th>Tipo</th><th>Equipe</th><th>Data da visita</th><th>Entrada</th><th>Saída</th><th>Na base</th><th>Campo</th><th>Análise</th></tr>' + vis2.slice(0, 400).map(function (x) {
+          return "<tr><td><b>" + esc(x.l.programado_infratel || x.l.clr_sdr_site_helix || "") + "</b></td><td>" + esc(x.w) + "</td><td>" + esc(tipoCurto(x.l.tipo)) + "</td><td>" + esc(x.equipe || "—") + "</td><td>" + (x.v && x.v.data_execucao ? dataBR(x.v.data_execucao) : "—") + "</td><td>" + dh(x.v && x.v.hora_entrada) + "</td><td>" + dh(x.v && x.v.hora_saida) + '</td><td><span class="rv-tg">' + esc(x.l.status_final || "—") + "</span></td><td>" + (x.emCampo ? "Visita de campo" : "Sem visita de campo") + "</td><td>" +
             (x.ult ? esc(REGRAS.validacao.resultados[x.ult.resultado] || x.ult.resultado) : "Sem análise") + "</td></tr>";
         }).join("") + "</table></div>" : '<div class="vl-mu" style="padding:12px 20px">Nenhuma WO nesta lista.</div>') + "</div>";
     }
@@ -4842,7 +4850,7 @@
       const nm = function (n, rot, nota, neg) { return '<div><div class="l">' + rot + '</div><div class="v' + (neg ? " neg" : "") + '">' + fmt(n) + '</div><div class="n">' + (nota || "") + "</div></div>"; };
       t += '<div class="rv-bl"><div class="rv-hd">' + esc(nomeP) + ' · acumulado <span>MOP · em WOs · base do período ' + fmt(d.mopTotal) + '</span></div><div class="rv-m rv-m5">' +
         nm(d.mopExec, "Total executadas", fmt(d.campoNaBase) + " em campo" + (d.execSemCampo ? " · " + fmt(d.execSemCampo) + " sem visita de campo " + lk("ver", "wlista", "exec:semcampo") : "") + "<br>" + lk("ver lista", "wlista", "exec:todas")) +
-        nm(d.campo, "Executadas em campo", (d.campo ? fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise " + lk("ver", "semval") : "")) +
+        nm(d.campo, "Executadas em campo", (d.campo ? lk("ver todas as visitas", "wlista", "campo:todas") + "<br>" + fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise " + lk("ver", "semval") : "")) +
         nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo" + (A.exec ? "<br>" + lk("ver lista", "vlista", "periodo:todas") : "")) + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
         nm(pendTot, "Com pendências", fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Offline"), true) + "</div></div>";
       t += barras;
@@ -4910,6 +4918,16 @@
     const vl = e.target.closest("[data-vl]");
     if (vl) {
       const L = estado.val.rvLista, a = vl.dataset.vl;
+      if (a === "excel") {
+        const ex = estado.val.rvExport;
+        if (typeof XLSX === "undefined") { mostrarAviso("A biblioteca de Excel não carregou. Aperte Ctrl+F5 e tente de novo.", "erro"); return; }
+        if (!ex || !ex.linhas.length) { mostrarAviso("Não há WO nesta lista para exportar.", "erro"); return; }
+        const ws = XLSX.utils.json_to_sheet(ex.linhas), wb = XLSX.utils.book_new();
+        ws["!cols"] = Object.keys(ex.linhas[0]).map(function (k) { return { wch: Math.max(12, k.length + 2) }; });
+        XLSX.utils.book_append_sheet(wb, ws, "Visitas");
+        XLSX.writeFile(wb, ex.nome + "_" + (estado.periodo.mes ? estado.periodo.ano + "-" + String(estado.periodo.mes).padStart(2, "0") : estado.periodo.ano) + ".xlsx");
+        return;
+      }
       if (a === "resumo") estado.val.rvLista = null;
       else if (L && a === "lista") L.aberta = null;
       else if (L && a === "filtro") L.filtro = vl.dataset.f;
