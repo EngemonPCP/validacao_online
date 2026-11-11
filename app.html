@@ -5587,8 +5587,8 @@
       const faltaAbas = !c.concluido_em && (svc ? (iz < 0 || hz[iz].sem_analise === true) : precisaValidar(c));
       const ro = resultadoOnline(c), vz = (estado.off.valsLista || {})[c.validacao_id];
       const roTg = '<span class="vl-tag ' + (ro === "validada" ? "v4" : ro === "ressalva" ? "v3" : "v6") + '">' + (ro === "validada" ? "Validada" : ro === "ressalva" ? "Com ressalva" : "Offline") + "</span>";
-      const compl = svc || c.origem === "sem_pedido" ? false : (vz && vz.completa !== null ? vz.completa : (ro === "offline" ? null : true));
-      const coTg = compl === null ? "—" : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta") + "</span>";
+      const compl = svc || c.origem === "sem_pedido" ? false : (vz && vz.completa !== null && vz.completa !== undefined ? vz.completa : null);
+      const coTg = compl === null ? '<span class="vl-tag v5">Não verificada</span>' : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta") + "</span>";
       const tg = c.concluido_em ? '<span class="vl-tag v1">Resolvido</span>' : (!pe.length && !faltaAbas && !(svc && !tecnicoDe(c))) ? '<span class="vl-tag v1">Sem pendência</span>' : faltaAbas ? '<span class="vl-tag v2">Abas para validar</span>' : svc && !tecnicoDe(c) ? '<span class="vl-tag v2">Informar quem executou</span>' : (!nab && !ntr) ? '<span class="vl-tag v5">Pronto para concluir</span>' : nab ? '<span class="vl-tag v2">' + nab + (nab === 1 ? " aberta" : " abertas") + "</span>" : '<span class="vl-tag v5">' + ntr + " em tratativa</span>";
       return '<tr data-id="' + c.id + '" class="vl-clic"><td><b>' + esc(c.site) + "</b></td><td>" + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + "</td><td>" + esc(c.equipe || "—") + "</td><td>" +
         roTg + "</td><td>" + coTg + "</td><td>" + tg + "</td><td>" + (c.responsavel ? esc(c.responsavel) : "—") + "</td><td>" + (emRisco(c) ? '<span class="vl-tag v2">' : "") + (c.origem === "sem_visita" ? dataBR(dataCaso(c)).slice(0, 5) : dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em)) + (emRisco(c) ? "</span>" : "") + "</td></tr>";
@@ -5676,16 +5676,17 @@
     const nAp = v.linhas ? v.linhas.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !e || !(e.fotos || e.pend) || apont(e); }).length : ks.filter(function (k) { return apont(eq[k]); }).length;
     let bat = null; try { bat = batimentoDoRegistro({ alarmes: v.alarmes, wos: v.wos || c.wos || [] }); } catch (e) { bat = null; }
     const nApAl = bat ? bat.itens.filter(function (i) { return i.apontamento && i.apontamento !== "Sem apontamento"; }).length : 0;
+    let compl = vz && vz.completa !== null && vz.completa !== undefined ? vz.completa : null;
     let motivoInc = "";
     try {
       if (v.linhas) {
         const fl = faltasDe({ equipamentos: v.equipamentos, alarmes: v.alarmes, inventario: v.inventario, wos: v.wos || c.wos || [], grupos_ok: v.grupos_ok }, v.linhas);
+        if (compl === null) compl = fl.length === 0;
         const mm = /faltam conferir (\d+)/.exec(fl.join(" "));
         motivoInc = mm ? mm[1] + (mm[1] === "1" ? " equipamento sem marcação" : " equipamentos sem marcação") : fl.length ? fl[0].toLowerCase() : "";
       }
     } catch (e4) { motivoInc = ""; }
     const hv = v.historico || [], enc = hv.filter(function (e) { return e.tipo === "encerramento"; }), ult = enc[enc.length - 1];
-    const compl = vz && vz.completa !== null && vz.completa !== undefined ? vz.completa : null;
     let t = '<div class="of-box" style="margin-bottom:24px"><div class="of-it" style="display:flex;justify-content:space-between"><b>Resumo da validação online</b><span class="vl-mu">somente leitura</span></div>' +
       '<div class="of-it" style="display:flex;gap:48px;flex-wrap:wrap"><div><div class="vl-mu" style="font-size:12px">Resultado online</div><span class="vl-tag ' + (ro === "validada" ? "v4" : ro === "ressalva" ? "v3" : "v6") + '">' + (ro === "validada" ? "Validada" : ro === "ressalva" ? "Com ressalva" : "Offline") + "</span></div>" +
       '<div><div class="vl-mu" style="font-size:12px">Validadora</div><b>' + esc(ult ? nomeDoEmail(ult.por) : (v.analista ? nomeDoEmail(v.analista) : "—")) + "</b></div>" +
