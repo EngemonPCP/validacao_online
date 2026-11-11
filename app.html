@@ -5595,7 +5595,7 @@
     }).join("") + "</table>";
     t += "</div></div>";
     const cs = casoSel(), topo = document.querySelector("#telaOffline .vl-topo");
-    if (cs && O.aberto) { topo.style.display = "none"; { const bc = document.querySelector("#telaOffline .tr span"); if (bc) bc.textContent = "Validação offline / " + cs.site; } $("ofCorpo").innerHTML = '<div class="of-caso">' + painelCaso(cs, nomes) + "</div>"; return; }
+    if (cs && O.aberto) { topo.style.display = "none"; { const bc = document.querySelector("#telaOffline .tr span"); if (bc) bc.textContent = "Validação offline / " + cs.site; } $("ofCorpo").innerHTML = '<div class="of-caso">' + painelCaso(cs, nomes) + "</div>"; npAtualizaBotao(); return; }
     topo.style.display = "";
     { const bc = document.querySelector("#telaOffline .tr span"); if (bc) bc.textContent = "Validação offline"; }
     $("ofCorpo").innerHTML = t;
@@ -5649,6 +5649,20 @@
     if (/^Fotos das abas de alarme/.test(p.texto)) return String(confBloco(al, "fotos").motivo || "").trim();
     return "";
   }
+  function lerNp() {
+    const f = document.getElementById("ofNp"); if (!f) return;
+    const np = estado.off.np = estado.off.np || {}, g = function (id) { const x = document.getElementById(id); return x ? x.value : undefined; };
+    if (g("npTipo") !== undefined) np.tipo = g("npTipo");
+    if (g("npWo") !== undefined) np.wo = g("npWo");
+    const rd = f.querySelector("input[name=npEq]:checked"); np.eq = rd ? rd.value : (np.wo ? np.eq : "");
+    if (g("npOutro") !== undefined) np.outro = g("npOutro");
+    if (g("npDesc") !== undefined) np.desc = g("npDesc");
+  }
+  function npValido(c) {
+    const np = estado.off.np || {};
+    return !!(np.tipo && np.wo && np.eq && (np.eq !== "__outro" || (np.outro || "").trim().length >= 2) && (np.desc || "").trim().length >= 3);
+  }
+  function npAtualizaBotao() { const b = document.getElementById("npGravar"); if (b) b.disabled = !npValido(casoSel()); }
   const CONF_ITENS = [["eq", "Equipamentos e fotos conferidos"], ["al", "Alarmes conferidos"], ["rel", "Relatório do técnico recebido e conferido"], ["pend", "Pendências do online tratadas"]];
   const TIPOS_NOVA_PEND = ["Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"];
   function confDoCaso(c) { const h = c.historico || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].conf) return h[i].conf; return {}; }
@@ -5747,12 +5761,19 @@
     if (!conc) {
       t += '<div class="of-it"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Observação da conferência</div><textarea id="ofObs" class="auto" rows="2" placeholder="Observação"></textarea></div>';
       if (O.novaPend) {
-        const ws = (c.wos || []);
-        t += '<div class="of-it"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"><div><div class="vl-mu" style="font-size:12px">Tipo</div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option>" + x + "</option>"; }).join("") + "</select></div>" +
-          '<div><div class="vl-mu" style="font-size:12px">WO</div><select id="npWo"><option value="">Todas</option>' + ws.map(function (w) { return '<option value="' + esc(w.wo) + '">' + esc(tipoCurto(w.tipo)) + " · " + esc(w.wo) + "</option>"; }).join("") + "</select></div>" +
-          '<div><div class="vl-mu" style="font-size:12px">Equipamento (opcional)</div><input type="text" id="npEq"></div></div>' +
-          '<div style="margin-top:12px"><div class="vl-mu" style="font-size:12px">Descrição</div><textarea id="npDesc" class="auto" rows="2"></textarea></div>' +
-          '<div style="margin-top:12px"><button class="bt p" data-of="gravarpend">Registrar pendência</button> <button class="bt" data-of="cancelarpend">Cancelar</button></div></div>';
+        const np = O.np = O.np || {}, ws = (c.wos || []), vv = (O.vals || {})[c.id], lin = (vv && vv.linhas) || [];
+        const wsel = ws.find(function (w) { return w.wo === np.wo; });
+        const eqs = wsel ? lin.filter(function (r) { return !ehNA(r) && woDaLinha(r, ws) === wsel; }).sort(function (a, b) { return String(a.segmento).localeCompare(String(b.segmento)) || String(a.tag).localeCompare(String(b.tag)); }) : [];
+        t += '<div class="of-it" id="ofNp"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"><div><div class="vl-mu" style="font-size:12px">Tipo</div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option" + (np.tipo === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
+          '<div><div class="vl-mu" style="font-size:12px">WO</div><select id="npWo"><option value="">Selecione</option>' + ws.map(function (w) { return '<option value="' + esc(w.wo) + '"' + (np.wo === w.wo ? " selected" : "") + ">" + esc(tipoCurto(w.tipo)) + " · " + esc(w.wo) + "</option>"; }).join("") + "</select></div></div>";
+        if (wsel) {
+          t += '<div class="vl-mu" style="font-size:12px;margin:16px 0 6px">Equipamento da WO (marque um)</div><table><tr><th style="width:50px"></th><th>Segmento</th><th>Equipamento</th><th>Planilha</th></tr>' +
+            eqs.map(function (r) { const k = chaveEquip(r); return '<tr' + (np.eq === k ? ' style="background:#edf5ff"' : "") + '><td><input type="radio" name="npEq" value="' + esc(k) + '"' + (np.eq === k ? " checked" : "") + "></td><td>" + esc(r.segmento || "—") + "</td><td>" + esc(r.tag || "—") + "</td><td>" + esc(r.situacao_prev || "—") + "</td></tr>"; }).join("") +
+            '<tr' + (np.eq === "__outro" ? ' style="background:#edf5ff"' : "") + '><td><input type="radio" name="npEq" value="__outro"' + (np.eq === "__outro" ? " checked" : "") + '></td><td colspan="3" style="color:#0f62fe">Outro equipamento (não está na lista da WO)</td></tr></table>';
+          if (np.eq === "__outro") t += '<div style="margin-top:14px"><div class="vl-mu" style="font-size:12px">Qual equipamento? <b style="color:#da1e28">(obrigatório)</b></div><input type="text" id="npOutro" value="' + esc(np.outro || "") + '"></div>';
+        }
+        t += '<div style="margin-top:16px"><div class="vl-mu" style="font-size:12px">Descrição do problema</div><textarea id="npDesc" class="auto" rows="2">' + esc(np.desc || "") + "</textarea></div>" +
+          '<div style="margin-top:16px"><button class="bt p" id="npGravar" data-of="gravarpend" disabled>Registrar pendência</button> <button class="bt" data-of="cancelarpend">Cancelar</button></div></div>';
       }
       t += '<div class="of-it">' + (O.novaPend ? "" : '<button class="bt" data-of="novapend">Registrar pendência nova</button> ') + '<button class="bt p" data-of="concluirconf">Concluir conferência</button></div>';
     }
@@ -5775,7 +5796,7 @@
     const semAbas = !conc && precisaValidar(c);
     if (sv && !conc) t += '<div class="of-tit">Quem executou</div><div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu" style="font-size:12px;margin-bottom:4px">Técnico que executou o serviço (obrigatório)</div><div style="display:flex;gap:12px;align-items:flex-end"><input type="text" id="ofTec" style="width:320px" value="' + esc(tec ? tec.tecnico : "") + '"><button class="bt p" data-of="tecnico">Salvar</button></div></div>';
     if (!sv) t += resumoOnline(c);
-    if (!sv) t += conferenciaOffline(c);
+    if (!sv && (estado.off.abaRes || "eq") === "hist") t += conferenciaOffline(c);
     if (semAbas) t += '<div class="of-tit">Abas para validar</div><div class="of-box" style="margin-bottom:24px">' + (c.wos || []).map(function (w) {
       return '<div class="of-it" style="display:flex;justify-content:space-between;align-items:center"><span><b>' + esc(tipoCurto(w.tipo)) + '</b> <span class="vl-mu">· WO ' + esc(w.wo) + '</span></span><span class="vl-tag v2">Não validada</span></div>';
     }).join("") + '<div style="padding:12px 16px"><button class="bt p" data-of="validarabas">Validar abas agora</button></div></div>';
@@ -5863,16 +5884,16 @@
       }
       else if (a === "assumir") { await salvarCaso(c, { responsavel: nomeDoEmail(quem), historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Responsável: " + nomeDoEmail(quem) }]) }); }
       else if (a === "abares") { estado.off.abaRes = el.dataset.a; }
-      else if (a === "novapend") { estado.off.novaPend = true; }
-      else if (a === "cancelarpend") { estado.off.novaPend = false; }
+      else if (a === "novapend") { estado.off.novaPend = true; estado.off.np = {}; }
+      else if (a === "cancelarpend") { estado.off.novaPend = false; estado.off.np = null; }
       else if (a === "gravarpend") {
-        const tp = $("npTipo").value, ds = ($("npDesc").value || "").trim(), eqn = ($("npEq").value || "").trim(), wo = $("npWo").value;
-        if (!tp) { mostrarAviso("Escolha o tipo da pendência.", "erro"); return; }
-        if (!ds) { mostrarAviso("Escreva a descrição da pendência.", "erro"); return; }
-        const wr = (c.wos || []).find(function (w) { return w.wo === wo; });
-        const np = { id: "m" + Date.now(), tipo: tp, texto: (eqn ? eqn + " · " : "") + ds, eq: eqn || undefined, wos: wo ? [wo] : undefined, por: quem, estado: "Aberta", manual: true };
-        await salvarCaso(c, { pendencias: (c.pendencias || []).concat([np]), concluido_em: null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Pendência registrada", itens: [tp + " · " + np.texto + (wr ? " (" + tipoCurto(wr.tipo) + ")" : "")] }]) });
-        estado.off.novaPend = false;
+        lerNp(); const np = estado.off.np || {};
+        if (!npValido(c)) { mostrarAviso("Preencha tipo, WO, equipamento e descrição.", "erro"); return; }
+        const lin = ((estado.off.vals || {})[c.id] || {}).linhas || [], r = np.eq === "__outro" ? null : lin.find(function (x) { return chaveEquip(x) === np.eq; });
+        const eqn = np.eq === "__outro" ? np.outro.trim() : (r ? (r.tag || r.segmento || "") : ""), wr = (c.wos || []).find(function (w) { return w.wo === np.wo; });
+        const nv = { id: "m" + Date.now(), tipo: np.tipo, texto: eqn + " · " + np.desc.trim(), eq: eqn, wos: [np.wo], por: quem, estado: "Aberta", manual: true };
+        await salvarCaso(c, { pendencias: (c.pendencias || []).concat([nv]), concluido_em: null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Pendência registrada", itens: [np.tipo + " · " + nv.texto + (wr ? " (" + tipoCurto(wr.tipo) + ")" : "")] }]) });
+        estado.off.novaPend = false; estado.off.np = null;
       }
       else if (a === "concluirconf") {
         const cf = confDoCaso(c), falta = CONF_ITENS.filter(function (i) { return !cf[i[0]]; });
@@ -5935,6 +5956,15 @@
       }
       desenharOffline();
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
+  });
+  $("ofCorpo").addEventListener("input", function (e) { if (e.target.closest && e.target.closest("#ofNp")) { lerNp(); npAtualizaBotao(); } });
+  $("ofCorpo").addEventListener("change", function (e) {
+    if (!(e.target.closest && e.target.closest("#ofNp"))) return;
+    const antes = JSON.stringify([(estado.off.np || {}).wo, (estado.off.np || {}).eq]);
+    if (e.target.id === "npWo") { estado.off.np = Object.assign({}, estado.off.np, { eq: "" }); }
+    lerNp();
+    if (e.target.id === "npWo") estado.off.np.eq = "";
+    if (JSON.stringify([estado.off.np.wo, estado.off.np.eq]) !== antes || e.target.id === "npWo") desenharOffline(); else npAtualizaBotao();
   });
   $("ofCorpo").addEventListener("input", function (e) {
     if (e.target.id !== "ofBusca") return;
