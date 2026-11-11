@@ -621,7 +621,7 @@
     .vl td.grp { background:#e8e8e8; font-weight:600; font-size:12px; color:#393939; }
     .vl-tag { display:inline-block; padding:2px 8px; font-size:12px; margin:1px 2px 1px 0; }
     .vl-tag.v1 { background:#defbe6; color:#0e6027; } .vl-tag.v2 { background:#ffd7d9; color:#a2191f; font-weight:600; }
-    .vl-tag.v3 { background:#fcf4d6; color:#684e00; } .vl-tag.v4 { background:#d0e2ff; color:#0043ce; } .vl-tag.v5 { background:#e0e0e0; color:#393939; }
+    .vl-tag.v6 { background:#e8daff; color:#491d8b; } .vl-tag.v3 { background:#fcf4d6; color:#684e00; } .vl-tag.v4 { background:#d0e2ff; color:#0043ce; } .vl-tag.v5 { background:#e0e0e0; color:#393939; }
     .vl .vl-ok { color:#198038; font-weight:600; } .vl .vl-no { color:#da1e28; font-weight:600; } .vl .vl-mu { color:#6f6f6f; }
     .vl-vazio { background:#fff; padding:18px; color:#525252; }
     .vl-funil { display:flex; margin:10px 0 16px; align-items:stretch; }
@@ -714,6 +714,25 @@
     .vl-of-p .lb { font-size:11px; color:#525252; margin:12px 0 3px; }
     .vl-it { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid #e0e0e0; }
     .vl-it select { width:150px; flex:none; }
+    .tlx { position:relative; height:225px; margin:6px 28px 0; }
+    .tl-base { position:absolute; left:0; right:0; top:130px; height:2px; background:#c6c6c6; }
+    .tl-site { position:absolute; top:118px; height:26px; background:#d0e2ff; }
+    .tl-tol { position:absolute; top:118px; height:26px; background:repeating-linear-gradient(135deg,#f0f6ff,#f0f6ff 3px,#d0e2ff 3px,#d0e2ff 4px); }
+    .tl-flag { position:absolute; top:30px; height:120px; border-left:2px dashed #0f62fe; }
+    .tl-ft { position:absolute; top:10px; font-size:12px; font-weight:600; color:#0043ce; white-space:nowrap; }
+    .tl-ft.dir { transform:translateX(-100%); }
+    .tl-p { position:absolute; top:125px; width:12px; height:12px; border-radius:6px; margin-left:-6px; border:2px solid #fff; background:#198038; box-shadow:0 0 0 1px #198038; }
+    .tl-p.f { background:#da1e28; box-shadow:0 0 0 1px #da1e28; }
+    .tl-fio { position:absolute; width:1px; background:#198038; } .tl-fio.f { background:#da1e28; }
+    .tl-n { position:absolute; width:22px; height:22px; border-radius:11px; margin-left:-11px; background:#198038; color:#fff; font-size:12px; font-weight:600; text-align:center; line-height:22px; cursor:default; }
+    .tl-n.f { background:#da1e28; }
+    .tl-tk { position:absolute; top:146px; height:5px; border-left:1px solid #8d8d8d; } .tl-tk.c { height:9px; }
+    .tl-tl { position:absolute; top:156px; font-size:11px; color:#525252; transform:translateX(-50%); }
+    .tl-gap { position:absolute; top:182px; height:12px; border:1px solid #8d8d8d; border-top:0; }
+    .tl-gt { position:absolute; top:198px; font-size:12px; text-align:center; }
+    .tl-leg { display:flex; flex-wrap:wrap; gap:4px 18px; padding:2px 28px 6px; font-size:12px; color:#393939; }
+    .tl-leg b { display:inline-block; min-width:20px; height:20px; line-height:20px; border-radius:10px; text-align:center; background:#198038; color:#fff; font-size:11px; margin-right:4px; }
+    .tl-leg b.f { background:#da1e28; } .tl-leg .x { color:#6f6f6f; }
     .vl-tl { border-left:2px solid #c6c6c6; margin:8px 0 0 5px; padding-left:12px; }
     .vl-tl div { margin-bottom:9px; font-size:12px; } .vl-tl i { color:#525252; font-style:normal; display:block; font-size:11px; }
     .vl-passo { background:#fafafa; border:1px solid #e0e0e0; padding:12px; margin-top:12px; }
@@ -4242,16 +4261,40 @@
     if (an.semHorario) return '<div class="vl-alerta am"><b>Permanência:</b> a visita não tem entrada e saída registradas, então não dá para comparar com os alarmes.</div>';
     let ini = an.ent, fim = an.sai;
     an.evs.forEach(function (e) { if (e.quando < ini) ini = e.quando; if (e.quando > fim) fim = e.quando; });
-    ini -= 10 * 60000; fim += 10 * 60000;
+    const tolMs = REGRAS.validacao.toleranciaPermanenciaMin * 60000;
+    ini -= tolMs + 60000; fim += tolMs + 60000;
     const pc = function (ms) { return ((ms - ini) / (fim - ini) * 100).toFixed(2); };
     let t = '<div class="vl-caixa"><h3>Permanência x alarmes</h3><div class="vl-cards">' +
       '<div class="vl-c"><div class="r">Entrada no site</div><div class="v">' + hmDe(an.ent) + '</div></div><div class="vl-c"><div class="r">Saída do site</div><div class="v">' + hmDe(an.sai) + "</div></div>" +
       '<div class="vl-c"><div class="r">Permanência</div><div class="v">' + duracaoDe(an.sai - an.ent) + '</div></div><div class="vl-c verde"><div class="r">Eventos dentro</div><div class="v">' + an.dentro + "</div></div>" +
       '<div class="vl-c ' + (an.fora.length ? "verm" : "verde") + '"><div class="r">Eventos fora</div><div class="v">' + an.fora.length + "</div></div></div>";
-    t += '<div class="vl-lt"><div class="faixa" style="left:' + pc(an.ent) + "%;width:" + (pc(an.sai) - pc(an.ent)).toFixed(2) + '%"></div>';
-    an.evs.forEach(function (e) { t += '<div class="mk ' + (e.pos === "dentro" ? "d" : "f") + '" style="left:' + pc(e.quando) + '%" title="' + esc(e.texto + " · " + horaSegDe(e.quando)) + '"></div>'; });
-    t += '<div class="eixo"></div><div class="rt" style="left:' + pc(an.ent) + '%">Entrada ' + hmDe(an.ent) + '</div><div class="rt dir" style="left:' + pc(an.sai) + '%">Saída ' + hmDe(an.sai) + "</div></div>";
-    t += '<div class="vl-mu" style="font-size:11px;margin:4px 0 8px"><span class="vl-ok">■</span> Dentro da permanência &nbsp; <span class="vl-no">■</span> Fora (tolerância de ' + REGRAS.validacao.toleranciaPermanenciaMin + " min) &nbsp; <span style=\"color:#a6c8ff\">■</span> Tempo no site</div>";
+
+    const evs = an.evs.slice().sort(function (x, y) { return x.quando - y.quando; });
+    const extraSet = new Set(an.extras.map(function (x) { return x.e; }));
+    const nIv = [-99, -99, -99];
+    let tx = '<div class="tlx"><div class="tl-base"></div>';
+    tx += '<div class="tl-tol" style="left:' + pc(an.ent - tolMs) + '%;width:' + (pc(an.ent) - pc(an.ent - tolMs)).toFixed(2) + '%"></div><div class="tl-tol" style="left:' + pc(an.sai) + '%;width:' + (pc(an.sai + tolMs) - pc(an.sai)).toFixed(2) + '%"></div>';
+    tx += '<div class="tl-site" style="left:' + pc(an.ent) + '%;width:' + (pc(an.sai) - pc(an.ent)).toFixed(2) + '%"></div>';
+    tx += '<div class="tl-flag" style="left:' + pc(an.ent) + '%"></div><div class="tl-ft" style="left:' + pc(an.ent) + '%">Entrada · ' + hmDe(an.ent) + '</div><div class="tl-flag" style="left:' + pc(an.sai) + '%"></div><div class="tl-ft dir" style="left:' + pc(an.sai) + '%">Saída · ' + hmDe(an.sai) + '</div>';
+    evs.forEach(function (e, i) {
+      const x = parseFloat(pc(e.quando)); let nv = 0;
+      while (nv < 2 && x - nIv[nv] < 2.4) nv++;
+      nIv[nv] = x;
+      const topo = 44 + nv * 26, cor = e.pos === "dentro" ? "d" : "f";
+      tx += '<div class="tl-fio ' + cor + '" style="left:' + x + '%;top:' + (topo + 22) + 'px;height:' + (130 - topo - 22) + 'px"></div><div class="tl-n ' + cor + '" style="left:' + x + '%;top:' + topo + 'px" title="' + esc(e.texto + " · " + horaSegDe(e.quando)) + '">' + (i + 1) + '</div><div class="tl-p ' + cor + '" style="left:' + x + '%" title="' + esc(e.texto + " · " + horaSegDe(e.quando)) + '"></div>';
+    });
+    for (let m = Math.ceil(ini / 1800000) * 1800000; m <= fim; m += 1800000) {
+      const cheia = new Date(m).getMinutes() === 0;
+      tx += '<div class="tl-tk' + (cheia ? " c" : "") + '" style="left:' + pc(m) + '%"></div>' + (cheia ? '<div class="tl-tl" style="left:' + pc(m) + '%">' + hmDe(m) + "</div>" : "");
+    }
+    const ult = evs.filter(function (e) { return !extraSet.has(e) && e.quando <= an.sai; }).pop();
+    if (ult && an.sai > ult.quando) {
+      const mi = Math.round((an.sai - ult.quando) / 60000);
+      tx += '<div class="tl-gap" style="left:' + pc(ult.quando) + '%;width:' + (pc(an.sai) - pc(ult.quando)).toFixed(2) + '%"></div><div class="tl-gt" style="left:' + pc(ult.quando) + '%;width:' + (pc(an.sai) - pc(ult.quando)).toFixed(2) + '%"><b>' + doisDigitos(Math.floor(mi / 60)) + "h" + doisDigitos(mi % 60) + "</b> sem alarme até a saída informada</div>";
+    }
+    t += tx + "</div>";
+    t += '<div class="tl-leg">' + evs.map(function (e, i) { return '<span class="' + (extraSet.has(e) ? "x" : "") + '"><b class="' + (e.pos === "dentro" ? "d" : "f") + '">' + (i + 1) + "</b> " + horaSegDe(e.quando) + " " + esc(e.texto) + (extraSet.has(e) ? " · fora da conta" : "") + "</span>"; }).join("") + "</div>";
+    t += '<div class="vl-mu" style="font-size:11px;margin:4px 0 8px"><span style="color:#a6c8ff">■</span> Tempo no site &nbsp; <span class="vl-ok">■</span> Alarme dentro da permanência &nbsp; <span class="vl-no">■</span> Alarme fora (tolerância de ' + REGRAS.validacao.toleranciaPermanenciaMin + " min)</div>";
     if (an.extras.length) t += '<div class="vl-alerta am" style="border-left-color:#0f62fe;background:#edf5ff"><b>' + an.evs.length + " eventos no histórico, " + (an.evs.length - an.extras.length) + " deles são alarmes a externar.</b> Fora dessa conta (" + an.extras.length + "): " +
       an.extras.slice(0, 6).map(function (x) { return esc(x.e.texto) + " às " + horaSegDe(x.e.quando) + " (" + x.motivo + ")"; }).join(" · ") + (an.extras.length > 6 ? " · e outros " + (an.extras.length - 6) : "") + "</div>";
     if (an.fora.length) t += '<div class="vl-alerta"><b>Fora da permanência (' + an.fora.length + "):</b> " + an.fora.slice(0, 8).map(function (e) {
@@ -4309,7 +4352,7 @@
     });
     const inv = reg.inventario || {};
     REGRAS.validacao.inventarioCritico.forEach(function (k) { if (inv[k] === "Não inventariado") p.push({ tipo: "Inventário", texto: k + " não inventariado", wos: wosDoInventario(reg) }); });
-    [["bornes", "Bornes sem “gatinho”"], ["fotos", "Fotos das abas de alarme"]].forEach(function (x) {
+    [["bornes", "Bornes sem jump"], ["fotos", "Fotos das abas de alarme"]].forEach(function (x) {
       const c = confBloco(reg.alarmes, x[0]);
       if (c.estado === "nao") p.push({ tipo: "Alarmes", texto: x[1] + " · não ok" + (c.motivo ? ": " + c.motivo : ""), obs: (c.motivo || "").trim(), por: estado.usuarioEmail, wos: alW });
     });
@@ -4363,7 +4406,7 @@
       if (!al.config) f.push("Alarmes: falta a configuração do site");
       if (!al.hist) f.push("Alarmes: falta o histórico");
     }
-    [["bornes", "bornes sem “gatinho”"], ["fotos", "fotos das abas de alarme"]].forEach(function (x) {
+    [["bornes", "bornes sem jump"], ["fotos", "fotos das abas de alarme"]].forEach(function (x) {
       const c = confBloco(al, x[0]);
       if (!c.estado) f.push("Alarmes: " + x[1] + " não conferidos");
       else if (c.estado === "nao" && !c.motivo.trim()) f.push("Alarmes: informe por que " + x[1] + " não está ok");
@@ -5053,7 +5096,7 @@
         '<button type="button" class="' + (v.estado === "nao" ? "off" : "") + '" data-sv="bl" data-c="' + c + '" data-r="nao">Não ok</button></div>' +
         (v.estado === "nao" ? '<div class="vl-blm"><div class="r">Por que não está ok? *</div><textarea data-sv="blmotivo" data-c="' + c + '">' + esc(v.motivo) + "</textarea></div>" : "") + "</div>";
     };
-    t += '<div class="vl-caixa"><h3>Conferência do bloco</h3>' + itemBloco("bornes", "Fios conectados nos bornes (sem “gatinho”)") + itemBloco("fotos", "Conferi as fotos das abas de alarme no sistema do cliente") + "</div>";
+    t += '<div class="vl-caixa"><h3>Conferência do bloco</h3>' + itemBloco("bornes", "Fios conectados nos bornes (sem jump)") + itemBloco("fotos", "Conferi as fotos das abas de alarme no sistema do cliente") + "</div>";
     return t;
   }
 
@@ -5118,7 +5161,7 @@
     const botao = function (r, classe, rot) { return '<button class="bt ' + classe + (forca === r ? " sel" : "") + '" data-sv="res" data-r="' + r + '"' + (semCom ? " disabled" : "") + ">" + rot + "</button>"; };
     const pode = forca ? true : falt.length === 0;
     t += '<div class="vl-caixa"><h3>Resultado</h3>' + tabelaPorWO(reg, porWo, pend) + '<div class="vl-ferr" style="margin-top:14px">' +
-      botao("devolvida", "r", "Devolver ao técnico") + botao("offline", "", "Encaminhar para validação offline") + "</div>" +
+      botao("offline", "", "Encaminhar para validação offline") + "</div>" +
       '<div class="vl-mu" style="font-size:12px;margin:8px 0 4px">Motivo (obrigatório com ressalva, devolução ou offline)</div><textarea id="svMotivo">' + esc(sugestao) + "</textarea>" +
       '<div class="vl-fim"><button class="bt enc" data-sv="encerrar"' + (pode ? "" : " disabled") + ">Encerrar Validação</button></div></div>" + historicoEncerramentos(reg, 1);
     return t;
@@ -5296,12 +5339,18 @@
     diasRisco: 7,
     estados: ["Aberta", "Em tratativa", "Resolvida", "Não resolvida"],
     acoes: ["Contato com o técnico", "Contato com o cliente", "Correção feita no sistema", "Contestação enviada ao cliente", "Aguardando retorno", "Outro"],
-    origens: { offline: "Encaminhada", ressalva: "Com ressalva", devolvida: "Devolvida", sem_pedido: "Saiu sem pedir validação", sem_visita: "Executada sem visita" }
+    origens: { offline: "Encaminhada", ressalva: "Com ressalva", devolvida: "Devolvida", sem_pedido: "Saiu sem pedir validação", sem_visita: "Executada sem visita", conferencia: "Conferência" }
   };
-  estado.off = { casos: [], filtro: "abertas", setor: "", resp: "", sel: null, passo: false };
+  estado.off = { casos: [], filtro: "abertas", setor: "", resp: "", sel: null, passo: false, resOn: "todos", valsLista: {} };
 
   function nomeDoEmail(e) {
     return String(e || "").split("@")[0].split(/[._-]+/).map(function (p) { return p ? p.charAt(0).toUpperCase() + p.slice(1) : ""; }).join(" ");
+  }
+  function resultadoOnline(c) {
+    const v = (estado.off.valsLista || {})[c.validacao_id];
+    if (c.origem === "sem_visita" || c.origem === "sem_pedido") return "offline";
+    const r = v ? v.resultado : (c.origem === "ressalva" ? "ressalva" : c.origem === "conferencia" ? "validada" : "offline");
+    return r === "devolvida" ? "offline" : (r || "offline");
   }
   function situacaoCaso(c) {
     if (c.concluido_em) return "resolvida";
@@ -5366,14 +5415,20 @@
     const agora = new Date().toISOString(), quem = estado.usuarioEmail;
     const existente = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", reg.id).limit(1))[0];
     if (resultado === "validada") {
-      if (!existente || existente.concluido_em) return;
+      if (!existente) {
+        conferir(await banco.from("casos_offline").insert({ validacao_id: reg.id, site: reg.site, setor: reg.setor, equipe: reg.equipe, wos: wosCaso && wosCaso.length ? wosCaso : reg.wos || [],
+          origem: "conferencia", motivo: motivo || null, pendencias: [], historico: [{ em: agora, por: quem, acao: "Validada na validação online · aguardando conferência offline", sem_analise: completa === undefined ? false : !completa }],
+          criado_em: agora, atualizado_por: quem, atualizado_em: agora }));
+        return;
+      }
+      if (existente.concluido_em) return;
       if (existente.origem === "sem_visita" && !tecnicoDe(existente)) {
         conferir(await banco.from("casos_offline").update({ atualizado_por: quem, atualizado_em: agora, historico: (existente.historico || []).concat([{ em: agora, por: quem, acao: "Abas validadas sem pendência", sem_analise: false }]) }).eq("id", existente.id));
         return;
       }
       const pe = (existente.pendencias || []).map(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa" ? Object.assign({}, p, { estado: "Resolvida" }) : p; });
-      conferir(await banco.from("casos_offline").update({ pendencias: pe, concluido_em: agora, atualizado_por: quem, atualizado_em: agora,
-        historico: (existente.historico || []).concat([{ em: agora, por: quem, acao: "Revalidada sem pendência", texto: motivo || "", sem_analise: false }]) }).eq("id", existente.id));
+      conferir(await banco.from("casos_offline").update({ pendencias: pe, atualizado_por: quem, atualizado_em: agora,
+        historico: (existente.historico || []).concat([{ em: agora, por: quem, acao: "Revalidada sem pendência · aguardando conferência offline", texto: motivo || "", sem_analise: false }]) }).eq("id", existente.id));
       return;
     }
     const itens = pend.length ? pend : [{ tipo: "Outros", texto: motivo || "Sem detalhe" }];
@@ -5407,6 +5462,17 @@
         const d = dataCaso(c);
         return d >= fx[0] && d <= fx[1];
       });
+      estado.off.valsLista = {};
+      try {
+        const ids = estado.off.casos.map(function (c) { return c.validacao_id; }).filter(Boolean);
+        for (let i = 0; i < ids.length; i += 150) {
+          const rs = conferir(await banco.from("validacoes").select("id,resultado,historico").in("id", ids.slice(i, i + 150)));
+          rs.forEach(function (v) {
+            const hs = (v.historico || []).filter(function (e) { return e.tipo === "encerramento"; }), u = hs[hs.length - 1];
+            estado.off.valsLista[v.id] = { resultado: v.resultado, completa: u && typeof u.completa === "boolean" ? u.completa : null };
+          });
+        }
+      } catch (e) { estado.off.valsLista = {}; }
     } catch (e) { $("ofCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar: ' + esc(e.message) + " (o SQL validacao_offline_sql.txt já foi rodado?)</div>"; return; }
     desenharOffline();
   }
@@ -5428,6 +5494,7 @@
     const base = O.casos.filter(function (c) {
       if (busca && String(c.site || "").toUpperCase().indexOf(busca) < 0) return false;
       if (O.setor && !casaSetor(String(c.setor || "").trim().toUpperCase(), O.setor)) return false;
+      if (O.resOn && O.resOn !== "todos" && resultadoOnline(c) !== O.resOn) return false;
       if (O.resp === "__sem") return !c.responsavel;
       if (O.resp) return c.responsavel === O.resp;
       return true;
@@ -5439,27 +5506,36 @@
                 risco: base.filter(emRisco).length, sem: base.filter(function (c) { return !c.concluido_em && !c.responsavel; }).length };
     const me0 = nomeDoEmail(estado.usuarioEmail);
     const f = O.filtro === "todas" || O.filtro === "risco" || O.filtro === "resolvidas" ? "abertas" : O.filtro;
+    const temPendAberta = function (c) { return !c.concluido_em && (c.pendencias || []).some(function (p) { return p.estado === "Aberta" || p.estado === "Em tratativa"; }); };
+    const comPendN = base.filter(temPendAberta).length;
     const abertosN = n.aberta + n.tratativa, minhaN = base.filter(function (c) { return !c.concluido_em && c.responsavel === me0; }).length, concN = n.resolvida;
     let lista = base.filter(function (c) {
       const sc = sit(c);
-      return f === "abertas" ? sc !== "resolvida" : f === "minha" ? (!c.concluido_em && c.responsavel === me0) : f === "tratativa" ? sc === "tratativa" : sc === "resolvida";
+      return f === "abertas" ? sc !== "resolvida" : f === "minha" ? (!c.concluido_em && c.responsavel === me0) : f === "tratativa" ? temPendAberta(c) : sc === "resolvida";
     });
     lista.sort(function (a, b) { return String(a.criado_em).localeCompare(String(b.criado_em)); });
     lista = lista.slice(0, 300);
     const sub = document.querySelector("#telaOffline .vl-topo .sub");
-    if (sub) sub.textContent = abertosN + " casos em aberto" + (n.risco ? " · " + n.risco + " com risco de recusa" : "");
+    if (sub) sub.textContent = abertosN + (abertosN === 1 ? " caso a conferir" : " casos a conferir") + (n.risco ? " · " + n.risco + " com risco de recusa" : "");
     let t = '<div class="vl-of"><div class="vl-of-l"><input id="ofBusca" class="of-busca" type="search" placeholder="Pesquisar site" value="' + esc(O.busca || "") + '"><div class="vl-chips" id="ofChips">' +
-      [["abertas", "Em aberto", abertosN], ["minha", "Minha fila", minhaN], ["tratativa", "Em tratativa", n.tratativa], ["concluidos", "Concluídos", concN]].map(function (c) {
+      [["abertas", "A conferir", abertosN], ["minha", "Minha fila", minhaN], ["tratativa", "Com pendência aberta", comPendN], ["concluidos", "Concluídos", concN]].map(function (c) {
         return '<button data-f="' + c[0] + '"' + (c[0] === f ? ' class="ativo"' : "") + ">" + c[1] + " · " + c[2] + "</button>";
       }).join("") + "</div>";
+    const RO = [["todos", "Todos"], ["validada", "Validada"], ["ressalva", "Com ressalva"], ["offline", "Offline"]];
+    const nRO = function (k) { return base.filter(function (c) { return k === "todos" || resultadoOnline(c) === k; }).length; };
+    t += '<div class="vl-chips" id="ofRes" style="margin-top:10px"><span class="vl-mu" style="align-self:center;margin-right:8px">Resultado online:</span>' + RO.map(function (r) { return '<button data-r="' + r[0] + '"' + ((O.resOn || "todos") === r[0] ? ' class="ativo"' : "") + ">" + r[1] + " · " + nRO(r[0]) + "</button>"; }).join("") + "</div>";
     if (!lista.length) t += '<div class="vl-vazio">Nada nesta lista.</div>';
-    else t += "<table><tr><th>Site</th><th>Atividade</th><th>Equipe</th><th>Origem</th><th>Pendências</th><th>Responsável</th><th>Entrada</th></tr>" + lista.map(function (c) {
+    else t += "<table><tr><th>Site</th><th>Atividade</th><th>Equipe</th><th>Resultado online</th><th>Conferência online</th><th>Pendências</th><th>Responsável</th><th>Entrada</th></tr>" + lista.map(function (c) {
       const pe = c.pendencias || [], nab = pe.filter(function (p) { return p.estado === "Aberta"; }).length, ntr = pe.filter(function (p) { return p.estado === "Em tratativa"; }).length;
       const svc = c.origem === "sem_visita", hz = c.historico || [], iz = ultimoSemAnalise(hz);
       const faltaAbas = !c.concluido_em && (svc ? (iz < 0 || hz[iz].sem_analise === true) : precisaValidar(c));
-      const tg = c.concluido_em ? '<span class="vl-tag v1">Resolvido</span>' : faltaAbas ? '<span class="vl-tag v2">Abas para validar</span>' : svc && !tecnicoDe(c) ? '<span class="vl-tag v2">Informar quem executou</span>' : (!nab && !ntr) ? '<span class="vl-tag v5">Pronto para concluir</span>' : nab ? '<span class="vl-tag v2">' + nab + (nab === 1 ? " aberta" : " abertas") + "</span>" : '<span class="vl-tag v5">' + ntr + " em tratativa</span>";
+      const ro = resultadoOnline(c), vz = (estado.off.valsLista || {})[c.validacao_id];
+      const roTg = '<span class="vl-tag ' + (ro === "validada" ? "v4" : ro === "ressalva" ? "v3" : "v6") + '">' + (ro === "validada" ? "Validada" : ro === "ressalva" ? "Com ressalva" : "Offline") + "</span>";
+      const compl = svc || c.origem === "sem_pedido" ? false : (vz && vz.completa !== null ? vz.completa : (ro === "offline" ? null : true));
+      const coTg = compl === null ? "—" : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta") + "</span>";
+      const tg = c.concluido_em ? '<span class="vl-tag v1">Resolvido</span>' : (!pe.length && !faltaAbas && !(svc && !tecnicoDe(c))) ? '<span class="vl-tag v1">Sem pendência</span>' : faltaAbas ? '<span class="vl-tag v2">Abas para validar</span>' : svc && !tecnicoDe(c) ? '<span class="vl-tag v2">Informar quem executou</span>' : (!nab && !ntr) ? '<span class="vl-tag v5">Pronto para concluir</span>' : nab ? '<span class="vl-tag v2">' + nab + (nab === 1 ? " aberta" : " abertas") + "</span>" : '<span class="vl-tag v5">' + ntr + " em tratativa</span>";
       return '<tr data-id="' + c.id + '" class="vl-clic"><td><b>' + esc(c.site) + "</b></td><td>" + esc((c.wos || []).map(function (w) { return tipoCurto(w.tipo); }).join(" e ")) + "</td><td>" + esc(c.equipe || "—") + "</td><td>" +
-        esc(REGRAS.offline.origens[c.origem] || c.origem) + "</td><td>" + tg + "</td><td>" + (c.responsavel ? esc(c.responsavel) : "—") + "</td><td>" + (emRisco(c) ? '<span class="vl-tag v2">' : "") + (c.origem === "sem_visita" ? dataBR(dataCaso(c)).slice(0, 5) : dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em)) + (emRisco(c) ? "</span>" : "") + "</td></tr>";
+        roTg + "</td><td>" + coTg + "</td><td>" + tg + "</td><td>" + (c.responsavel ? esc(c.responsavel) : "—") + "</td><td>" + (emRisco(c) ? '<span class="vl-tag v2">' : "") + (c.origem === "sem_visita" ? dataBR(dataCaso(c)).slice(0, 5) : dataBR(dataLocalDe(c.criado_em)).slice(0, 5) + " " + horaDe(c.criado_em)) + (emRisco(c) ? "</span>" : "") + "</td></tr>";
     }).join("") + "</table>";
     t += "</div></div>";
     const cs = casoSel(), topo = document.querySelector("#telaOffline .vl-topo");
@@ -5559,6 +5635,8 @@
   }
 
   $("ofCorpo").addEventListener("click", async function (e) {
+    const rchip = e.target.closest("#ofRes button");
+    if (rchip) { estado.off.resOn = rchip.dataset.r; desenharOffline(); return; }
     const chip = e.target.closest("#ofChips button");
     if (chip) { estado.off.filtro = chip.dataset.f; desenharOffline(); return; }
     const linha = e.target.closest("tr.vl-clic");
