@@ -5764,7 +5764,7 @@
         const np = O.np = O.np || {}, ws = (c.wos || []), vv = (O.vals || {})[c.id], lin = (vv && vv.linhas) || [];
         const wsel = ws.find(function (w) { return w.wo === np.wo; });
         const eqs = wsel ? lin.filter(function (r) { return !ehNA(r) && woDaLinha(r, ws) === wsel; }).sort(function (a, b) { return String(a.segmento).localeCompare(String(b.segmento)) || String(a.tag).localeCompare(String(b.tag)); }) : [];
-        t += '<div class="of-it" id="ofNp"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"><div><div class="vl-mu" style="font-size:12px">Tipo</div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option" + (np.tipo === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
+        t += '<div style="position:fixed;inset:0;background:rgba(22,22,22,.5);z-index:9999;display:flex;align-items:center;justify-content:center"><div style="background:#fff;width:900px;max-width:94vw;max-height:90vh;overflow:auto;box-shadow:0 4px 16px rgba(0,0,0,.25)"><div style="padding:16px 20px;font-weight:600;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between"><span>Registrar pendência nova</span><span class="vl-mu" style="font-weight:400">todos os campos são obrigatórios</span></div><div style="padding:20px" id="ofNp"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"><div><div class="vl-mu" style="font-size:12px">Tipo</div><select id="npTipo"><option value="">Selecione</option>' + TIPOS_NOVA_PEND.map(function (x) { return "<option" + (np.tipo === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
           '<div><div class="vl-mu" style="font-size:12px">WO</div><select id="npWo"><option value="">Selecione</option>' + ws.map(function (w) { return '<option value="' + esc(w.wo) + '"' + (np.wo === w.wo ? " selected" : "") + ">" + esc(tipoCurto(w.tipo)) + " · " + esc(w.wo) + "</option>"; }).join("") + "</select></div></div>";
         if (wsel) {
           t += '<div class="vl-mu" style="font-size:12px;margin:16px 0 6px">Equipamento da WO (marque um)</div><table><tr><th style="width:50px"></th><th>Segmento</th><th>Equipamento</th><th>Planilha</th></tr>' +
@@ -5773,7 +5773,7 @@
           if (np.eq === "__outro") t += '<div style="margin-top:14px"><div class="vl-mu" style="font-size:12px">Qual equipamento? <b style="color:#da1e28">(obrigatório)</b></div><input type="text" id="npOutro" value="' + esc(np.outro || "") + '"></div>';
         }
         t += '<div style="margin-top:16px"><div class="vl-mu" style="font-size:12px">Descrição do problema</div><textarea id="npDesc" class="auto" rows="2">' + esc(np.desc || "") + "</textarea></div>" +
-          '<div style="margin-top:16px"><button class="bt p" id="npGravar" data-of="gravarpend" disabled>Registrar pendência</button> <button class="bt" data-of="cancelarpend">Cancelar</button></div></div>';
+          '<div style="margin-top:16px"><button class="bt p" id="npGravar" data-of="gravarpend" disabled>Registrar pendência</button> <button class="bt" data-of="cancelarpend">Cancelar</button></div></div></div></div>';
       }
       t += '<div class="of-it">' + (O.novaPend ? "" : '<button class="bt" data-of="novapend">Registrar pendência nova</button> ') + '<button class="bt p" data-of="concluirconf">Concluir conferência</button></div>';
     }
@@ -5957,14 +5957,13 @@
       desenharOffline();
     } catch (err) { mostrarAviso("Erro ao gravar: " + err.message, "erro"); }
   });
-  $("ofCorpo").addEventListener("input", function (e) { if (e.target.closest && e.target.closest("#ofNp")) { lerNp(); npAtualizaBotao(); } });
+  $("ofCorpo").addEventListener("input", function (e) { if (e.target.closest && e.target.closest("#ofNp") && e.target.type !== "radio" && e.target.tagName !== "SELECT") { lerNp(); npAtualizaBotao(); } });
   $("ofCorpo").addEventListener("change", function (e) {
     if (!(e.target.closest && e.target.closest("#ofNp"))) return;
-    const antes = JSON.stringify([(estado.off.np || {}).wo, (estado.off.np || {}).eq]);
-    if (e.target.id === "npWo") { estado.off.np = Object.assign({}, estado.off.np, { eq: "" }); }
+    if (e.target.id === "npWo") { lerNp(); estado.off.np.eq = ""; desenharOffline(); return; }
     lerNp();
-    if (e.target.id === "npWo") estado.off.np.eq = "";
-    if (JSON.stringify([estado.off.np.wo, estado.off.np.eq]) !== antes || e.target.id === "npWo") desenharOffline(); else npAtualizaBotao();
+    if (e.target.type === "radio") desenharOffline(); else npAtualizaBotao();
+    if (e.target.type === "radio") { const o = document.getElementById("npOutro"); if (o) o.focus(); }
   });
   $("ofCorpo").addEventListener("input", function (e) {
     if (e.target.id !== "ofBusca") return;
