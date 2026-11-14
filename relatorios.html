@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatórios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --fonte:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; --laranja:#ff832b; --azul:#0f62fe; --cinza1:#f4f4f4; --cinza2:#e0e0e0; --texto:#161616; --suave:#6f6f6f; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:var(--fonte); font-size:13px; color:var(--texto); background:#fff; font-variant-numeric:tabular-nums; }
+  .top { background:#161616; color:#fff; height:48px; display:flex; align-items:center; padding:0 24px; font-size:14px; }
+  .top b { font-weight:600; margin-right:24px; }
+  .top span { color:#c6c6c6; }
+  .top .dir { margin-left:auto; font-size:12px; }
+  .wrap { padding:24px; max-width:1600px; margin:0 auto; }
+  h1 { font-size:24px; font-weight:400; margin-bottom:16px; }
+  .oculto { display:none !important; }
+  .g { color:var(--suave); }
+  .lab { font-size:12px; color:#525252; margin-bottom:6px; }
+  .campo { background:var(--cinza1); border:0; border-bottom:1px solid #8d8d8d; padding:11px 14px; font:inherit; font-size:14px; color:var(--texto); }
+  .campo:focus { outline:2px solid var(--azul); outline-offset:-2px; }
+  .btn { background:var(--azul); color:#fff; border:0; padding:11px 20px; font:inherit; font-size:13px; cursor:pointer; }
+  .btn:hover { background:#0353e9; }
+  .btn:disabled { background:#c6c6c6; cursor:not-allowed; }
+  .btn2 { background:#fff; color:var(--azul); border:1px solid var(--azul); padding:9px 16px; font:inherit; font-size:13px; cursor:pointer; }
+  .btn2:hover { background:#edf5ff; }
+  .linha { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; margin-bottom:20px; }
+  .drop { border:1px dashed #8d8d8d; background:var(--cinza1); min-height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; padding:12px; text-align:center; }
+  .drop.sobre { background:#edf5ff; border-color:var(--azul); }
+  .drop b { font-weight:600; font-size:14px; }
+  .kv { display:grid; grid-template-columns:repeat(5,1fr); border:1px solid var(--cinza2); margin:20px 0; }
+  .kv div { padding:12px 14px; border-right:1px solid var(--cinza2); }
+  .kv div:last-child { border-right:0; }
+  .kv .n { font-size:24px; font-weight:300; }
+  .kv .l { color:var(--suave); font-size:12px; }
+  .bl { border:1px solid var(--cinza2); margin-bottom:20px; }
+  .bl h2 { background:var(--cinza1); font-size:14px; font-weight:600; padding:10px 14px; border-bottom:1px solid var(--cinza2); display:flex; justify-content:space-between; align-items:center; }
+  .bl h2 .g { font-weight:400; font-size:13px; }
+  table { width:100%; border-collapse:collapse; }
+  th { background:var(--cinza2); text-align:left; font-weight:600; font-size:12px; padding:8px 12px; white-space:nowrap; }
+  td { padding:8px 12px; border-bottom:1px solid var(--cinza2); vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  tbody tr.clic { cursor:pointer; }
+  tbody tr.clic:hover { background:var(--cinza1); }
+  .refazer { color:var(--laranja); font-weight:600; }
+  .tag { display:inline-block; background:var(--cinza2); padding:1px 8px; font-size:12px; }
+  .cab { display:flex; gap:48px; flex-wrap:wrap; border-bottom:1px solid var(--cinza2); padding-bottom:16px; margin-bottom:4px; align-items:flex-end; }
+  .cab h2 { font-size:28px; font-weight:400; margin-right:16px; }
+  .cab .k { color:var(--suave); font-size:12px; margin-bottom:4px; }
+  .cab .v { font-size:14px; }
+  .erro { color:#a2191f; }
+  .ov { position:fixed; inset:0; background:rgba(22,22,22,.6); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:40px 16px; z-index:10; }
+  .mod { background:#fff; width:900px; max-width:100%; }
+  .mh { display:flex; justify-content:space-between; align-items:flex-start; padding:20px 24px; border-bottom:1px solid var(--cinza2); }
+  .mh h3 { font-size:22px; font-weight:400; }
+  .mkv { display:flex; flex-wrap:wrap; gap:16px 40px; padding:14px 24px; background:var(--cinza1); border-bottom:1px solid var(--cinza2); }
+  .mkv .k { color:var(--suave); font-size:12px; margin-bottom:3px; }
+  .mkv .v { font-size:14px; }
+  .msec { padding:16px 24px; }
+  .msec h4 { font-size:14px; font-weight:600; margin-bottom:10px; }
+  .ach { border-left:3px solid var(--laranja); background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
+  .x { background:none; border:0; font-size:22px; color:#525252; cursor:pointer; padding:0 4px; }
+</style>
+</head>
+<body>
+<div class="top"><b>Relatórios</b><span>Leitura e análise dos PDFs</span><span class="dir" id="usuario"></span></div>
+
+<div class="wrap oculto" id="telaLogin" style="max-width:420px">
+  <h1>Entrar</h1>
+  <div class="lab">E-mail</div><input class="campo" id="email" type="email" style="width:100%;margin-bottom:12px">
+  <div class="lab">Senha</div><input class="campo" id="senha" type="password" style="width:100%;margin-bottom:16px">
+  <button class="btn" id="botaoEntrar">Entrar</button>
+  <div id="msgLogin" class="erro" style="margin-top:12px"></div>
+</div>
+
+<div class="wrap oculto" id="telaApp">
+  <h1>Análise por site</h1>
+  <div class="linha">
+    <div><div class="lab">Site</div><input class="campo" id="site" style="width:220px" placeholder="Ex.: SMBRE07" autocomplete="off"></div>
+    <div><div class="lab">Mês</div><input class="campo" id="mes" type="month"></div>
+    <button class="btn" id="botaoConsultar">Consultar</button>
+  </div>
+  <div id="msg"></div>
+  <div id="cabSite"></div>
+
+  <div id="areaPdf" class="oculto" style="margin-top:16px">
+    <div class="lab">Relatórios do site (PDF)</div>
+    <div class="drop" id="drop"><b>Arraste os PDFs deste site aqui</b><span class="g">ou clique para escolher · todas as abas de uma vez</span></div>
+    <input type="file" id="arquivos" accept="application/pdf,.pdf" multiple class="oculto">
+  </div>
+
+  <div id="faixa"></div>
+  <div id="barra" class="linha oculto" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="display:flex;gap:12px;align-items:center"><span class="g">Mostrar</span>
+      <select class="campo" id="filtro" style="font-size:13px;padding:8px 12px"><option value="todos">Todos</option><option value="refazer">Para refazer</option><option value="faltando">Faltando</option></select></div>
+    <div style="display:flex;gap:12px"><button class="btn2" id="botaoExcel">Exportar Excel</button><button class="btn" id="botaoGravar">Gravar análise</button></div>
+  </div>
+  <div id="blocos"></div>
+  <div id="ignorados"></div>
+</div>
+
+<div class="ov oculto" id="modal"><div class="mod" id="modCorpo"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  // ==== CONFIGURACAO =======================================================
+  const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
+  const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
+  const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs";
+  const PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs";
+  // Ticket provisório = mês e ano (112026 = novembro/2026, 102026 = outubro/2026).
+  function ehProvisorio(t) { return /^(0[1-9]|1[0-2])20\d{2}$/.test(String(t || "")); }
+  function mesDoProvisorio(t) { return String(t).slice(2) + "-" + String(t).slice(0, 2); }
+  const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  // Cada sistema escreve o segmento de um jeito (PDF, Validação, Cronograma). Tudo vira a mesma chave.
+  const ALIAS_SEG = { FONTECC: "FCC", QUADROCA: "QDCA", CONC: "BAIXATENSAO", CONCESSIONARIABT: "BAIXATENSAO", CONCESSIONYRIABT: "BAIXATENSAO", CONCESSIONARIAMT: "MEDIATENSAO", CONCESSIONYRIAMT: "MEDIATENSAO" };
+
+  const $ = function (id) { return document.getElementById(id); };
+  const banco = supabase.createClient(ENDERECO, CHAVE);
+  let pdfjs = null;
+
+  // ==== FUNCOES PURAS ======================================================
+  function semAcento(t) { return String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function chaveSite(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  function chaveSeg(t) {
+    const k = semAcento(t).toUpperCase().replace(/&/g, "E").replace(/[^A-Z0-9]/g, "");
+    if (ALIAS_SEG[k]) return ALIAS_SEG[k];
+    if (/^CONCESSION.*BT$/.test(k)) return "BAIXATENSAO";
+    if (/^CONCESSION.*MT$/.test(k)) return "MEDIATENSAO";
+    return k;
+  }
+  function chaveTag(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function soDigitos(t) { return String(t == null ? "" : t).replace(/\D/g, "").replace(/^0+/, ""); }
+  function dataIso(br) { const m = String(br || "").match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? m[3] + "-" + m[2] + "-" + m[1] : null; }
+  function dataBr(iso) { const m = String(iso || "").match(/(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + "/" + m[2] + "/" + m[1] : "—"; }
+  function nomeMes(ym) { const m = String(ym).match(/(\d{4})-(\d{2})/); return m ? MESES[Number(m[2]) - 1] + "/" + m[1] : ym; }
+  function normFato(t) { return semAcento(t).toUpperCase().replace(/\s+/g, " ").trim(); }
+
+  // Classifica o tipo da WO pelo texto da base ("PREVENTIVA INFRA - ENERGIA", "Climatização"...).
+  function tipoWO(t) {
+    const x = semAcento(t).toUpperCase();
+    if (x.indexOf("CLIMA") >= 0) return "Climatização";
+    if (x.indexOf("ENERGIA") >= 0) return "Energia";
+    if (x.indexOf("ZELADORIA") >= 0) return "Zeladoria";
+    if (x.indexOf("UPS") >= 0) return "UPS";
+    if (x.indexOf("GMG") >= 0 || x.indexOf("GERADOR") >= 0) return "Gerador";
+    return String(t || "").trim() || "Outro";
+  }
+
+  function segDoPdf(txt) { return chaveSeg(txt); }
+
+  // Junta os pedaços de texto do pdf.js em linhas (mesmo "y" = mesma linha).
+  function juntarLinhas(items) {
+    const it = items.filter(function (i) { return i.str && i.str.trim() !== ""; })
+      .map(function (i) { return { s: i.str, x: i.transform[4], y: i.transform[5] }; });
+    it.sort(function (a, b) { return b.y - a.y || a.x - b.x; });
+    const linhas = [];
+    let atual = null;
+    it.forEach(function (i) {
+      if (!atual || Math.abs(atual.y - i.y) > 2.5) { atual = { y: i.y, p: [] }; linhas.push(atual); }
+      atual.p.push(i);
+    });
+    return linhas.map(function (l) { l.p.sort(function (a, b) { return a.x - b.x; }); return l.p.map(function (p) { return p.s.trim(); }).join(" ").replace(/\s+/g, " ").trim(); });
+  }
+
+  // Lê o que importa da primeira página de um relatório.
+  function interpretarPagina1(linhas, arquivo) {
+    const r = { arquivo: arquivo, site: null, segmentoTxt: null, segmento: null, tag: null, tickets: [], ticket: null, situacaoFinal: null, realizadaPor: null, dataInicio: null, horaInicio: null, dataFim: null, horaFim: null, ok: false };
+    const todo = linhas.join("\n");
+    const mNome = todo.match(/Nome:\s*(.+?)\s+Cidade:/);
+    if (mNome) r.site = mNome[1].trim();
+    const iPlanta = linhas.findIndex(function (l) { return /Planta:/.test(l); });
+    if (iPlanta >= 0) {
+      for (let i = iPlanta + 1; i < Math.min(linhas.length, iPlanta + 6); i++) {
+        const l = linhas[i];
+        if (!l || /:/.test(l) || /^Tickets?$/i.test(l) || /^Ticket\b/.test(l)) continue;
+        const p = l.split(" - ");
+        r.segmentoTxt = p[0].trim();
+        r.tag = p.length > 1 ? p.slice(1).join(" - ").trim() : null;
+        break;
+      }
+    }
+    if (r.segmentoTxt) r.segmento = segDoPdf(r.segmentoTxt);
+    const reTk = /^(\S+)\s+(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})\s+(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})\s+(.+)$/;
+    linhas.forEach(function (l) {
+      const m = l.match(reTk);
+      if (m) r.tickets.push({ ticket: m[1], dataInicio: m[2], horaInicio: m[3], dataFim: m[4], horaFim: m[5], situacao: m[6] });
+    });
+    if (r.tickets.length) {
+      const t = r.tickets[0];
+      r.ticket = t.ticket; r.dataInicio = t.dataInicio; r.horaInicio = t.horaInicio; r.dataFim = t.dataFim; r.horaFim = t.horaFim;
+    }
+    const mSit = todo.match(/Situação Final:\s*(.+)/);
+    if (mSit) r.situacaoFinal = mSit[1].trim();
+    const mRea = todo.match(/Realizada por:\s*(.+)/);
+    if (mRea) r.realizadaPor = mRea[1].trim();
+    r.ok = !!(r.site && r.segmento);
+    return r;
+  }
+
+  // ==== ESTADO =============================================================
+  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "" };
+
+  // ==== LOGIN ==============================================================
+  async function iniciar() {
+    const s = await banco.auth.getSession();
+    if (s.data && s.data.session) { entrou(s.data.session); }
+    else { $("telaLogin").classList.remove("oculto"); }
+  }
+  function entrou(sessao) {
+    E.usuario = (sessao.user && sessao.user.email) || "";
+    $("usuario").textContent = E.usuario;
+    $("telaLogin").classList.add("oculto");
+    $("telaApp").classList.remove("oculto");
+    const h = new Date();
+    if (!$("mes").value) $("mes").value = h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0");
+  }
+  $("botaoEntrar").addEventListener("click", async function () {
+    $("msgLogin").textContent = "";
+    const r = await banco.auth.signInWithPassword({ email: $("email").value.trim(), password: $("senha").value });
+    if (r.error) { $("msgLogin").textContent = "Erro no login: " + r.error.message; return; }
+    entrou(r.data.session);
+  });
+
+  // ==== CONSULTA DO SITE ===================================================
+  async function consultar() {
+    const txt = $("site").value.trim();
+    const mes = $("mes").value;
+    if (!txt || !mes) { $("msg").innerHTML = '<span class="erro">Informe o site e o mês.</span>'; return; }
+    E.siteTxt = txt; E.siteChave = chaveSite(txt); E.mes = mes; E.pdfs = []; E.ignorados = []; E.linhas = [];
+    $("msg").textContent = "Consultando...";
+    $("faixa").innerHTML = ""; $("blocos").innerHTML = ""; $("ignorados").innerHTML = ""; $("barra").classList.add("oculto"); $("areaPdf").classList.add("oculto");
+    let wos = await banco.from("base_preventiva").select("wo,tipo,mes,programado_infratel,clr_sdr_site_helix").eq("mes", mes).ilike("programado_infratel", txt);
+    if (!wos.error && !(wos.data || []).length) wos = await banco.from("base_preventiva").select("wo,tipo,mes,programado_infratel,clr_sdr_site_helix").eq("mes", mes).ilike("clr_sdr_site_helix", txt);
+    const eq = await banco.from("equipamentos_base").select("site,tipo,segmento,tag,status_eqpto,situacao_prev").eq("site_chave", E.siteChave);
+    const va = await banco.from("validacao_cliente").select("*").eq("site_chave", E.siteChave);
+    const rg = await banco.from("segmentos_regra").select("*");
+    const falha = [wos, eq, va, rg].filter(function (r) { return r.error; })[0];
+    if (falha) { $("msg").innerHTML = '<span class="erro">Não consegui consultar: ' + esc(falha.error.message) + "</span>"; return; }
+    E.wos = wos.data || []; E.equip = eq.data || []; E.vals = va.data || []; E.regras = rg.data || [];
+    $("msg").textContent = "";
+    const tipos = {};
+    E.wos.forEach(function (w) { tipos[tipoWO(w.tipo)] = (tipos[tipoWO(w.tipo)] || []).concat(w.wo); });
+    $("cabSite").innerHTML = '<div class="cab"><h2>' + esc(E.siteTxt.toUpperCase()) + '</h2>' +
+      '<div><div class="k">Mês</div><div class="v">' + esc(nomeMes(E.mes)) + "</div></div>" +
+      '<div><div class="k">WOs do mês</div><div class="v">' + (E.wos.length ? Object.keys(tipos).map(function (t) { return esc(t) + " " + esc(tipos[t].join(", ")); }).join(" · ") : '<span class="refazer">Nenhuma WO deste site neste mês</span>') + "</div></div>" +
+      '<div><div class="k">Validação do cliente</div><div class="v">' + E.vals.filter(function (v) { return String(v.mes_inicio || "").slice(0, 7) === E.mes; }).length + " linhas no mês</div></div></div>";
+    $("areaPdf").classList.remove("oculto");
+    recalcular();
+  }
+  $("botaoConsultar").addEventListener("click", consultar);
+  $("site").addEventListener("keydown", function (e) { if (e.key === "Enter") consultar(); });
+
+  // ==== LEITURA DOS PDFs ===================================================
+  async function carregarPdfjs() {
+    if (pdfjs) return pdfjs;
+    pdfjs = await import(PDFJS);
+    pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+    return pdfjs;
+  }
+  async function lerPdf(arquivo) {
+    const lib = await carregarPdfjs();
+    const doc = await lib.getDocument({ data: await arquivo.arrayBuffer() }).promise;
+    const pag = await doc.getPage(1);
+    const tc = await pag.getTextContent();
+    const r = interpretarPagina1(juntarLinhas(tc.items), arquivo.name);
+    r.paginas = doc.numPages;
+    try { doc.destroy(); } catch (e) { /* ignora */ }
+    return r;
+  }
+  async function receberArquivos(lista) {
+    const arqs = Array.prototype.slice.call(lista).filter(function (f) { return /\.pdf$/i.test(f.name); });
+    if (!arqs.length) return;
+    for (let i = 0; i < arqs.length; i++) {
+      $("msg").textContent = "Lendo " + (i + 1) + " de " + arqs.length + "...";
+      let r;
+      try { r = await lerPdf(arqs[i]); }
+      catch (e) { E.ignorados.push({ arquivo: arqs[i].name, motivo: "Não consegui ler o PDF" }); continue; }
+      if (!r.ok) { E.ignorados.push({ arquivo: r.arquivo, motivo: "Não encontrei o site ou o segmento no relatório" }); continue; }
+      if (chaveSite(r.site) !== E.siteChave) { E.ignorados.push({ arquivo: r.arquivo, motivo: "Relatório de outro site (" + r.site + ")" }); continue; }
+      E.pdfs = E.pdfs.filter(function (p) { return p.arquivo !== r.arquivo; });
+      E.pdfs.push(r);
+    }
+    $("msg").textContent = "";
+    recalcular();
+  }
+  $("drop").addEventListener("click", function () { $("arquivos").click(); });
+  $("arquivos").addEventListener("change", function (e) { receberArquivos(e.target.files); e.target.value = ""; });
+  $("drop").addEventListener("dragover", function (e) { e.preventDefault(); $("drop").classList.add("sobre"); });
+  $("drop").addEventListener("dragleave", function () { $("drop").classList.remove("sobre"); });
+  $("drop").addEventListener("drop", function (e) { e.preventDefault(); $("drop").classList.remove("sobre"); receberArquivos(e.dataTransfer.files); });
+
+  // ==== ANALISE ============================================================
+  function ativo(e) { return (e.tag && String(e.tag).trim() !== "") || String(e.status_eqpto || "").toUpperCase() === "ATIVO"; }
+  function regraDe(segKey) { return E.regras.filter(function (r) { return chaveSeg(r.segmento) === segKey; })[0] || null; }
+
+  // Monta as linhas esperadas de cada WO a partir das regras e do Cronograma (equipamentos_base).
+  function montarEsperado() {
+    const out = [];
+    const ordem = ["Energia", "Climatização"];
+    const tipos = [];
+    E.wos.forEach(function (w) { const t = tipoWO(w.tipo); if (tipos.indexOf(t) < 0) tipos.push(t); });
+    tipos.sort(function (a, b) { const ia = ordem.indexOf(a), ib = ordem.indexOf(b); return (ia < 0 ? 9 : ia) - (ib < 0 ? 9 : ib); });
+    const temClima = E.equip.some(function (e) { return tipoWO(e.tipo) === "Climatização" && chaveSeg(e.segmento) === "CLIMA" && ativo(e); });
+    tipos.forEach(function (tipo) {
+      const wo = E.wos.filter(function (w) { return tipoWO(w.tipo) === tipo; }).map(function (w) { return w.wo; }).join(", ");
+      const bloco = "WO " + tipo + " · " + wo;
+      E.regras.forEach(function (r) {
+        const modo = tipo === "Energia" ? r.obrig_energia : tipo === "Climatização" ? r.obrig_clima : "nao";
+        if (!modo || modo === "nao" || modo === "outro_setor") return;
+        const sk = chaveSeg(r.segmento);
+        const eqs = E.equip.filter(function (e) { return tipoWO(e.tipo) === tipo && chaveSeg(e.segmento) === sk && ativo(e); });
+        if (modo === "se_clima" && !temClima) return;
+        if (modo === "cronograma") { eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: "Sim", doCrono: true, regra: r }); }); return; }
+        const obrig = modo === "condicional" ? "Condicional" : "Sim";
+        if (eqs.length) eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: obrig, doCrono: true, regra: r }); });
+        else out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: null, obrig: obrig, doCrono: false, regra: r });
+      });
+    });
+    return out;
+  }
+
+  // Escolhe, entre as linhas da Validação, as que correspondem a este segmento/tag.
+  function acharValidacao(segKey, tag, rep) {
+    const doSeg = E.vals.filter(function (v) { return chaveSeg(v.segmento) === segKey; });
+    if (!doSeg.length) return [];
+    let c = doSeg;
+    if (tag) { const t = chaveTag(tag); const porTag = doSeg.filter(function (v) { return chaveTag(v.tag) === t; }); if (porTag.length) c = porTag; }
+    if (rep && rep.dataInicio && c.length > 1) { const di = dataIso(rep.dataInicio); const porData = c.filter(function (v) { return v.inicio === di; }); if (porData.length) c = porData; }
+    return c;
+  }
+
+  function analisarLinha(l) {
+    const a = [];
+    const rep = l.rep;
+    const cands = acharValidacao(l.segKey, l.tag || (rep && rep.tag), rep);
+    const noMes = cands.filter(function (v) { return String(v.mes_inicio || v.inicio || "").slice(0, 7) === E.mes; });
+    const val = (noMes.length ? noMes : cands).slice().sort(function (x, y) { return String(y.inicio).localeCompare(String(x.inicio)) || (y.ocorrencia || 1) - (x.ocorrencia || 1); })[0] || null;
+    l.val = val;
+    if (!rep) {
+      l.faltando = l.obrig === "Sim" && !noMes.length;
+      l.semPdf = l.obrig === "Sim" && !l.faltando && !!noMes.length;
+      return a;
+    }
+    // ticket
+    const tk = String(rep.ticket || "");
+    if (!tk) a.push("Relatório sem ticket");
+    else if (ehProvisorio(tk)) {
+      a.push("Ticket provisório (" + tk + ")");
+      if (mesDoProvisorio(tk) !== E.mes) a.push("Ticket provisório de " + nomeMes(mesDoProvisorio(tk)) + " em relatório de " + nomeMes(E.mes));
+    }
+    else {
+      const wo = E.wos.filter(function (w) { return soDigitos(w.wo) === soDigitos(tk); })[0];
+      if (!wo) a.push("Ticket " + tk + " não é de nenhuma WO deste site no mês");
+      else {
+        const tipoT = tipoWO(wo.tipo);
+        let aceitos = l.regra ? (l.regra.tickets_aceitos || []).slice() : [];
+        if (l.doCrono) aceitos = [l.tipoWo].concat(l.regra && l.regra.situacao_wo === "Climatização" ? aceitos : []);
+        if (aceitos.length && aceitos.indexOf(tipoT) < 0) a.push("Ticket de " + tipoT + " em aba de " + l.seg);
+      }
+    }
+    // mês de início e validação
+    if (!val) a.push("Sem registro na validação do cliente");
+    else {
+      if (!noMes.length) a.push("Aba iniciada em " + nomeMes(String(val.inicio).slice(0, 7)) + ": não conta para " + nomeMes(E.mes));
+      if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente");
+      if (normFato(val.status) === "EM ANDAMENTO") a.push("Aba em andamento no sistema do cliente");
+      if (rep.situacaoFinal && val.fato && normFato(rep.situacaoFinal) !== normFato(val.fato)) a.push("Fato na validação (" + val.fato + ") difere da Situação Final do relatório (" + rep.situacaoFinal + ")");
+    }
+    return a;
+  }
+
+  function recalcular() {
+    const esp = montarEsperado();
+    const usados = {};
+    esp.forEach(function (l) {
+      let achou = null;
+      E.pdfs.forEach(function (p) {
+        if (achou || usados[p.arquivo] || p.segmento !== l.segKey) return;
+        if (l.tag && p.tag && chaveTag(p.tag) === chaveTag(l.tag)) achou = p;
+      });
+      E.pdfs.forEach(function (p) {
+        if (achou || usados[p.arquivo] || p.segmento !== l.segKey) return;
+        if (!l.tag || !esp.some(function (o) { return o !== l && o.bloco === l.bloco && o.segKey === l.segKey && o.tag && p.tag && chaveTag(o.tag) === chaveTag(p.tag); })) achou = p;
+      });
+      if (achou) { usados[achou.arquivo] = true; l.rep = achou; }
+    });
+    const extras = E.pdfs.filter(function (p) { return !usados[p.arquivo]; }).map(function (p) {
+      const rg = regraDe(p.segmento);
+      return { bloco: "Fora do Cronograma", tipoWo: null, wo: null, seg: rg ? rg.segmento : p.segmentoTxt, segKey: p.segmento, tag: p.tag, obrig: "—", doCrono: false, regra: rg, rep: p, extra: true };
+    });
+    const todas = esp.concat(extras);
+    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); l.refazer = l.achados.length > 0; });
+    E.linhas = todas;
+    desenhar();
+  }
+
+  // ==== TELA ===============================================================
+  function marca(l) {
+    if (l.faltando) return '<span class="refazer">Faltando</span>';
+    if (l.refazer) return '<span class="refazer">Refazer</span>';
+    if (l.semPdf) return '<span class="g">Sem PDF</span>';
+    return "";
+  }
+  function desenhar() {
+    const obrig = E.linhas.filter(function (l) { return l.obrig === "Sim"; });
+    const comPdf = E.linhas.filter(function (l) { return l.rep; });
+    const nFalt = E.linhas.filter(function (l) { return l.faltando; }).length;
+    const nRef = E.linhas.filter(function (l) { return l.refazer; }).length;
+    const nSem = E.linhas.filter(function (l) { return l.semPdf; }).length;
+    $("faixa").innerHTML = '<div class="kv">' +
+      '<div><div class="n">' + obrig.length + '</div><div class="l">Abas obrigatórias</div></div>' +
+      '<div><div class="n">' + comPdf.length + '</div><div class="l">Com relatório</div></div>' +
+      '<div><div class="n">' + nSem + '</div><div class="l">Sem PDF enviado</div></div>' +
+      '<div><div class="n">' + nFalt + '</div><div class="l">Faltando</div></div>' +
+      '<div><div class="n">' + nRef + '</div><div class="l">Para refazer</div></div></div>';
+    $("barra").classList.toggle("oculto", !E.linhas.length);
+    const f = $("filtro").value;
+    const vis = E.linhas.filter(function (l) { return f === "todos" || (f === "refazer" && l.refazer) || (f === "faltando" && l.faltando); });
+    const blocos = [];
+    vis.forEach(function (l) { let b = blocos.filter(function (x) { return x.nome === l.bloco; })[0]; if (!b) { b = { nome: l.bloco, linhas: [] }; blocos.push(b); } b.linhas.push(l); });
+    $("blocos").innerHTML = blocos.length ? blocos.map(function (b) {
+      const todasDoBloco = E.linhas.filter(function (l) { return l.bloco === b.nome; });
+      const nf = todasDoBloco.filter(function (l) { return l.faltando; }).length, nr = todasDoBloco.filter(function (l) { return l.refazer; }).length;
+      return '<div class="bl"><h2>' + esc(b.nome) + '<span class="g">' + todasDoBloco.length + " abas" + (nf ? " · " + nf + " faltando" : "") + (nr ? " · " + nr + " para refazer" : "") + "</span></h2>" +
+        "<table><thead><tr><th>Segmento</th><th>Tag</th><th>Obrigatória</th><th>Arquivo</th><th>Resultado</th><th>Fato na validação</th><th>Status</th><th>Ticket</th><th>Alerta</th></tr></thead><tbody>" +
+        b.linhas.map(function (l) {
+          const i = E.linhas.indexOf(l), r = l.rep, v = l.val;
+          const prov = r && ehProvisorio(r.ticket);
+          const sub = !r;
+          return '<tr class="clic" data-i="' + i + '"><td>' + esc(l.seg) + "</td><td>" + esc((r && r.tag) || l.tag || "—") + "</td><td>" + l.obrig + "</td>" +
+            "<td" + (sub ? ' class="g"' : "") + ">" + (r ? esc(r.arquivo) : "Sem relatório") + "</td><td>" + (r ? esc(r.situacaoFinal || "—") : "—") + "</td>" +
+            "<td>" + (v ? esc(v.fato || "—") : "—") + "</td><td>" + (v ? esc(v.status || "—") : "—") + "</td>" +
+            "<td>" + (r ? esc(r.ticket || "—") + (prov ? ' <span class="tag">Provisório</span>' : "") : "—") + "</td><td>" + marca(l) + "</td></tr>";
+        }).join("") + "</tbody></table></div>";
+    }).join("") : '<div class="g">Nenhuma aba para mostrar.</div>';
+    $("ignorados").innerHTML = E.ignorados.length ? '<div class="bl"><h2>Arquivos ignorados<span class="g">' + E.ignorados.length + "</span></h2><table><tbody>" +
+      E.ignorados.map(function (g) { return "<tr><td>" + esc(g.arquivo) + "</td><td>" + esc(g.motivo) + "</td></tr>"; }).join("") + "</tbody></table></div>" : "";
+  }
+  $("filtro").addEventListener("change", desenhar);
+  $("blocos").addEventListener("click", function (e) {
+    const tr = e.target.closest("tr[data-i]");
+    if (tr) abrirDetalhe(E.linhas[Number(tr.getAttribute("data-i"))]);
+  });
+
+  function abrirDetalhe(l) {
+    const r = l.rep, v = l.val;
+    function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
+    $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.seg) + (l.tag ? " – " + esc(l.tag) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
+      '<div class="mkv">' + kv("WO", l.wo ? l.tipoWo + " · " + l.wo : "Fora do Cronograma") + kv("Ticket", r && r.ticket) + kv("Resultado no relatório", r && r.situacaoFinal) +
+      kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
+      kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
+      '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
+      (l.faltando ? '<div class="ach">Aba obrigatória sem preenchimento no sistema do cliente</div>' : (l.achados || []).length ? l.achados.map(function (t) { return '<div class="ach">' + esc(t) + "</div>"; }).join("") : '<div class="g">Nenhum achado.</div>') + "</div>";
+    $("modal").classList.remove("oculto");
+    $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
+  }
+  $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) $("modal").classList.add("oculto"); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("modal").classList.add("oculto"); });
+
+  // ==== EXPORTAR E GRAVAR ==================================================
+  $("botaoExcel").addEventListener("click", function () {
+    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados"];
+    const linhas = E.linhas.map(function (l) {
+      const r = l.rep, v = l.val;
+      return [l.bloco, l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
+        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ")];
+    });
+    const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Relatórios");
+    XLSX.writeFile(wb, "relatorios_" + E.siteChave + "_" + E.mes + ".xlsx");
+  });
+
+  $("botaoGravar").addEventListener("click", async function () {
+    const lote = E.linhas.filter(function (l) { return l.rep; }).map(function (l) {
+      const r = l.rep;
+      const iso = dataIso(r.dataInicio);
+      return {
+        chave: [E.siteChave, E.mes, l.segKey, chaveTag(r.tag), r.arquivo].join("|"),
+        site: E.siteTxt.toUpperCase(), site_chave: E.siteChave, mes: E.mes + "-01", segmento: l.seg, tag: r.tag || null, arquivo: r.arquivo,
+        wo: l.wo || null, ticket: r.ticket || null, situacao_final: r.situacaoFinal || null,
+        data_relatorio: iso ? iso + "T" + (r.horaInicio || "00:00:00") + "-03:00" : null,
+        fotos_qtd: 0, achados: (l.achados || []).map(function (t) { return { texto: t }; }), refazer: !!l.refazer,
+        analisado_por: E.usuario, analisado_em: new Date().toISOString()
+      };
+    });
+    if (!lote.length) { $("msg").innerHTML = '<span class="erro">Não há relatórios lidos para gravar.</span>'; return; }
+    $("botaoGravar").disabled = true;
+    const r = await banco.from("relatorios_analise").upsert(lote, { onConflict: "chave" });
+    $("botaoGravar").disabled = false;
+    $("msg").innerHTML = r.error ? '<span class="erro">Erro ao gravar: ' + esc(r.error.message) + "</span>" : "Análise gravada: " + lote.length + " relatórios.";
+  });
+
+  window.__rel = { interpretarPagina1: interpretarPagina1, juntarLinhas: juntarLinhas, segDoPdf: segDoPdf, E: E, recalcular: recalcular };
+  iniciar();
+})();
+</script>
+</body>
+</html>
