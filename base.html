@@ -805,7 +805,7 @@
           }
           return converterData(v);
         }
-        const mapa = {};
+        const mapa = {}, cont = {};
         let semSite = 0, semInicio = 0, repetidas = 0;
         for (let i = cab + 1; i < matriz.length; i++) {
           const l = matriz[i];
@@ -816,9 +816,12 @@
           const inicio = dataDe(l, "inicio");
           if (!inicio) { semInicio++; continue; }
           const partes = equip.split(" - ");
-          const chave = site + "|" + equip + "|" + inicio;
-          if (mapa[chave]) repetidas++;
-          mapa[chave] = { chave: chave, site: site, site_chave: chaveDeSigla(site), regional: cel(l, "regional") || null, uf: cel(l, "uf") || null,
+          // A mesma aba pode aparecer mais de uma vez (erro do sistema ou o técnico preencheu de novo): guardo todas, numeradas.
+          const base = site + "|" + equip + "|" + inicio;
+          const n = (cont[base] = (cont[base] || 0) + 1);
+          if (n > 1) repetidas++;
+          const chave = n === 1 ? base : base + "|" + n;
+          mapa[chave] = { chave: chave, ocorrencia: n, site: site, site_chave: chaveDeSigla(site), regional: cel(l, "regional") || null, uf: cel(l, "uf") || null,
                           inicio: inicio, fim: dataDe(l, "fim"), fato: cel(l, "fato") || null, motivo_expurgo: cel(l, "expurgo") || null,
                           equipamento: equip, segmento: partes[0].trim() || null, tag: partes.length > 1 ? partes.slice(1).join(" - ").trim() : null,
                           status: cel(l, "status") || null };
@@ -861,7 +864,7 @@
         $("resumoVal").innerHTML = "<p>Aba lida: <b>" + aba + "</b> · linhas: <b>" + r.linhas.length + "</b> · sites: <b>" + Object.keys(sites).length + "</b>" +
           (r.semSite ? " · sem site ou equipamento (ignoradas): " + r.semSite : "") +
           (r.semInicio ? " · sem data de início (ignoradas): " + r.semInicio : "") +
-          (r.repetidas ? " · repetidas na planilha (mantive a última): " + r.repetidas : "") + "</p>" +
+          (r.repetidas ? " · abas preenchidas mais de uma vez (guardei todas): " + r.repetidas : "") + "</p>" +
           '<p class="pequeno">Por mês de início: ' + Object.keys(meses).sort().map(function (m) { return m + " (" + meses[m] + ")"; }).join(" · ") + "<br>" +
           "Por status: " + Object.keys(status).map(function (s) { return s + " (" + status[s] + ")"; }).join(" · ") + "</p>" +
           (r.ambiguas ? '<p class="aviso">' + r.ambiguas + " data(s) estão escritas como texto e podem estar com dia e mês trocados. Confira o mês de início acima.</p>" : "") +
