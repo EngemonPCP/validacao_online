@@ -84,6 +84,16 @@
     <div id="msgGravarEquip"></div>
   </div>
 
+  <div class="caixa oculto" id="caixaVal">
+    <h2>Validação do cliente (aba "Validação" da Atualização_Preventiva)</h2>
+    <div class="pequeno" id="ultimaVal"></div>
+    <input id="arquivoVal" type="file" accept=".xlsx,.xlsm">
+    <div id="msgVal"></div>
+    <div id="resumoVal"></div>
+    <button id="botaoGravarVal" disabled>Gravar validação do cliente</button>
+    <div id="msgGravarVal"></div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
@@ -468,6 +478,8 @@
         $("caixaSites").classList.remove("oculto");
         $("caixaEquip").classList.remove("oculto");
         mostrarUltimaEquip();
+        $("caixaVal").classList.remove("oculto");
+        mostrarUltimaVal();
         mostrarUltimaAtualizacao();
         mostrarUltimaSites();
       });
@@ -760,6 +772,123 @@
           : '<span class="ok">Pronto: ' + gravadas + " equipamentos gravados.</span>";
         mostrarUltimaEquip();
         $("botaoGravarEquip").disabled = false;
+      });
+
+      // ---- validação do cliente (aba "Validação" da Atualização_Preventiva) ---------
+      let valParaGravar = [];
+      const COLUNAS_VAL = { site: "site", regional: "regional", uf: "uf", inicio: "inicio", fim: "fim", fato: "fato",
+                            expurgo: "motivo do expurgo", equipamento: "equipamento", status: "status" };
+
+      function montarValidacao(matriz) {
+        let cab = -1;
+        for (let i = 0; i < Math.min(matriz.length, 15); i++) {
+          const nomes = matriz[i].map(limpar);
+          if (nomes.indexOf("site") >= 0 && nomes.indexOf("equipamento") >= 0 && nomes.indexOf("fato") >= 0 && nomes.indexOf("inicio") >= 0) { cab = i; break; }
+        }
+        if (cab < 0) return null;
+        const nomes = matriz[cab].map(limpar);
+        const pos = {};
+        Object.keys(COLUNAS_VAL).forEach(function (k) { pos[k] = nomes.indexOf(COLUNAS_VAL[k]); });
+        function cel(l, k) { return pos[k] < 0 ? "" : String(l[pos[k]] == null ? "" : l[pos[k]]).trim(); }
+        let ambiguas = 0;
+        // Datas escritas como texto: se o segundo número passa de 12, é mês/dia (padrão americano do Excel); se não der para saber, vale dia/mês e eu aviso.
+        function dataDe(l, k) {
+          if (pos[k] < 0) return null;
+          const v = l[pos[k]];
+          if (typeof v === "string") {
+            const m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (m) {
+              const a = Number(m[1]), b = Number(m[2]);
+              if (b > 12) return formatar(Number(m[3]), a, b);
+              if (a <= 12) ambiguas++;
+            }
+          }
+          return converterData(v);
+        }
+        const mapa = {};
+        let semSite = 0, semInicio = 0, repetidas = 0;
+        for (let i = cab + 1; i < matriz.length; i++) {
+          const l = matriz[i];
+          if (!l.some(function (c) { return String(c).trim() !== ""; })) continue;
+          const site = cel(l, "site");
+          const equip = cel(l, "equipamento");
+          if (!site || !equip) { semSite++; continue; }
+          const inicio = dataDe(l, "inicio");
+          if (!inicio) { semInicio++; continue; }
+          const partes = equip.split(" - ");
+          const chave = site + "|" + equip + "|" + inicio;
+          if (mapa[chave]) repetidas++;
+          mapa[chave] = { chave: chave, site: site, site_chave: chaveDeSigla(site), regional: cel(l, "regional") || null, uf: cel(l, "uf") || null,
+                          inicio: inicio, fim: dataDe(l, "fim"), fato: cel(l, "fato") || null, motivo_expurgo: cel(l, "expurgo") || null,
+                          equipamento: equip, segmento: partes[0].trim() || null, tag: partes.length > 1 ? partes.slice(1).join(" - ").trim() : null,
+                          status: cel(l, "status") || null };
+        }
+        return { ambiguas: ambiguas, linhas: Object.keys(mapa).map(function (k) { return mapa[k]; }), semSite: semSite, semInicio: semInicio, repetidas: repetidas,
+                 faltando: Object.keys(pos).filter(function (k) { return pos[k] < 0; }) };
+      }
+
+      async function mostrarUltimaVal() {
+        const r = await banco.from("validacao_cliente").select("carregado_em").order("carregado_em", { ascending: false }).limit(1);
+        if (r.error) { $("ultimaVal").innerHTML = '<span class="erro">Não consegui ler a validação do cliente (o SQL dos relatórios já foi rodado?): ' + r.error.message + "</span>"; return; }
+        $("ultimaVal").textContent = r.data.length
+          ? "Última carga da validação do cliente: " + new Date(r.data[0].carregado_em).toLocaleString("pt-BR")
+          : "A validação do cliente ainda não foi enviada.";
+      }
+
+      $("arquivoVal").addEventListener("change", async function (evento) {
+        const arquivo = evento.target.files[0];
+        if (!arquivo) return;
+        $("msgVal").textContent = "Lendo o arquivo...";
+        $("botaoGravarVal").disabled = true;
+        let pasta;
+        try { pasta = XLSX.read(await arquivo.arrayBuffer(), { type: "array" }); }
+        catch (e) { $("msgVal").innerHTML = '<span class="erro">Não consegui abrir o arquivo: ' + e.message + "</span>"; return; }
+        let r = null, aba = "";
+        for (const nome of pasta.SheetNames) {
+          const matriz = XLSX.utils.sheet_to_json(pasta.Sheets[nome], { header: 1, raw: true, defval: "" });
+          const m = montarValidacao(matriz);
+          if (m) { r = m; aba = nome; break; }
+        }
+        if (!r) { $("msgVal").innerHTML = '<span class="erro">Nenhuma aba tem as colunas Site, Início, Equipamento e Fato.</span>'; return; }
+        $("msgVal").textContent = "";
+        valParaGravar = r.linhas;
+        const sites = {}, meses = {}, status = {};
+        r.linhas.forEach(function (l) {
+          sites[l.site_chave] = true;
+          const m = l.inicio.slice(0, 7); meses[m] = (meses[m] || 0) + 1;
+          const st = l.status || "(sem status)"; status[st] = (status[st] || 0) + 1;
+        });
+        $("resumoVal").innerHTML = "<p>Aba lida: <b>" + aba + "</b> · linhas: <b>" + r.linhas.length + "</b> · sites: <b>" + Object.keys(sites).length + "</b>" +
+          (r.semSite ? " · sem site ou equipamento (ignoradas): " + r.semSite : "") +
+          (r.semInicio ? " · sem data de início (ignoradas): " + r.semInicio : "") +
+          (r.repetidas ? " · repetidas na planilha (mantive a última): " + r.repetidas : "") + "</p>" +
+          '<p class="pequeno">Por mês de início: ' + Object.keys(meses).sort().map(function (m) { return m + " (" + meses[m] + ")"; }).join(" · ") + "<br>" +
+          "Por status: " + Object.keys(status).map(function (s) { return s + " (" + status[s] + ")"; }).join(" · ") + "</p>" +
+          (r.ambiguas ? '<p class="aviso">' + r.ambiguas + " data(s) estão escritas como texto e podem estar com dia e mês trocados. Confira o mês de início acima.</p>" : "") +
+          (r.faltando.length ? '<p class="aviso">Colunas não encontradas: ' + r.faltando.join(", ") + "</p>" : "");
+        $("botaoGravarVal").disabled = r.linhas.length === 0;
+        $("msgGravarVal").textContent = "";
+      });
+
+      $("botaoGravarVal").addEventListener("click", async function () {
+        $("botaoGravarVal").disabled = true;
+        const carimbo = new Date().toISOString();
+        const lote = 500;
+        let gravadas = 0;
+        for (let i = 0; i < valParaGravar.length; i += lote) {
+          const parte = valParaGravar.slice(i, i + lote).map(function (l) { return Object.assign({}, l, { carregado_em: carimbo }); });
+          const r = await banco.from("validacao_cliente").upsert(parte, { onConflict: "chave" });
+          if (r.error) {
+            $("msgGravarVal").innerHTML = '<span class="erro">Erro ao gravar: ' + r.error.message + " (o que já estava gravado foi mantido)</span>";
+            $("botaoGravarVal").disabled = false;
+            return;
+          }
+          gravadas += parte.length;
+          $("msgGravarVal").textContent = "Gravando... " + gravadas + " de " + valParaGravar.length;
+        }
+        $("msgGravarVal").innerHTML = '<span class="ok">Pronto: ' + gravadas + " linhas gravadas ou atualizadas.</span>";
+        mostrarUltimaVal();
+        $("botaoGravarVal").disabled = false;
       });
     }
   </script>
