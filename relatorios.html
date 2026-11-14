@@ -162,9 +162,9 @@
   function segDoPdf(txt) { return chaveSeg(txt); }
 
   // Junta os pedaços de texto do pdf.js em linhas (mesmo "y" = mesma linha).
-  function juntarLinhas(items) {
+  function linhasRicas(items) {
     const it = items.filter(function (i) { return i.str && i.str.trim() !== ""; })
-      .map(function (i) { return { s: i.str, x: i.transform[4], y: i.transform[5] }; });
+      .map(function (i) { return { s: i.str.trim(), x: i.transform[4], y: i.transform[5], w: i.width || 0 }; });
     it.sort(function (a, b) { return b.y - a.y || a.x - b.x; });
     const linhas = [];
     let atual = null;
@@ -172,8 +172,9 @@
       if (!atual || Math.abs(atual.y - i.y) > 2.5) { atual = { y: i.y, p: [] }; linhas.push(atual); }
       atual.p.push(i);
     });
-    return linhas.map(function (l) { l.p.sort(function (a, b) { return a.x - b.x; }); return l.p.map(function (p) { return p.s.trim(); }).join(" ").replace(/\s+/g, " ").trim(); });
+    return linhas.map(function (l) { l.p.sort(function (a, b) { return a.x - b.x; }); l.t = l.p.map(function (p) { return p.s; }).join(" ").replace(/\s+/g, " ").trim(); return l; });
   }
+  function juntarLinhas(items) { return linhasRicas(items).map(function (l) { return l.t; }); }
 
   // Lê o que importa da primeira página de um relatório.
   function interpretarPagina1(linhas, arquivo) {
@@ -227,32 +228,51 @@
   function situacaoDe(l) { const m = String(l).match(/(NÃO OK|NAO OK|OK|NA)\s*$/); return m ? m[1] : null; }
   function fmt(v) { return String(Math.round(v * 100) / 100).replace(".", ","); }
   function dentro(v, faixas) { return faixas.some(function (f) { return v >= f[0] && v <= f[1]; }); }
-  function desq(v) { const med = (v[0] + v[1] + v[2]) / 3; return med ? (Math.max.apply(null, v) - Math.min.apply(null, v)) / med * 100 : 0; }
 
-  // Lê os blocos "Medição - ..." de todas as páginas.
-  function extrairMedicoes(linhas) {
+  // Lê os valores de uma linha de medição pela posição das colunas do cabeçalho (campo em branco = null).
+  function valoresFase(l, cab) {
+    const fase = (cab || []).filter(function (c) { return /^Fase/i.test(c.s); });
+    if (!fase.length || cab.length < 2) return nums(l.t).slice(0, 3);
+    const centros = cab.map(function (c) { return c.x + c.w / 2; });
+    const esp = centros[1] - centros[0];
+    const out = fase.map(function () { return null; });
+    l.p.forEach(function (p) {
+      if (!/^-?\d+(?:[.,]\d+)?$/.test(p.s)) return;
+      let k = 0, melhor = 1e9;
+      centros.forEach(function (c, idx) { const d = Math.abs(p.x - (c - esp / 2 + 7)); if (d < melhor) { melhor = d; k = idx; } });
+      if (k < fase.length) out[k] = parseFloat(p.s.replace(",", "."));
+    });
+    return out;
+  }
+
+  // Lê os blocos "Medição - ..." de todas as páginas (linhas com posição).
+  function extrairMedicoes(L) {
     const m = {};
-    for (let i = 0; i < linhas.length; i++) {
-      const t = linhas[i].match(/^Medição - (.+)$/);
+    for (let i = 0; i < L.length; i++) {
+      const t = L[i].t.match(/^Medição - (.+)$/);
       if (!t) continue;
       const tit = t[1].toUpperCase();
       const bloco = [];
       let j = i + 1;
-      while (j < linhas.length && !/^Medição - /.test(linhas[j]) && !/^(Histórico de Ações|Fotos do Relatório|Observação)/.test(linhas[j])) { bloco.push(linhas[j]); j++; }
-      const dados = bloco.filter(function (l) { return /^-?\d/.test(l); });
-      if (/^TENSÃO\(VCA\)/.test(tit)) { if (dados[0]) m.tensaoFN = nums(dados[0]).slice(0, 3); if (dados[1]) m.tensaoFF = nums(dados[1]).slice(0, 3); m.sitTensao = [dados[0], dados[1]].map(situacaoDe).filter(Boolean); }
-      else if (/^CORRENTE\(A\)/.test(tit)) { if (dados[0]) { m.corrente = nums(dados[0]).slice(0, 3); m.sitCorrente = situacaoDe(dados[0]); } }
-      else if (/^TEMPERATURA/.test(tit)) { if (dados[0]) { m.temp = nums(dados[0]).slice(0, 3); m.sitTemp = situacaoDe(dados[0]); } }
-      else if (/^BALANCEAMENTO/.test(tit)) { if (dados[0]) m.balanc = nums(dados[0]).slice(0, 3); }
-      else if (/^TENSÃO ENT\. AC/.test(tit)) { if (dados[0]) { m.acTensao = nums(dados[0]).slice(0, 3); } }
-      else if (/^CORRENTE DE ENTRADA AC/.test(tit)) { if (dados[0]) { m.acCorrente = nums(dados[0]).slice(0, 3); } }
-      else if (/^POTÊNCIA/.test(tit)) { if (dados[0]) { const n = nums(dados[0]); m.potKw = n[0]; m.potPct = n[1]; } }
+      while (j < L.length && !/^Medição - /.test(L[j].t) && !/^(Histórico de Ações|Fotos do Relatório|Observação)/.test(L[j].t)) { bloco.push(L[j]); j++; }
+      let cab = null;
+      const dados = [];
+      bloco.forEach(function (l) { if (/^Fase\b/.test(l.t)) cab = l.p; else if (/^-?\d/.test(l.t)) dados.push({ l: l, cab: cab }); });
+      const vf = function (d) { return d ? valoresFase(d.l, d.cab) : null; };
+      if (/^TENSÃO\(VCA\)/.test(tit)) { m.tensaoFN = vf(dados[0]); m.tensaoFF = vf(dados[1]); }
+      else if (/^CORRENTE\(A\)/.test(tit)) { m.corrente = vf(dados[0]); }
+      else if (/^TEMPERATURA/.test(tit)) { m.temp = vf(dados[0]); }
+      else if (/^BALANCEAMENTO/.test(tit)) { m.balanc = vf(dados[0]); }
+      else if (/^TENSÃO ENT\. AC/.test(tit)) { m.acTensao = vf(dados[0]); }
+      else if (/^CORRENTE DE ENTRADA AC/.test(tit)) { m.acCorrente = vf(dados[0]); }
+      else if (/^POTÊNCIA/.test(tit)) { if (dados[0]) { const n = nums(dados[0].l.t); m.potKw = n[0]; m.potPct = n[1]; } }
       else if (/^GERAL/.test(tit)) {
-        bloco.forEach(function (l, k) {
+        const B = bloco.map(function (l) { return l.t; });
+        B.forEach(function (l, k) {
           const mm = l.match(/^(.+?)\s+(-?\d+(?:[.,]\d+)?)\s+(?:OK|NÃO OK|NAO OK|NA)\b/);
           let rot = null, val = null;
           if (mm) { rot = mm[1]; val = parseFloat(mm[2].replace(",", ".")); }
-          else if (/^-?\d+(?:[.,]?\d+)?\s+(?:OK|NÃO OK|NAO OK|NA)\b/.test(l) && k > 0) { rot = bloco[k - 1]; val = parseFloat(l.match(/^-?\d+(?:[.,]\d+)?/)[0].replace(",", ".")); }
+          else if (/^-?\d+(?:[.,]?\d+)?\s+(?:OK|NÃO OK|NAO OK|NA)\b/.test(l) && k > 0) { rot = B[k - 1]; val = parseFloat(l.match(/^-?\d+(?:[.,]\d+)?/)[0].replace(",", ".")); }
           if (rot == null) return;
           if (/TENSÃO DE SAÍDA DC/.test(rot)) m.dcV = val;
           else if (/CORRENTE DE SAÍDA DC/.test(rot)) m.dcI = val;
@@ -263,40 +283,42 @@
     return m;
   }
 
-  // Regras de coerência das medições. Devolve a lista de achados.
-  function analisarMedicoes(m, seg) {
+  // Regras de coerência das medições. Cada achado vem como "título||explicação".
+  function lista(v) { return (v || []).map(function (x) { return x == null ? "—" : fmt(x); }).join(" / "); }
+  function pres(v) { return (v || []).filter(function (x) { return x != null && !isNaN(x); }); }
+  function media(v) { return v.reduce(function (s0, x) { return s0 + x; }, 0) / v.length; }
+  function desq(v) { const med = media(v); return med ? (Math.max.apply(null, v) - Math.min.apply(null, v)) / med * 100 : 0; }
+  function analisarMedicoes(m) {
     const a = [];
-    const ok3 = function (v) { return v && v.length === 3 && v.every(function (x) { return !isNaN(x); }); };
-    if (ok3(m.tensaoFN)) {
-      if (m.tensaoFN.some(function (x) { return !dentro(x, LIM.tensaoFN); })) a.push("Tensão fase-neutro fora da faixa esperada: " + m.tensaoFN.map(fmt).join(" / ") + " V");
-      if (desq(m.tensaoFN) > LIM.desqTensao) a.push("Tensão fase-neutro desequilibrada (" + fmt(desq(m.tensaoFN)) + "%): " + m.tensaoFN.map(fmt).join(" / ") + " V");
-      if (m.tensaoFN[0] === m.tensaoFN[1] && m.tensaoFN[1] === m.tensaoFN[2]) a.push("Tensão fase-neutro igual nas 3 fases: " + fmt(m.tensaoFN[0]) + " V");
+    const fn = pres(m.tensaoFN), ff = pres(m.tensaoFF), co = pres(m.corrente), ac = pres(m.acCorrente), tp = pres(m.temp);
+    if (fn.some(function (x) { return !dentro(x, LIM.tensaoFN); })) a.push("Tensão fase-neutro fora da faixa: " + lista(m.tensaoFN) + " V||O esperado é de 105 a 145 V (rede 127 V) ou de 190 a 250 V (rede 220 V). Valor fora disso costuma ser erro de digitação, medição na fase errada ou problema real na rede.");
+    if (fn.length >= 2 && desq(fn) > LIM.desqTensao) a.push("Tensão fase-neutro desequilibrada (" + fmt(desq(fn)) + "%): " + lista(m.tensaoFN) + " V||A diferença entre a maior e a menor fase é de " + fmt(desq(fn)) + "% da média; o limite adotado é " + LIM.desqTensao + "%. Fases muito diferentes indicam digitação errada ou rede com problema.");
+    if (fn.length === 3 && fn[0] === fn[1] && fn[1] === fn[2]) a.push("Tensão fase-neutro igual nas 3 fases: " + fmt(fn[0]) + " V||Três medições idênticas, sem nenhuma variação, sugerem que o valor foi copiado em vez de medido.");
+    if (ff.some(function (x) { return !dentro(x, LIM.tensaoFF); })) a.push("Tensão fase-fase fora da faixa: " + lista(m.tensaoFF) + " V||O esperado é de 190 a 245 V (rede 220 V) ou de 340 a 420 V (rede 380 V).");
+    if (ff.length >= 2 && desq(ff) > LIM.desqTensao) a.push("Tensão fase-fase desequilibrada (" + fmt(desq(ff)) + "%): " + lista(m.tensaoFF) + " V||A diferença entre a maior e a menor fase é de " + fmt(desq(ff)) + "% da média; o limite adotado é " + LIM.desqTensao + "%.");
+    if (fn.length && ff.length) {
+      const f1 = media(fn), f2 = media(ff);
+      const razao = f2 / f1;
+      const okRazao = Math.abs(razao - LIM.razaoFFFN) / LIM.razaoFFFN <= LIM.tolRazao || Math.abs(razao - 2) / 2 <= LIM.tolRazao;
+      if (f1 > 0 && !okRazao) a.push("Tensão fase-fase (" + fmt(f2) + " V) não combina com a fase-neutro (" + fmt(f1) + " V)||Numa rede trifásica a tensão entre fases é cerca de 1,73 vezes a tensão fase-neutro (numa rede com duas fases e neutro, 2 vezes). Com " + fmt(f1) + " V de fase-neutro esperava-se perto de " + fmt(f1 * LIM.razaoFFFN) + " V, mas foi lançado " + fmt(f2) + " V. Um dos dois valores deve estar errado.");
     }
-    if (ok3(m.tensaoFF)) {
-      if (m.tensaoFF.some(function (x) { return !dentro(x, LIM.tensaoFF); })) a.push("Tensão fase-fase fora da faixa esperada: " + m.tensaoFF.map(fmt).join(" / ") + " V");
-      if (desq(m.tensaoFF) > LIM.desqTensao) a.push("Tensão fase-fase desequilibrada (" + fmt(desq(m.tensaoFF)) + "%): " + m.tensaoFF.map(fmt).join(" / ") + " V");
-    }
-    if (ok3(m.tensaoFN) && ok3(m.tensaoFF)) {
-      const fn = (m.tensaoFN[0] + m.tensaoFN[1] + m.tensaoFN[2]) / 3, ff = (m.tensaoFF[0] + m.tensaoFF[1] + m.tensaoFF[2]) / 3;
-      if (fn > 0 && Math.abs(ff / fn - LIM.razaoFFFN) / LIM.razaoFFFN > LIM.tolRazao) a.push("Tensão fase-fase (" + fmt(ff) + " V) não combina com a fase-neutro (" + fmt(fn) + " V)");
-    }
-    [["corrente", "Corrente"], ["acCorrente", "Corrente de entrada AC"]].forEach(function (c) {
-      const v = m[c[0]];
-      if (!ok3(v)) return;
-      if (v.some(function (x) { return x === 0; }) && !v.every(function (x) { return x === 0; })) a.push(c[1] + " zerada em uma das fases: " + v.map(fmt).join(" / ") + " A");
-      else if (desq(v) > LIM.desqCorrente) a.push(c[1] + " desequilibrada (" + fmt(desq(v)) + "%): " + v.map(fmt).join(" / ") + " A");
-      if (v[0] === v[1] && v[1] === v[2] && v[0] !== 0) a.push(c[1] + " igual nas 3 fases: " + fmt(v[0]) + " A");
+    [["corrente", "Corrente", co, m.corrente], ["acCorrente", "Corrente de entrada AC", ac, m.acCorrente]].forEach(function (c) {
+      const v = c[2];
+      if (!v.length) return;
+      if (v.some(function (x) { return x === 0; }) && !v.every(function (x) { return x === 0; })) a.push(c[1] + " zerada em uma das fases: " + lista(c[3]) + " A||Uma fase com 0 A enquanto as outras têm carga indica fase desligada, disjuntor aberto ou valor digitado errado.");
+      else if (v.length >= 2 && desq(v) > LIM.desqCorrente) a.push(c[1] + " desequilibrada (" + fmt(desq(v)) + "%): " + lista(c[3]) + " A||A diferença entre a maior e a menor fase é de " + fmt(desq(v)) + "% da média; o limite adotado é " + LIM.desqCorrente + "%. Carga mal distribuída entre as fases ou valor errado.");
+      if (v.length === 3 && v[0] === v[1] && v[1] === v[2] && v[0] !== 0) a.push(c[1] + " igual nas 3 fases: " + fmt(v[0]) + " A||Três medições idênticas sugerem que o valor foi copiado em vez de medido.");
     });
-    if (ok3(m.temp) && m.temp.some(function (x) { return x > LIM.tempMax; })) a.push("Temperatura acima de " + LIM.tempMax + " ºC: " + m.temp.map(fmt).join(" / ") + " ºC");
-    if (m.dcV != null && !isNaN(m.dcV) && (m.dcV < LIM.dcV[0] || m.dcV > LIM.dcV[1])) a.push("Tensão de saída DC fora da faixa esperada: " + fmt(m.dcV) + " V");
+    if (tp.some(function (x) { return x > LIM.tempMax; })) a.push("Temperatura acima de " + LIM.tempMax + " ºC: " + lista(m.temp) + " ºC||Temperatura alta no quadro ou equipamento indica sobrecarga, mau contato ou ventilação ruim.");
+    if (m.dcV != null && !isNaN(m.dcV) && (m.dcV < LIM.dcV[0] || m.dcV > LIM.dcV[1])) a.push("Tensão de saída DC fora da faixa: " + fmt(m.dcV) + " V||O esperado para o retificador é de " + LIM.dcV[0] + " a " + LIM.dcV[1] + " V.");
     if (m.dcV != null && m.dcI != null && m.potKw != null && m.dcV * m.dcI > 0) {
       const calc = m.dcV * m.dcI / 1000;
-      if (Math.abs(calc - m.potKw) / calc > 0.25) a.push("Potência consumida (" + fmt(m.potKw) + " kW) não bate com tensão x corrente DC (" + fmt(calc) + " kW)");
+      if (Math.abs(calc - m.potKw) / calc > 0.25) a.push("Potência (" + fmt(m.potKw) + " kW) não bate com tensão x corrente DC (" + fmt(calc) + " kW)||Pela saída DC (" + fmt(m.dcV) + " V x " + fmt(m.dcI) + " A) a potência seria cerca de " + fmt(calc) + " kW, mas o controlador informa " + fmt(m.potKw) + " kW. Uma das leituras está errada.");
     }
-    if (ok3(m.acTensao) && ok3(m.acCorrente) && m.potKw != null && m.potKw > 0) {
-      const vac = (m.acTensao[0] + m.acTensao[1] + m.acTensao[2]) / 3, iac = (m.acCorrente[0] + m.acCorrente[1] + m.acCorrente[2]) / 3;
-      const kva = 1.732 * vac * iac / 1000;
-      if (kva > LIM.fatorAcDc * (m.potKw / 0.85)) a.push("Corrente de entrada AC (" + m.acCorrente.map(fmt).join(" / ") + " A, cerca de " + fmt(kva) + " kVA) incompatível com a potência consumida (" + fmt(m.potKw) + " kW)");
+    const at = pres(m.acTensao);
+    if (at.length && ac.length && m.potKw != null && m.potKw > 0) {
+      const kva = (ac.length >= 3 ? 1.732 * media(at) * media(ac) : media(at) * ac.reduce(function (t, x) { return t + x; }, 0)) / 1000;
+      if (kva > LIM.fatorAcDc * (m.potKw / 0.85)) a.push("Corrente de entrada AC incompatível com a potência consumida||A corrente de entrada (" + lista(m.acCorrente) + " A a cerca de " + fmt(media(at)) + " V) corresponde a cerca de " + fmt(kva) + " kVA, mas o retificador informa consumo de só " + fmt(m.potKw) + " kW. As duas leituras deveriam ser da mesma ordem de grandeza; confira se a corrente foi medida no ponto certo.");
     }
     return a;
   }
@@ -456,6 +478,7 @@
       if (!cand.length) cand = noX.filter(function (t) { return t.transform[5] >= a.y + a.h - 2 && t.transform[5] <= a.y + a.h + 30; });
       cand.sort(function (u, v) { return Math.abs(u.transform[5] - a.y) - Math.abs(v.transform[5] - a.y) || u.transform[4] - v.transform[4]; });
       const legenda = cand.length ? cand.filter(function (t) { return Math.abs(t.transform[5] - cand[0].transform[5]) < 3; }).sort(function (u, v) { return u.transform[4] - v.transform[4]; }).map(function (t) { return t.str.trim(); }).join(" ") : "";
+      if (/^INFRATEL$/i.test(legenda) || (numPag === 1 && !legenda)) continue;   // logotipos do cabeçalho
       const esc2 = Math.min(1, FOTO_MAX / c.width);
       const c2 = document.createElement("canvas"); c2.width = Math.round(c.width * esc2); c2.height = Math.round(c.height * esc2);
       c2.getContext("2d").drawImage(c, 0, 0, c2.width, c2.height);
@@ -477,7 +500,7 @@
     let d = null, m;
     if ((m = t.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(20\d{2})/))) d = [Number(m[3]), Number(m[2]), Number(m[1])];
     else if ((m = t.match(/(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/))) d = [Number(m[1]), Number(m[2]), Number(m[3])];
-    else if ((m = t.match(/(\d{1,2})\s*(?:de\s*)?(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-zç]*\.?,?\s*(?:de\s*)?(20\d{2})/i))) d = [Number(m[3]), MESES_ABR[m[2].toLowerCase()], Number(m[1])];
+    else if ((m = t.match(/(\d{1,2})\D{0,6}(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\D{0,8}(20\d{2})/i))) d = [Number(m[3]), MESES_ABR[m[2].toLowerCase()], Number(m[1])];
     const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
     if (!d || d[1] < 1 || d[1] > 12 || d[2] < 1 || d[2] > 31) return h ? { data: null, hora: h[0] } : null;
     const pad = function (n) { return (n < 10 ? "0" : "") + n; };
@@ -494,14 +517,23 @@
     } catch (e) { tessFalhou = true; return null; }
   }
   function carregarImg(url) { return new Promise(function (ok, no) { const im = new Image(); im.onload = function () { ok(im); }; im.onerror = no; im.src = url; }); }
+  // O carimbo (data, hora e endereço) fica no canto inferior direito, em letra branca: recorta, amplia e isola o branco.
+  const PLANOS_OCR = [{ l: 0.45, t: 0.72, th: 215, psm: "6" }, { l: 0.45, t: 0.72, th: 235, psm: "6" }, { l: 0.45, t: 0.72, th: 250, psm: "6" }, { l: 0.45, t: 0.72, th: 0, psm: "6" }, { l: 0, t: 0.55, th: 225, psm: "11" }];
   async function ocrFoto(w, foto) {
     const im = await carregarImg(foto.url);
-    const tentativas = [[0.6, 1], [0, 1]];
-    for (let k = 0; k < tentativas.length; k++) {
-      const topo = tentativas[k][0] * im.height, alt = im.height - topo;
-      const esc3 = Math.max(1, Math.min(2, 1600 / im.width));
-      const c = document.createElement("canvas"); c.width = Math.round(im.width * esc3); c.height = Math.round(alt * esc3);
-      const x = c.getContext("2d"); x.drawImage(im, 0, topo, im.width, alt, 0, 0, c.width, c.height);
+    for (let k = 0; k < PLANOS_OCR.length; k++) {
+      const p = PLANOS_OCR[k];
+      const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = im.width - x0, ch = im.height - y0;
+      const c = document.createElement("canvas"); c.width = cw * 3; c.height = ch * 3;
+      const x = c.getContext("2d"); x.drawImage(im, x0, y0, cw, ch, 0, 0, c.width, c.height);
+      const dd = x.getImageData(0, 0, c.width, c.height), px = dd.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const g = px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114;
+        const v = p.th ? (g >= p.th ? 0 : 255) : g;
+        px[i] = px[i + 1] = px[i + 2] = v;
+      }
+      x.putImageData(dd, 0, 0);
+      await w.setParameters({ tessedit_pageseg_mode: p.psm });
       const r = await w.recognize(c);
       const ca = lerCarimbo(r.data.text);
       if (ca && ca.data) return ca;
@@ -519,11 +551,11 @@
     for (let i = 0; i < fila.length; i++) {
       if (consulta !== E.siteChave + E.mes) return;
       $("msg").textContent = "Lendo data e hora das fotos: " + (i + 1) + " de " + fila.length;
-      try { fila[i][1].carimbo = (await ocrFoto(w, fila[i][1])) || false; } catch (e) { fila[i][1].carimbo = false; }
+      try { fila[i][1].carimbo = (await ocrFoto(w, fila[i][1])) || false; } catch (e) { fila[i][1].carimbo = false; E.ocrErro = String((e && e.message) || e); }
       fila[i][0].ocrFeito = (fila[i][0].fotos || []).every(function (f) { return f.carimbo !== null; });
       if (fila[i][0].ocrFeito) recalcular();
     }
-    $("msg").textContent = "";
+    $("msg").textContent = E.ocrErro ? "Erro na leitura de data e hora das fotos: " + E.ocrErro : "";
     recalcular();
   }
 
@@ -537,18 +569,20 @@
   async function lerPdf(arquivo) {
     const lib = await carregarPdfjs();
     const doc = await lib.getDocument({ data: await arquivo.arrayBuffer() }).promise;
-    let todas = [], primeira = null, fotos = [];
+    const todasR = []; let primeira = null, fotos = [];
     for (let n = 1; n <= doc.numPages; n++) {
       const pag = await doc.getPage(n);
       const tc = await pag.getTextContent();
       try { (await extrairFotos(lib, pag, n, tc.items)).forEach(function (f) { fotos.push(f); }); } catch (e) { /* segue sem fotos desta página */ }
-      const lin = juntarLinhas(tc.items);
+      const ric = linhasRicas(tc.items);
+      const lin = ric.map(function (l) { return l.t; });
       if (n === 1) primeira = lin;
-      todas = todas.concat(lin.filter(function (x) { return !/^Infratel - Relat/.test(x) && !/^Página \d+ de \d+/.test(x); }));
+      ric.forEach(function (l) { if (!/^Infratel - Relat/.test(l.t) && !/^Página \d+ de \d+/.test(l.t)) todasR.push(l); });
     }
     const r = interpretarPagina1(primeira, arquivo.name);
     r.paginas = doc.numPages;
-    r.medicoes = extrairMedicoes(todas);
+    const todas = todasR.map(function (l) { return l.t; });
+    r.medicoes = extrairMedicoes(todasR);
     r.alarmes = extrairAlarmes(todas);
     r.fotos = marcarRepetidas(fotos);
     const lm = todas.filter(function (x) { return /Leitura Medidor/i.test(x); })[0];
@@ -580,7 +614,13 @@
   $("drop").addEventListener("drop", function (e) { e.preventDefault(); $("drop").classList.remove("sobre"); receberArquivos(e.dataTransfer.files); });
 
   // ==== ANALISE ============================================================
-  function ativo(e) { return (e.tag && String(e.tag).trim() !== "") || String(e.status_eqpto || "").toUpperCase() === "ATIVO"; }
+  function ativo(e) {
+    const sp = semAcento(e.situacao_prev || "").toUpperCase().replace(/\s+/g, "");
+    if (sp === "N/A" || sp === "NA") return false;                       // cronograma diz que não se aplica
+    const st = semAcento(e.status_eqpto || "").toUpperCase().trim();
+    if (/^(INATIV|DESATIV|RETIRAD|DESINSTAL|BAIXAD)/.test(st)) return false;
+    return (e.tag && String(e.tag).trim() !== "") || st === "ATIVO";
+  }
   function regraDe(segKey) { return E.regras.filter(function (r) { return chaveSeg(r.segmento) === segKey; })[0] || null; }
 
   // Monta as linhas esperadas de cada WO a partir das regras e do Cronograma (equipamentos_base).
@@ -602,9 +642,9 @@
         const sk = chaveSeg(r.segmento);
         const eqs = E.equip.filter(function (e) { return tipoWO(e.tipo) === tipo && chaveSeg(e.segmento) === sk && ativo(e); });
         if (modo === "se_clima" && !temClima) return;
-        if (modo === "cronograma") { eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: "Sim", doCrono: true, regra: r }); }); return; }
+        if (modo === "cronograma") { eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: "Sim", doCrono: true, regra: r, eq: e }); }); return; }
         const obrig = modo === "condicional" ? "Condicional" : "Sim";
-        if (eqs.length) eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: obrig, doCrono: true, regra: r }); });
+        if (eqs.length) eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: obrig, doCrono: true, regra: r, eq: e }); });
         else out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: null, obrig: obrig, doCrono: false, regra: r });
       });
     });
@@ -633,12 +673,13 @@
       l.semPdf = l.obrig === "Sim" && !l.faltando && !!noMes.length;
       return a;
     }
+    if (l.dups && l.dups.length) a.push("Mais de um PDF para a mesma aba (" + [rep.arquivo].concat(l.dups.map(function (d) { return d.arquivo; })).join(" e ") + ")||O sistema do cliente conta uma ficha só por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
     // ticket
     const tk = String(rep.ticket || "");
     if (!tk) a.push("Relatório sem ticket");
     else if (ehProvisorio(tk)) {
       // Provisório (mês e ano) é uma regra combinada quando a WO demora a abrir: só avisa se for de outro mês.
-      if (mesDoProvisorio(tk) !== E.mes) a.push("Ticket provisório de " + nomeMes(mesDoProvisorio(tk)) + " em relatório de " + nomeMes(E.mes));
+      if (mesDoProvisorio(tk) !== E.mes) a.push("Ticket provisório de " + nomeMes(mesDoProvisorio(tk)) + " em relatório de " + nomeMes(E.mes) + "||O ticket provisório (mês e ano) deve ser do mesmo mês da preventiva.");
     }
     else {
       const wo = E.wos.filter(function (w) { return soDigitos(w.wo) === soDigitos(tk); })[0];
@@ -651,27 +692,27 @@
       }
     }
     // mês de início e validação
-    if (!val) a.push("Sem registro na validação do cliente");
+    if (!val) a.push("Sem registro na validação do cliente||Esta aba não aparece na planilha de Validação carregada: o técnico não a finalizou ou a planilha está desatualizada.");
     else {
-      if (!noMes.length) a.push("Aba iniciada em " + nomeMes(String(val.inicio).slice(0, 7)) + ": não conta para " + nomeMes(E.mes));
-      if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente");
+      if (!noMes.length) a.push("Aba iniciada em " + nomeMes(String(val.inicio).slice(0, 7)) + ": não conta para " + nomeMes(E.mes) + "||O cliente conta a aba pelo mês em que ela foi iniciada. Iniciada em outro mês e finalizada neste, ela vale para o mês de início e precisa ser refeita.");
+      if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente||O cliente só conta uma ficha por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
       if (normFato(val.status) === "EM ANDAMENTO") a.push("Aba em andamento no sistema do cliente");
-      if (rep.situacaoFinal && val.fato && normFato(rep.situacaoFinal) !== normFato(val.fato)) a.push("Fato na validação (" + val.fato + ") difere da Situação Final do relatório (" + rep.situacaoFinal + ")");
+      if (rep.situacaoFinal && val.fato && normFato(rep.situacaoFinal) !== normFato(val.fato)) a.push("Fato na validação (" + val.fato + ") difere da Situação Final do relatório (" + rep.situacaoFinal + ")||O resultado marcado no sistema do cliente é diferente do que consta no relatório. Se o técnico apontou pendência e finalizou como OK, o cliente pode recusar.");
     }
     // fotos
     const fotos = rep.fotos || [];
     const reps = fotos.map(function (f, i) { return f.repetida ? "foto " + (i + 1) + " igual à " + f.repetida : null; }).filter(Boolean);
-    if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")");
+    if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")||Duas fotos iguais no mesmo relatório indicam imagem reaproveitada; cada foto deve mostrar o equipamento naquele momento.");
     if (rep.ocrFeito) {
       const sem = fotos.filter(function (f) { return !f.carimbo; }).length;
-      if (sem) a.push("Foto sem data e hora legível: " + sem + " de " + fotos.length);
+      if (sem) a.push("Foto sem data e hora legível: " + sem + " de " + fotos.length + "||A data e a hora carimbadas na foto são obrigatórias. A leitura automática não achou o carimbo em " + sem + " foto(s); abra as fotos para ver se o carimbo realmente falta ou só está ilegível.");
       const fora = {};
       fotos.forEach(function (f) { if (f.carimbo && f.carimbo.data && f.carimbo.data.slice(0, 7) !== E.mes) fora[f.carimbo.data] = 1; });
-      Object.keys(fora).forEach(function (d) { a.push("Foto com data " + dataBr(d) + " fora de " + nomeMes(E.mes)); });
+      Object.keys(fora).forEach(function (d) { a.push("Foto com data " + dataBr(d) + " fora de " + nomeMes(E.mes) + "||A foto foi tirada fora do mês da preventiva; o cliente não aceita e a aba precisa ser refeita."); });
     }
     if (l.segKey === "ALARMES") {
       const bi = fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); });
-      if (bi < 0) { if (fotos.length) a.push("Foto dos bornes (QIT) não encontrada no relatório"); }
+      if (bi < 0) { if (fotos.length) a.push("Foto dos bornes (QIT) não encontrada no relatório||O relatório de Alarmes deve ter uma foto com a legenda QIT (bornes) para conferir os jumps."); }
       else {
         const b = E.bornes[rep.arquivo];
         if (b && (b.resultado === "Tipo A" || b.resultado === "Tipo B" || b.resultado === "Suspeito")) a.push("Jump nos bornes: " + b.resultado + (b.comentario ? " (" + b.comentario + ")" : ""));
@@ -679,9 +720,9 @@
       }
     }
     // análise técnica
-    if (rep.medicoes) analisarMedicoes(rep.medicoes, l.segKey).forEach(function (t) { a.push(t); });
-    if (rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura);
-    (rep.alarmes || []).forEach(function (it) { if (it.fim === "NÃO OK" || it.fim === "NAO OK") a.push("Alarme " + it.n + " - " + it.nome + ": final NÃO OK"); });
+    if (rep.medicoes) analisarMedicoes(rep.medicoes).forEach(function (t) { a.push(t); });
+    if (rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura + "||Números em sequência, repetidos ou curtos demais sugerem leitura digitada sem olhar o medidor; compare com a foto do medidor.");
+    (rep.alarmes || []).forEach(function (it) { if (it.fim === "NÃO OK" || it.fim === "NAO OK") a.push("Alarme " + it.n + " - " + it.nome + ": final NÃO OK||O item terminou com NÃO OK no checklist de alarmes, ou seja, ficou alarme sem normalizar."); });
     return a;
   }
 
@@ -700,7 +741,13 @@
       });
       if (achou) { usados[achou.arquivo] = true; l.rep = achou; }
     });
-    const extras = E.pdfs.filter(function (p) { return !usados[p.arquivo]; }).map(function (p) {
+    esp.forEach(function (l) { l.dups = []; });
+    const sobra = E.pdfs.filter(function (p) { return !usados[p.arquivo]; }).filter(function (p) {
+      const dono = esp.filter(function (l) { return l.rep && l.segKey === p.segmento && chaveTag(l.rep.tag || l.tag) === chaveTag(p.tag); })[0];
+      if (dono) { dono.dups.push(p); return false; }
+      return true;
+    });
+    const extras = sobra.map(function (p) {
       const rg = regraDe(p.segmento);
       return { bloco: "Fora do Cronograma", tipoWo: null, wo: null, seg: rg ? rg.segmento : p.segmentoTxt, segKey: p.segmento, tag: p.tag, obrig: "—", doCrono: false, regra: rg, rep: p, extra: true };
     });
@@ -744,7 +791,7 @@
           const prov = r && ehProvisorio(r.ticket);
           const sub = !r;
           return '<tr class="clic" data-i="' + i + '"><td>' + esc(l.seg) + "</td><td>" + esc((r && r.tag) || l.tag || "—") + "</td><td>" + l.obrig + "</td>" +
-            "<td" + (sub ? ' class="g"' : "") + ">" + (r ? esc(r.arquivo) : "Sem relatório") + "</td><td>" + (r ? esc(r.situacaoFinal || "—") : "—") + "</td>" +
+            "<td" + (sub ? ' class="g"' : "") + ">" + (r ? esc(r.arquivo) + (l.dups && l.dups.length ? ' <span class="tag">+' + l.dups.length + " repetido</span>" : "") : "Sem relatório") + "</td><td>" + (r ? esc(r.situacaoFinal || "—") : "—") + "</td>" +
             "<td>" + (v ? esc(v.fato || "—") : "—") + "</td><td>" + (v ? esc(v.status || "—") : "—") + "</td>" +
             "<td>" + (r ? esc(r.ticket || "—") + (prov ? ' <span class="tag">Provisório</span>' : "") : "—") + "</td><td>" + marca(l) + "</td></tr>";
         }).join("") + "</tbody></table></div>";
@@ -758,12 +805,16 @@
     if (tr) abrirDetalhe(E.linhas[Number(tr.getAttribute("data-i"))]);
   });
 
+  function achHtml(t) {
+    const q = String(t).split("||");
+    return '<div class="ach"><div>' + esc(q[0]) + "</div>" + (q[1] ? '<div class="g" style="margin-top:4px">' + esc(q[1]) + "</div>" : "") + "</div>";
+  }
   function medicoesHtml(r) {
     const m = r && r.medicoes;
     if (!m) return "";
     const rows = [["Tensão fase-neutro (V)", m.tensaoFN], ["Tensão fase-fase (V)", m.tensaoFF], ["Corrente (A)", m.corrente], ["Temperatura (ºC)", m.temp], ["Balanceamento", m.balanc],
-      ["Tensão entrada AC (V)", m.acTensao], ["Corrente entrada AC (A)", m.acCorrente]].filter(function (x) { return x[1] && x[1].length; })
-      .map(function (x) { return "<tr><td>" + x[0] + "</td><td>" + x[1].map(fmt).join(" / ") + "</td></tr>"; });
+      ["Tensão entrada AC (V)", m.acTensao], ["Corrente entrada AC (A)", m.acCorrente]].filter(function (x) { return x[1] && pres(x[1]).length; })
+      .map(function (x) { return "<tr><td>" + x[0] + "</td><td>" + lista(x[1]) + "</td></tr>"; });
     if (m.potKw != null) rows.push("<tr><td>Potência</td><td>" + fmt(m.potKw) + " kW" + (m.potPct != null ? " (" + fmt(m.potPct) + "%)" : "") + "</td></tr>");
     if (m.dcV != null) rows.push("<tr><td>Saída DC</td><td>" + fmt(m.dcV) + " V" + (m.dcI != null ? " / " + fmt(m.dcI) + " A" : "") + "</td></tr>");
     if (r.leitura) rows.push("<tr><td>Leitura do medidor</td><td>" + esc(r.leitura) + "</td></tr>");
@@ -847,10 +898,11 @@
     $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.seg) + (l.tag ? " – " + esc(l.tag) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
       '<div class="mkv">' + kv("WO", l.wo ? l.tipoWo + " · " + l.wo : "Fora do Cronograma") + kv("Ticket", r && r.ticket) + kv("Resultado no relatório", r && r.situacaoFinal) +
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
+      kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Não consta no Cronograma" : "")) +
       kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
       medicoesHtml(r) + fotosHtml(l) +
       '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
-      (l.faltando ? '<div class="ach">Aba obrigatória sem preenchimento no sistema do cliente</div>' : (l.achados || []).length ? l.achados.map(function (t) { return '<div class="ach">' + esc(t) + "</div>"; }).join("") : '<div class="g">Nenhum achado.</div>') + "</div>";
+      (l.faltando ? '<div class="ach"><div>Aba obrigatória sem preenchimento no sistema do cliente</div><div class="g" style="margin-top:4px">O Cronograma pede esta aba para a WO, mas ela não consta na Validação do mês. Confira em "No Cronograma" se o equipamento realmente se aplica.</div></div>' : (l.achados || []).length ? l.achados.map(achHtml).join("") : '<div class="g">Nenhum achado.</div>') + "</div>";
     $("modal").classList.remove("oculto");
     $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
     ligarBornes(l);
@@ -864,7 +916,7 @@
     const linhas = E.linhas.map(function (l) {
       const r = l.rep, v = l.val;
       return [l.bloco, l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
-        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ")];
+        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — ")];
     });
     const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas));
     const wb = XLSX.utils.book_new();
@@ -881,7 +933,7 @@
         site: E.siteTxt.toUpperCase(), site_chave: E.siteChave, mes: E.mes + "-01", segmento: l.seg, tag: r.tag || null, arquivo: r.arquivo,
         wo: l.wo || null, ticket: r.ticket || null, situacao_final: r.situacaoFinal || null,
         data_relatorio: iso ? iso + "T" + (r.horaInicio || "00:00:00") + "-03:00" : null,
-        fotos_qtd: (r.fotos || []).length, achados: (l.achados || []).map(function (t) { return { texto: t }; }), refazer: !!l.refazer,
+        fotos_qtd: (r.fotos || []).length, achados: (l.achados || []).map(function (t) { return { texto: String(t).replace("||", " — ") }; }), refazer: !!l.refazer,
         analisado_por: E.usuario, analisado_em: new Date().toISOString()
       };
     });
