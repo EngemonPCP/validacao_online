@@ -65,6 +65,10 @@
   .fotos { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
   .fto img { width:100%; height:130px; object-fit:cover; background:var(--cinza2); display:block; margin-bottom:4px; }
   .fto { font-size:12px; }
+  .cmt { background:var(--cinza1); padding:10px 14px; white-space:pre-wrap; }
+  .leg { margin-top:12px; font-size:12px; color:var(--suave); }
+  .leg div { margin-bottom:4px; }
+  .leg b { color:var(--texto); font-weight:600; }
   .bcv canvas { width:100%; max-width:560px; cursor:crosshair; display:block; touch-action:none; background:#161616; }
   .laranja { color:var(--laranja); }
   .x { background:none; border:0; font-size:22px; color:#525252; cursor:pointer; padding:0 4px; }
@@ -344,6 +348,29 @@
     return false;
   }
 
+  // Comentário e justificativa que o técnico escreveu no relatório.
+  function extrairComentarios(T) {
+    const i = T.findIndex(function (l) { return /^Observação/.test(l); });
+    const out = { comentario: "", justificativa: "" };
+    if (i < 0) return out;
+    const com = [], jus = [];
+    let modo = "c";
+    for (let k = i + 1; k < T.length; k++) {
+      const l = T[k];
+      if (/^(Histórico de Ações|Fotos do Relatório|Relato \d)/.test(l)) break;
+      if (/^Comentários$/.test(l)) { modo = "c"; continue; }
+      if (/^Justificativas$/.test(l)) { modo = "j"; continue; }
+      (modo === "j" ? jus : com).push(l);
+    }
+    out.comentario = com.join(" ").trim();
+    out.justificativa = jus.join(" ").trim();
+    return out;
+  }
+  // Palavras que indicam pendência no comentário (ajuste aqui conforme a operação).
+  const RE_PENDENCIA = /pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad/i;
+  // Motivos de zeladoria que exigem chamado de escalonamento com a detentora.
+  const RE_ZELADORIA = /mato|vegeta[cç]|capim|ro[cç]ad|[aá]rvore|entulho|lixo|terreno|bicho|animal|colmeia|abelha|cobra|escorpi|invas|desmat/i;
+
   // Checklist de alarmes (itens numerados com Inicial e Final).
   function extrairAlarmes(linhas) {
     const itens = [];
@@ -355,7 +382,7 @@
   }
 
   // ==== ESTADO =============================================================
-  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {} };
+  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {}, escal: null };
 
   // ==== LOGIN ==============================================================
   async function iniciar() {
@@ -396,7 +423,11 @@
     const falha = [wos, eq, va, rg].filter(function (r) { return r.error; })[0];
     if (falha) { $("msg").innerHTML = '<span class="erro">Não consegui consultar: ' + esc(falha.error.message) + "</span>"; return; }
     E.wos = wos.data || []; E.equip = eq.data || []; E.vals = va.data || []; E.regras = rg.data || [];
-    E.bornes = {};
+    E.bornes = {}; E.escal = null;
+    try {
+      const es = await banco.from("escalonamentos").select("*").eq("site_chave", E.siteChave).eq("mes", mes + "-01");
+      if (!es.error && (es.data || []).length) E.escal = es.data[0];
+    } catch (e) { /* tabela ainda não criada */ }
     try {
       const bo = await banco.from("bornes_conferencia").select("*").eq("site_chave", E.siteChave).eq("mes", mes + "-01");
       if (!bo.error) (bo.data || []).forEach(function (b) { E.bornes[b.arquivo] = { resultado: b.resultado, comentario: b.comentario, circulos: b.circulos || [], por: b.conferido_por, gravado: true }; });
@@ -584,6 +615,8 @@
     const todas = todasR.map(function (l) { return l.t; });
     r.medicoes = extrairMedicoes(todasR);
     r.alarmes = extrairAlarmes(todas);
+    const cm = extrairComentarios(todas);
+    r.comentario = cm.comentario; r.justificativa = cm.justificativa;
     r.fotos = marcarRepetidas(fotos);
     const lm = todas.filter(function (x) { return /Leitura Medidor/i.test(x); })[0];
     r.leitura = lm ? (lm.match(/Leitura Medidor\s*:?\s*(.*)$/i) || [])[1] : null;
@@ -633,10 +666,12 @@
     const temClima = E.equip.some(function (e) { return tipoWO(e.tipo) === "Climatização" && chaveSeg(e.segmento) === "CLIMA" && ativo(e); }) ||
       E.pdfs.some(function (p) { return p.segmento === "CLIMA"; }) ||
       E.vals.some(function (v) { return chaveSeg(v.segmento) === "CLIMA" && String(v.mes_inicio || v.inicio || "").slice(0, 7) === E.mes; });
+    const temEnergia = tipos.indexOf("Energia") >= 0;
     tipos.forEach(function (tipo) {
       const wo = E.wos.filter(function (w) { return tipoWO(w.tipo) === tipo; }).map(function (w) { return w.wo; }).join(", ");
       const bloco = "WO " + tipo + " · " + wo;
       E.regras.forEach(function (r) {
+        if (tipo !== "Energia" && temEnergia && r.situacao_wo === "Solta") return;   // abas soltas já estão na WO de Energia
         const modo = tipo === "Energia" ? r.obrig_energia : tipo === "Climatização" ? r.obrig_clima : "nao";
         if (!modo || modo === "nao" || modo === "outro_setor") return;
         const sk = chaveSeg(r.segmento);
@@ -698,6 +733,18 @@
       if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente||O cliente só conta uma ficha por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
       if (normFato(val.status) === "EM ANDAMENTO") a.push("Aba em andamento no sistema do cliente");
       if (rep.situacaoFinal && val.fato && normFato(rep.situacaoFinal) !== normFato(val.fato)) a.push("Fato na validação (" + val.fato + ") difere da Situação Final do relatório (" + rep.situacaoFinal + ")||O resultado marcado no sistema do cliente é diferente do que consta no relatório. Se o técnico apontou pendência e finalizou como OK, o cliente pode recusar.");
+    }
+    // comentário do técnico x resultado
+    const txt = ((rep.comentario || "") + " " + (rep.justificativa || "")).trim();
+    const fatoAba = String((val && val.fato) || rep.situacaoFinal || "");
+    const fechadaOk = semAcento(fatoAba).toUpperCase().trim() === "OK";
+    if (txt && fechadaOk) {
+      const mp = txt.match(RE_PENDENCIA);
+      if (mp) a.push("Comentário indica pendência, mas a aba foi fechada como OK||O técnico escreveu \"" + (txt.length > 160 ? txt.slice(0, 160) + "..." : txt) + "\" (palavra: " + mp[0] + "). Se há pendência, a aba não pode ficar OK e o cliente pode recusar; a aba precisa ser refeita.");
+    }
+    if (l.segKey === "ZELADORIA") {
+      const restrito = /RESTRI|NAO OK/.test(semAcento(fatoAba).toUpperCase());
+      if (restrito && RE_ZELADORIA.test(txt) && !(E.escal && E.escal.chamado)) a.push("Zeladoria com restrição por vegetação ou similar, sem chamado de escalonamento||Quando o motivo é mato alto, vegetação ou algo parecido, o técnico precisa abrir chamado de escalonamento com a detentora. A foto não prova isso, então a validadora confere e registra o número do chamado aqui no detalhe da aba; ele fica guardado para o site.");
     }
     // fotos
     const fotos = rep.fotos || [];
@@ -805,6 +852,37 @@
     if (tr) abrirDetalhe(E.linhas[Number(tr.getAttribute("data-i"))]);
   });
 
+  function comentarioHtml(r) {
+    if (!r || (!r.comentario && !r.justificativa)) return "";
+    return '<div class="msec"><h4>Comentário do técnico</h4>' + (r.comentario ? '<div class="cmt">' + esc(r.comentario) + "</div>" : "") + (r.justificativa ? '<div class="g" style="margin:6px 0 2px">Justificativa</div><div class="cmt">' + esc(r.justificativa) + "</div>" : "") + "</div>";
+  }
+  function restritoZel(l) {
+    const r = l.rep, v = l.val;
+    const f = semAcento(String((v && v.fato) || (r && r.situacaoFinal) || "")).toUpperCase();
+    return l.segKey === "ZELADORIA" && /RESTRI|NAO OK/.test(f);
+  }
+  function escalHtml(l) {
+    if (!l.rep || !restritoZel(l)) return "";
+    const e = E.escal || {};
+    return '<div class="msec" id="secEscal"><h4>Chamado de escalonamento com a detentora</h4>' +
+      '<div class="linha"><div><div class="lab">Número do chamado <span class="laranja">*</span></div><input class="campo" id="eChamado" value="' + esc(e.chamado || "") + '"></div>' +
+      '<div style="flex:1;min-width:240px"><div class="lab">Observação</div><input class="campo" id="eObs" style="width:100%" value="' + esc(e.observacao || "") + '"></div>' +
+      '<button class="btn" id="eSalvar" disabled>Registrar chamado</button></div><div class="g" id="eMsg">' + (e.chamado ? "Registrado por " + esc(e.registrado_por || "") : "") + "</div></div>";
+  }
+  function ligarEscal(l) {
+    if (!$("eSalvar")) return;
+    function validar() { $("eSalvar").disabled = !$("eChamado").value.trim(); }
+    $("eChamado").addEventListener("input", validar); validar();
+    $("eSalvar").addEventListener("click", async function () {
+      $("eSalvar").disabled = true; $("eMsg").textContent = "Gravando...";
+      const row = { chave: E.siteChave + "|" + E.mes + "|zeladoria", site_chave: E.siteChave, mes: E.mes + "-01", motivo: (l.rep.comentario || "").slice(0, 300), chamado: $("eChamado").value.trim(), observacao: $("eObs").value.trim() || null, registrado_por: E.usuario, registrado_em: new Date().toISOString() };
+      const g = await banco.from("escalonamentos").upsert(row, { onConflict: "chave" });
+      if (g.error) { $("eMsg").innerHTML = '<span class="erro">Erro ao gravar: ' + esc(g.error.message) + "</span>"; $("eSalvar").disabled = false; return; }
+      E.escal = row;
+      $("eMsg").textContent = "Chamado registrado.";
+      recalcular();
+    });
+  }
   function achHtml(t) {
     const q = String(t).split("||");
     return '<div class="ach"><div>' + esc(q[0]) + "</div>" + (q[1] ? '<div class="g" style="margin-top:4px">' + esc(q[1]) + "</div>" : "") + "</div>";
@@ -834,6 +912,13 @@
     return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
   const RESULT_BORNES = ["Sem jump", "Tipo A", "Tipo B", "Suspeito", "Ininteligível"];
+  const DESC_BORNES = {
+    "Sem jump": "Bornes com a ligação normal, sem ponte ou fio forçando o alarme.",
+    "Tipo A": "Jump evidente: fio ou ponte ligando dois bornes de forma direta, mantendo o alarme desligado.",
+    "Tipo B": "Jump possível: ligação fora do padrão (fio solto, emenda ou borne em curto) que pode estar escondendo um alarme.",
+    "Suspeito": "Não dá para afirmar pela foto, mas faltam alarmes que deveriam aparecer ou algo não bate; a validadora investiga.",
+    "Ininteligível": "A foto não permite avaliar (escura, tremida, longe ou fora de enquadramento); o técnico precisa refazer a foto."
+  };
   function bornesHtml(l, bi) {
     const b = E.bornes[l.rep.arquivo] || {};
     return '<div class="msec" id="secBornes"><h4>Conferência dos bornes (QIT)</h4>' +
@@ -841,7 +926,7 @@
       '<div class="linha" style="margin-top:12px"><button class="btn2" id="bDesfazer">Desfazer círculo</button><button class="btn2" id="bLimpar">Limpar</button></div>' +
       '<div class="linha"><div><div class="lab">Resultado <span class="laranja">*</span></div><select class="campo" id="bRes"><option value=""></option>' + RESULT_BORNES.map(function (x) { return '<option' + (b.resultado === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
       '<div style="flex:1;min-width:260px"><div class="lab">Comentário <span class="laranja">*</span></div><input class="campo" id="bCom" style="width:100%" value="' + esc(b.comentario || "") + '"></div>' +
-      '<button class="btn" id="bSalvar" disabled>Registrar conferência</button></div><div class="g" id="bMsg">' + (b.gravado ? "Conferida por " + esc(b.por || "") : "") + "</div></div>";
+      '<button class="btn" id="bSalvar" disabled>Registrar conferência</button></div><div class="leg">' + RESULT_BORNES.map(function (x) { return "<div><b>" + x + "</b> · " + DESC_BORNES[x] + "</div>"; }).join("") + '</div><div class="g" id="bMsg" style="margin-top:8px">' + (b.gravado ? "Conferida por " + esc(b.por || "") : "") + "</div></div>";
   }
   function ligarBornes(l) {
     const cv = $("cvBornes");
@@ -900,23 +985,24 @@
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
       kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Não consta no Cronograma" : "")) +
       kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
-      medicoesHtml(r) + fotosHtml(l) +
+      comentarioHtml(r) + escalHtml(l) + medicoesHtml(r) + fotosHtml(l) +
       '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
       (l.faltando ? '<div class="ach"><div>Aba obrigatória sem preenchimento no sistema do cliente</div><div class="g" style="margin-top:4px">O Cronograma pede esta aba para a WO, mas ela não consta na Validação do mês. Confira em "No Cronograma" se o equipamento realmente se aplica.</div></div>' : (l.achados || []).length ? l.achados.map(achHtml).join("") : '<div class="g">Nenhum achado.</div>') + "</div>";
     $("modal").classList.remove("oculto");
     $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
     ligarBornes(l);
+    ligarEscal(l);
   }
   $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) $("modal").classList.add("oculto"); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("modal").classList.add("oculto"); });
 
   // ==== EXPORTAR E GRAVAR ==================================================
   $("botaoExcel").addEventListener("click", function () {
-    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados"];
+    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico"];
     const linhas = E.linhas.map(function (l) {
       const r = l.rep, v = l.val;
       return [l.bloco, l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
-        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — ")];
+        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — "), r ? ((r.comentario || "") + (r.justificativa ? " | Justificativa: " + r.justificativa : "")) : ""];
     });
     const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas));
     const wb = XLSX.utils.book_new();
