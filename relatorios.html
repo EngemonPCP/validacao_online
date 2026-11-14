@@ -62,6 +62,11 @@
   .msec { padding:16px 24px; }
   .msec h4 { font-size:14px; font-weight:600; margin-bottom:10px; }
   .ach { border-left:3px solid var(--laranja); background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
+  .fotos { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+  .fto img { width:100%; height:130px; object-fit:cover; background:var(--cinza2); display:block; margin-bottom:4px; }
+  .fto { font-size:12px; }
+  .bcv canvas { width:100%; max-width:560px; cursor:crosshair; display:block; touch-action:none; background:#161616; }
+  .laranja { color:var(--laranja); }
   .x { background:none; border:0; font-size:22px; color:#525252; cursor:pointer; padding:0 4px; }
 </style>
 </head>
@@ -205,8 +210,130 @@
     return r;
   }
 
+  // ==== MEDIÇÕES E ALARMES =================================================
+  // Limites usados na análise técnica. Ajuste aqui conforme a realidade da operação.
+  const LIM = {
+    tensaoFN: [[105, 145], [190, 250]],      // fase-neutro: sistema 127 V ou 220 V
+    tensaoFF: [[190, 245], [340, 420]],      // fase-fase: 220 V ou 380 V
+    razaoFFFN: 1.732, tolRazao: 0.10,        // fase-fase deve ser ~1,73 x fase-neutro
+    desqTensao: 10,                          // desequilíbrio máximo entre fases (%)
+    desqCorrente: 25,                        // desequilíbrio máximo entre fases (%)
+    tempMax: 70,                             // temperatura máxima (ºC)
+    dcV: [44, 58],                           // tensão de saída DC do retificador (V)
+    fatorAcDc: 5                             // corrente AC acima de 5x o esperado pela carga DC é suspeita
+  };
+
+  function nums(l) { return (String(l).match(/-?\d+(?:[.,]\d+)?/g) || []).map(function (x) { return parseFloat(x.replace(",", ".")); }); }
+  function situacaoDe(l) { const m = String(l).match(/(NÃO OK|NAO OK|OK|NA)\s*$/); return m ? m[1] : null; }
+  function fmt(v) { return String(Math.round(v * 100) / 100).replace(".", ","); }
+  function dentro(v, faixas) { return faixas.some(function (f) { return v >= f[0] && v <= f[1]; }); }
+  function desq(v) { const med = (v[0] + v[1] + v[2]) / 3; return med ? (Math.max.apply(null, v) - Math.min.apply(null, v)) / med * 100 : 0; }
+
+  // Lê os blocos "Medição - ..." de todas as páginas.
+  function extrairMedicoes(linhas) {
+    const m = {};
+    for (let i = 0; i < linhas.length; i++) {
+      const t = linhas[i].match(/^Medição - (.+)$/);
+      if (!t) continue;
+      const tit = t[1].toUpperCase();
+      const bloco = [];
+      let j = i + 1;
+      while (j < linhas.length && !/^Medição - /.test(linhas[j]) && !/^(Histórico de Ações|Fotos do Relatório|Observação)/.test(linhas[j])) { bloco.push(linhas[j]); j++; }
+      const dados = bloco.filter(function (l) { return /^-?\d/.test(l); });
+      if (/^TENSÃO\(VCA\)/.test(tit)) { if (dados[0]) m.tensaoFN = nums(dados[0]).slice(0, 3); if (dados[1]) m.tensaoFF = nums(dados[1]).slice(0, 3); m.sitTensao = [dados[0], dados[1]].map(situacaoDe).filter(Boolean); }
+      else if (/^CORRENTE\(A\)/.test(tit)) { if (dados[0]) { m.corrente = nums(dados[0]).slice(0, 3); m.sitCorrente = situacaoDe(dados[0]); } }
+      else if (/^TEMPERATURA/.test(tit)) { if (dados[0]) { m.temp = nums(dados[0]).slice(0, 3); m.sitTemp = situacaoDe(dados[0]); } }
+      else if (/^BALANCEAMENTO/.test(tit)) { if (dados[0]) m.balanc = nums(dados[0]).slice(0, 3); }
+      else if (/^TENSÃO ENT\. AC/.test(tit)) { if (dados[0]) { m.acTensao = nums(dados[0]).slice(0, 3); } }
+      else if (/^CORRENTE DE ENTRADA AC/.test(tit)) { if (dados[0]) { m.acCorrente = nums(dados[0]).slice(0, 3); } }
+      else if (/^POTÊNCIA/.test(tit)) { if (dados[0]) { const n = nums(dados[0]); m.potKw = n[0]; m.potPct = n[1]; } }
+      else if (/^GERAL/.test(tit)) {
+        bloco.forEach(function (l, k) {
+          const mm = l.match(/^(.+?)\s+(-?\d+(?:[.,]\d+)?)\s+(?:OK|NÃO OK|NAO OK|NA)\b/);
+          let rot = null, val = null;
+          if (mm) { rot = mm[1]; val = parseFloat(mm[2].replace(",", ".")); }
+          else if (/^-?\d+(?:[.,]?\d+)?\s+(?:OK|NÃO OK|NAO OK|NA)\b/.test(l) && k > 0) { rot = bloco[k - 1]; val = parseFloat(l.match(/^-?\d+(?:[.,]\d+)?/)[0].replace(",", ".")); }
+          if (rot == null) return;
+          if (/TENSÃO DE SAÍDA DC/.test(rot)) m.dcV = val;
+          else if (/CORRENTE DE SAÍDA DC/.test(rot)) m.dcI = val;
+          else if (/FLUT/.test(rot)) m.dcFlut = val;
+        });
+      }
+    }
+    return m;
+  }
+
+  // Regras de coerência das medições. Devolve a lista de achados.
+  function analisarMedicoes(m, seg) {
+    const a = [];
+    const ok3 = function (v) { return v && v.length === 3 && v.every(function (x) { return !isNaN(x); }); };
+    if (ok3(m.tensaoFN)) {
+      if (m.tensaoFN.some(function (x) { return !dentro(x, LIM.tensaoFN); })) a.push("Tensão fase-neutro fora da faixa esperada: " + m.tensaoFN.map(fmt).join(" / ") + " V");
+      if (desq(m.tensaoFN) > LIM.desqTensao) a.push("Tensão fase-neutro desequilibrada (" + fmt(desq(m.tensaoFN)) + "%): " + m.tensaoFN.map(fmt).join(" / ") + " V");
+      if (m.tensaoFN[0] === m.tensaoFN[1] && m.tensaoFN[1] === m.tensaoFN[2]) a.push("Tensão fase-neutro igual nas 3 fases: " + fmt(m.tensaoFN[0]) + " V");
+    }
+    if (ok3(m.tensaoFF)) {
+      if (m.tensaoFF.some(function (x) { return !dentro(x, LIM.tensaoFF); })) a.push("Tensão fase-fase fora da faixa esperada: " + m.tensaoFF.map(fmt).join(" / ") + " V");
+      if (desq(m.tensaoFF) > LIM.desqTensao) a.push("Tensão fase-fase desequilibrada (" + fmt(desq(m.tensaoFF)) + "%): " + m.tensaoFF.map(fmt).join(" / ") + " V");
+    }
+    if (ok3(m.tensaoFN) && ok3(m.tensaoFF)) {
+      const fn = (m.tensaoFN[0] + m.tensaoFN[1] + m.tensaoFN[2]) / 3, ff = (m.tensaoFF[0] + m.tensaoFF[1] + m.tensaoFF[2]) / 3;
+      if (fn > 0 && Math.abs(ff / fn - LIM.razaoFFFN) / LIM.razaoFFFN > LIM.tolRazao) a.push("Tensão fase-fase (" + fmt(ff) + " V) não combina com a fase-neutro (" + fmt(fn) + " V)");
+    }
+    [["corrente", "Corrente"], ["acCorrente", "Corrente de entrada AC"]].forEach(function (c) {
+      const v = m[c[0]];
+      if (!ok3(v)) return;
+      if (v.some(function (x) { return x === 0; }) && !v.every(function (x) { return x === 0; })) a.push(c[1] + " zerada em uma das fases: " + v.map(fmt).join(" / ") + " A");
+      else if (desq(v) > LIM.desqCorrente) a.push(c[1] + " desequilibrada (" + fmt(desq(v)) + "%): " + v.map(fmt).join(" / ") + " A");
+      if (v[0] === v[1] && v[1] === v[2] && v[0] !== 0) a.push(c[1] + " igual nas 3 fases: " + fmt(v[0]) + " A");
+    });
+    if (ok3(m.temp) && m.temp.some(function (x) { return x > LIM.tempMax; })) a.push("Temperatura acima de " + LIM.tempMax + " ºC: " + m.temp.map(fmt).join(" / ") + " ºC");
+    if (m.dcV != null && !isNaN(m.dcV) && (m.dcV < LIM.dcV[0] || m.dcV > LIM.dcV[1])) a.push("Tensão de saída DC fora da faixa esperada: " + fmt(m.dcV) + " V");
+    if (m.dcV != null && m.dcI != null && m.potKw != null && m.dcV * m.dcI > 0) {
+      const calc = m.dcV * m.dcI / 1000;
+      if (Math.abs(calc - m.potKw) / calc > 0.25) a.push("Potência consumida (" + fmt(m.potKw) + " kW) não bate com tensão x corrente DC (" + fmt(calc) + " kW)");
+    }
+    if (ok3(m.acTensao) && ok3(m.acCorrente) && m.potKw != null && m.potKw > 0) {
+      const vac = (m.acTensao[0] + m.acTensao[1] + m.acTensao[2]) / 3, iac = (m.acCorrente[0] + m.acCorrente[1] + m.acCorrente[2]) / 3;
+      const kva = 1.732 * vac * iac / 1000;
+      if (kva > LIM.fatorAcDc * (m.potKw / 0.85)) a.push("Corrente de entrada AC (" + m.acCorrente.map(fmt).join(" / ") + " A, cerca de " + fmt(kva) + " kVA) incompatível com a potência consumida (" + fmt(m.potKw) + " kW)");
+    }
+    return a;
+  }
+
+  // Leitura de medidor em sequência, repetida ou curta demais.
+  function leituraSuspeita(txt) {
+    const d = String(txt || "").replace(/\D/g, "");
+    if (!d) return false;
+    if (d.length < 3) return true;
+    if (/^(\d)\1+$/.test(d)) return true;
+    let asc = true, desc = true, par = d.length % 2 === 0;
+    for (let i = 1; i < d.length; i++) {
+      const x = Number(d[i]) - Number(d[i - 1]);
+      if (x !== 1 && !(d[i - 1] === "9" && d[i] === "0")) asc = false;
+      if (x !== -1 && !(d[i - 1] === "0" && d[i] === "9")) desc = false;
+    }
+    if (asc || desc) return true;
+    if (par) {
+      let ok = true;
+      for (let i = 0; i < d.length; i += 2) if (d[i] !== d[i + 1]) ok = false;
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  // Checklist de alarmes (itens numerados com Inicial e Final).
+  function extrairAlarmes(linhas) {
+    const itens = [];
+    linhas.forEach(function (l) {
+      const m = l.match(/^(\d+) - (.+?)\s+(OK|NA|NÃO OK|NAO OK)\s+(OK|NA|NÃO OK|NAO OK)$/);
+      if (m) itens.push({ n: Number(m[1]), nome: m[2], ini: m[3], fim: m[4] });
+    });
+    return itens;
+  }
+
   // ==== ESTADO =============================================================
-  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "" };
+  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {} };
 
   // ==== LOGIN ==============================================================
   async function iniciar() {
@@ -221,6 +348,8 @@
     $("telaApp").classList.remove("oculto");
     const h = new Date();
     if (!$("mes").value) $("mes").value = h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0");
+    const q = new URLSearchParams(location.search);
+    if (q.get("site")) { $("site").value = q.get("site"); if (/^\d{4}-\d{2}$/.test(q.get("mes") || "")) $("mes").value = q.get("mes"); consultar(); }
   }
   $("botaoEntrar").addEventListener("click", async function () {
     $("msgLogin").textContent = "";
@@ -245,6 +374,11 @@
     const falha = [wos, eq, va, rg].filter(function (r) { return r.error; })[0];
     if (falha) { $("msg").innerHTML = '<span class="erro">Não consegui consultar: ' + esc(falha.error.message) + "</span>"; return; }
     E.wos = wos.data || []; E.equip = eq.data || []; E.vals = va.data || []; E.regras = rg.data || [];
+    E.bornes = {};
+    try {
+      const bo = await banco.from("bornes_conferencia").select("*").eq("site_chave", E.siteChave).eq("mes", mes + "-01");
+      if (!bo.error) (bo.data || []).forEach(function (b) { E.bornes[b.arquivo] = { resultado: b.resultado, comentario: b.comentario, circulos: b.circulos || [], por: b.conferido_por, gravado: true }; });
+    } catch (e) { /* tabela ainda não criada */ }
     $("msg").textContent = "";
     const tipos = {};
     E.wos.forEach(function (w) { tipos[tipoWO(w.tipo)] = (tipos[tipoWO(w.tipo)] || []).concat(w.wo); });
@@ -258,6 +392,141 @@
   $("botaoConsultar").addEventListener("click", consultar);
   $("site").addEventListener("keydown", function (e) { if (e.key === "Enter") consultar(); });
 
+  // ==== FOTOS ==============================================================
+  const FOTO_MIN = 200;          // lado mínimo (px) para considerar foto; abaixo disso é logotipo/ícone
+  const FOTO_DIST = 8;           // diferença máxima (de 256 bits) para duas fotos serem "a mesma"
+  const FOTO_MAX = 1280;         // largura máxima guardada
+  const TESSERACT = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+
+  function mulM(a, b) { return [a[0] * b[0] + a[1] * b[2], a[0] * b[1] + a[1] * b[3], a[2] * b[0] + a[3] * b[2], a[2] * b[1] + a[3] * b[3], a[4] * b[0] + a[5] * b[2] + b[4], a[4] * b[1] + a[5] * b[3] + b[5]]; }
+  function imagemParaCanvas(img) {
+    const c = document.createElement("canvas");
+    if (img.bitmap) { c.width = img.bitmap.width; c.height = img.bitmap.height; c.getContext("2d").drawImage(img.bitmap, 0, 0); return c; }
+    const w = img.width, h = img.height, n = w * h, d = img.data;
+    if (!d) return null;
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d"), out = ctx.createImageData(w, h), o = out.data;
+    if (d.length === n * 4) o.set(d);
+    else if (d.length === n * 3) for (let i = 0; i < n; i++) { o[i * 4] = d[i * 3]; o[i * 4 + 1] = d[i * 3 + 1]; o[i * 4 + 2] = d[i * 3 + 2]; o[i * 4 + 3] = 255; }
+    else if (d.length === n) for (let i = 0; i < n; i++) { o[i * 4] = o[i * 4 + 1] = o[i * 4 + 2] = d[i]; o[i * 4 + 3] = 255; }
+    else return null;
+    ctx.putImageData(out, 0, 0);
+    return c;
+  }
+  function dhash(c) {
+    const s2 = document.createElement("canvas"); s2.width = 17; s2.height = 16;
+    const x = s2.getContext("2d"); x.drawImage(c, 0, 0, 17, 16);
+    const d = x.getImageData(0, 0, 17, 16).data;
+    const g = function (i) { return d[i * 4] * 0.3 + d[i * 4 + 1] * 0.59 + d[i * 4 + 2] * 0.11; };
+    let bits = "";
+    for (let y = 0; y < 16; y++) for (let k = 0; k < 16; k++) bits += g(y * 17 + k) > g(y * 17 + k + 1) ? "1" : "0";
+    return bits;
+  }
+  function distHash(a, b) { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; }
+
+  // Acha as fotos de uma página, com a legenda (texto logo abaixo ou acima).
+  async function extrairFotos(lib, pag, numPag, items) {
+    const O = lib.OPS;
+    const ol = await pag.getOperatorList();
+    let ctm = [1, 0, 0, 1, 0, 0];
+    const pilha = [], achadas = [];
+    for (let i = 0; i < ol.fnArray.length; i++) {
+      const fn = ol.fnArray[i], ar = ol.argsArray[i];
+      if (fn === O.save) pilha.push(ctm.slice());
+      else if (fn === O.restore) ctm = pilha.pop() || [1, 0, 0, 1, 0, 0];
+      else if (fn === O.transform) ctm = mulM(ar, ctm);
+      else if (fn === O.paintImageXObject) {
+        const id = ar[0];
+        if (/^g_/.test(id)) continue;
+        const w = Math.hypot(ctm[0], ctm[1]), h = Math.hypot(ctm[2], ctm[3]);
+        const x0 = Math.min(ctm[4], ctm[4] + ctm[0] + ctm[2]), y0 = Math.min(ctm[5], ctm[5] + ctm[1] + ctm[3]);
+        achadas.push({ id: id, x: x0, y: y0, w: w, h: h });
+      }
+    }
+    const fotos = [];
+    for (let k = 0; k < achadas.length; k++) {
+      const a = achadas[k];
+      const obj = await new Promise(function (res) { let feito = false; const t = setTimeout(function () { if (!feito) res(null); }, 4000); try { pag.objs.get(a.id, function (o) { feito = true; clearTimeout(t); res(o); }); } catch (e) { clearTimeout(t); res(null); } });
+      if (!obj || (obj.width || 0) < FOTO_MIN || (obj.height || 0) < FOTO_MIN) continue;
+      const c = imagemParaCanvas(obj);
+      if (!c) continue;
+      // legenda: linhas de texto logo abaixo da foto (até 45 pt) dentro da largura dela; se não houver, logo acima
+      const noX = items.filter(function (t) { return t.str && t.str.trim() && t.transform[4] >= a.x - 6 && t.transform[4] <= a.x + a.w; });
+      let cand = noX.filter(function (t) { return t.transform[5] <= a.y + 2 && t.transform[5] >= a.y - 45; });
+      if (!cand.length) cand = noX.filter(function (t) { return t.transform[5] >= a.y + a.h - 2 && t.transform[5] <= a.y + a.h + 30; });
+      cand.sort(function (u, v) { return Math.abs(u.transform[5] - a.y) - Math.abs(v.transform[5] - a.y) || u.transform[4] - v.transform[4]; });
+      const legenda = cand.length ? cand.filter(function (t) { return Math.abs(t.transform[5] - cand[0].transform[5]) < 3; }).sort(function (u, v) { return u.transform[4] - v.transform[4]; }).map(function (t) { return t.str.trim(); }).join(" ") : "";
+      const esc2 = Math.min(1, FOTO_MAX / c.width);
+      const c2 = document.createElement("canvas"); c2.width = Math.round(c.width * esc2); c2.height = Math.round(c.height * esc2);
+      c2.getContext("2d").drawImage(c, 0, 0, c2.width, c2.height);
+      fotos.push({ pagina: numPag, legenda: legenda, w: c.width, h: c.height, hash: dhash(c2), url: c2.toDataURL("image/jpeg", 0.82), repetida: null, carimbo: null });
+    }
+    return fotos;
+  }
+  function marcarRepetidas(fotos) {
+    fotos.forEach(function (f, i) {
+      for (let j = 0; j < i; j++) if (distHash(f.hash, fotos[j].hash) <= FOTO_DIST) { f.repetida = j + 1; break; }
+    });
+    return fotos;
+  }
+
+  // Lê data e hora carimbadas na foto (texto do OCR).
+  const MESES_ABR = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
+  function lerCarimbo(txt) {
+    const t = String(txt || "").replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0").replace(/\s+/g, " ");
+    let d = null, m;
+    if ((m = t.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(20\d{2})/))) d = [Number(m[3]), Number(m[2]), Number(m[1])];
+    else if ((m = t.match(/(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/))) d = [Number(m[1]), Number(m[2]), Number(m[3])];
+    else if ((m = t.match(/(\d{1,2})\s*(?:de\s*)?(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-zç]*\.?,?\s*(?:de\s*)?(20\d{2})/i))) d = [Number(m[3]), MESES_ABR[m[2].toLowerCase()], Number(m[1])];
+    const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
+    if (!d || d[1] < 1 || d[1] > 12 || d[2] < 1 || d[2] > 31) return h ? { data: null, hora: h[0] } : null;
+    const pad = function (n) { return (n < 10 ? "0" : "") + n; };
+    return { data: d[0] + "-" + pad(d[1]) + "-" + pad(d[2]), hora: h ? h[0] : null };
+  }
+  let tess = null, tessFalhou = false;
+  async function carregarTesseract() {
+    if (tess) return tess;
+    if (tessFalhou) return null;
+    try {
+      await new Promise(function (ok, no) { const sc = document.createElement("script"); sc.src = TESSERACT; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+      tess = await window.Tesseract.createWorker("eng");
+      return tess;
+    } catch (e) { tessFalhou = true; return null; }
+  }
+  function carregarImg(url) { return new Promise(function (ok, no) { const im = new Image(); im.onload = function () { ok(im); }; im.onerror = no; im.src = url; }); }
+  async function ocrFoto(w, foto) {
+    const im = await carregarImg(foto.url);
+    const tentativas = [[0.6, 1], [0, 1]];
+    for (let k = 0; k < tentativas.length; k++) {
+      const topo = tentativas[k][0] * im.height, alt = im.height - topo;
+      const esc3 = Math.max(1, Math.min(2, 1600 / im.width));
+      const c = document.createElement("canvas"); c.width = Math.round(im.width * esc3); c.height = Math.round(alt * esc3);
+      const x = c.getContext("2d"); x.drawImage(im, 0, topo, im.width, alt, 0, 0, c.width, c.height);
+      const r = await w.recognize(c);
+      const ca = lerCarimbo(r.data.text);
+      if (ca && ca.data) return ca;
+    }
+    return null;
+  }
+  async function lerCarimbos() {
+    const fila = [];
+    E.pdfs.forEach(function (p) { (p.fotos || []).forEach(function (f) { if (f.carimbo === null) fila.push([p, f]); }); });
+    if (!fila.length) return;
+    $("msg").textContent = "Preparando a leitura de data e hora das fotos...";
+    const w = await carregarTesseract();
+    if (!w) { $("msg").textContent = "Não consegui carregar a leitura de data e hora das fotos."; return; }
+    const consulta = E.siteChave + E.mes;
+    for (let i = 0; i < fila.length; i++) {
+      if (consulta !== E.siteChave + E.mes) return;
+      $("msg").textContent = "Lendo data e hora das fotos: " + (i + 1) + " de " + fila.length;
+      try { fila[i][1].carimbo = (await ocrFoto(w, fila[i][1])) || false; } catch (e) { fila[i][1].carimbo = false; }
+      fila[i][0].ocrFeito = (fila[i][0].fotos || []).every(function (f) { return f.carimbo !== null; });
+      if (fila[i][0].ocrFeito) recalcular();
+    }
+    $("msg").textContent = "";
+    recalcular();
+  }
+
   // ==== LEITURA DOS PDFs ===================================================
   async function carregarPdfjs() {
     if (pdfjs) return pdfjs;
@@ -268,10 +537,22 @@
   async function lerPdf(arquivo) {
     const lib = await carregarPdfjs();
     const doc = await lib.getDocument({ data: await arquivo.arrayBuffer() }).promise;
-    const pag = await doc.getPage(1);
-    const tc = await pag.getTextContent();
-    const r = interpretarPagina1(juntarLinhas(tc.items), arquivo.name);
+    let todas = [], primeira = null, fotos = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      const pag = await doc.getPage(n);
+      const tc = await pag.getTextContent();
+      try { (await extrairFotos(lib, pag, n, tc.items)).forEach(function (f) { fotos.push(f); }); } catch (e) { /* segue sem fotos desta página */ }
+      const lin = juntarLinhas(tc.items);
+      if (n === 1) primeira = lin;
+      todas = todas.concat(lin.filter(function (x) { return !/^Infratel - Relat/.test(x) && !/^Página \d+ de \d+/.test(x); }));
+    }
+    const r = interpretarPagina1(primeira, arquivo.name);
     r.paginas = doc.numPages;
+    r.medicoes = extrairMedicoes(todas);
+    r.alarmes = extrairAlarmes(todas);
+    r.fotos = marcarRepetidas(fotos);
+    const lm = todas.filter(function (x) { return /Leitura Medidor/i.test(x); })[0];
+    r.leitura = lm ? (lm.match(/Leitura Medidor\s*:?\s*(.*)$/i) || [])[1] : null;
     try { doc.destroy(); } catch (e) { /* ignora */ }
     return r;
   }
@@ -290,6 +571,7 @@
     }
     $("msg").textContent = "";
     recalcular();
+    lerCarimbos();
   }
   $("drop").addEventListener("click", function () { $("arquivos").click(); });
   $("arquivos").addEventListener("change", function (e) { receberArquivos(e.target.files); e.target.value = ""; });
@@ -308,7 +590,9 @@
     const tipos = [];
     E.wos.forEach(function (w) { const t = tipoWO(w.tipo); if (tipos.indexOf(t) < 0) tipos.push(t); });
     tipos.sort(function (a, b) { const ia = ordem.indexOf(a), ib = ordem.indexOf(b); return (ia < 0 ? 9 : ia) - (ib < 0 ? 9 : ib); });
-    const temClima = E.equip.some(function (e) { return tipoWO(e.tipo) === "Climatização" && chaveSeg(e.segmento) === "CLIMA" && ativo(e); });
+    const temClima = E.equip.some(function (e) { return tipoWO(e.tipo) === "Climatização" && chaveSeg(e.segmento) === "CLIMA" && ativo(e); }) ||
+      E.pdfs.some(function (p) { return p.segmento === "CLIMA"; }) ||
+      E.vals.some(function (v) { return chaveSeg(v.segmento) === "CLIMA" && String(v.mes_inicio || v.inicio || "").slice(0, 7) === E.mes; });
     tipos.forEach(function (tipo) {
       const wo = E.wos.filter(function (w) { return tipoWO(w.tipo) === tipo; }).map(function (w) { return w.wo; }).join(", ");
       const bloco = "WO " + tipo + " · " + wo;
@@ -353,7 +637,7 @@
     const tk = String(rep.ticket || "");
     if (!tk) a.push("Relatório sem ticket");
     else if (ehProvisorio(tk)) {
-      a.push("Ticket provisório (" + tk + ")");
+      // Provisório (mês e ano) é uma regra combinada quando a WO demora a abrir: só avisa se for de outro mês.
       if (mesDoProvisorio(tk) !== E.mes) a.push("Ticket provisório de " + nomeMes(mesDoProvisorio(tk)) + " em relatório de " + nomeMes(E.mes));
     }
     else {
@@ -374,6 +658,30 @@
       if (normFato(val.status) === "EM ANDAMENTO") a.push("Aba em andamento no sistema do cliente");
       if (rep.situacaoFinal && val.fato && normFato(rep.situacaoFinal) !== normFato(val.fato)) a.push("Fato na validação (" + val.fato + ") difere da Situação Final do relatório (" + rep.situacaoFinal + ")");
     }
+    // fotos
+    const fotos = rep.fotos || [];
+    const reps = fotos.map(function (f, i) { return f.repetida ? "foto " + (i + 1) + " igual à " + f.repetida : null; }).filter(Boolean);
+    if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")");
+    if (rep.ocrFeito) {
+      const sem = fotos.filter(function (f) { return !f.carimbo; }).length;
+      if (sem) a.push("Foto sem data e hora legível: " + sem + " de " + fotos.length);
+      const fora = {};
+      fotos.forEach(function (f) { if (f.carimbo && f.carimbo.data && f.carimbo.data.slice(0, 7) !== E.mes) fora[f.carimbo.data] = 1; });
+      Object.keys(fora).forEach(function (d) { a.push("Foto com data " + dataBr(d) + " fora de " + nomeMes(E.mes)); });
+    }
+    if (l.segKey === "ALARMES") {
+      const bi = fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); });
+      if (bi < 0) { if (fotos.length) a.push("Foto dos bornes (QIT) não encontrada no relatório"); }
+      else {
+        const b = E.bornes[rep.arquivo];
+        if (b && (b.resultado === "Tipo A" || b.resultado === "Tipo B" || b.resultado === "Suspeito")) a.push("Jump nos bornes: " + b.resultado + (b.comentario ? " (" + b.comentario + ")" : ""));
+        if (b && b.resultado === "Ininteligível") a.push("Foto fora do Padrão: bornes ininteligíveis" + (b.comentario ? " (" + b.comentario + ")" : ""));
+      }
+    }
+    // análise técnica
+    if (rep.medicoes) analisarMedicoes(rep.medicoes, l.segKey).forEach(function (t) { a.push(t); });
+    if (rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura);
+    (rep.alarmes || []).forEach(function (it) { if (it.fim === "NÃO OK" || it.fim === "NAO OK") a.push("Alarme " + it.n + " - " + it.nome + ": final NÃO OK"); });
     return a;
   }
 
@@ -450,6 +758,89 @@
     if (tr) abrirDetalhe(E.linhas[Number(tr.getAttribute("data-i"))]);
   });
 
+  function medicoesHtml(r) {
+    const m = r && r.medicoes;
+    if (!m) return "";
+    const rows = [["Tensão fase-neutro (V)", m.tensaoFN], ["Tensão fase-fase (V)", m.tensaoFF], ["Corrente (A)", m.corrente], ["Temperatura (ºC)", m.temp], ["Balanceamento", m.balanc],
+      ["Tensão entrada AC (V)", m.acTensao], ["Corrente entrada AC (A)", m.acCorrente]].filter(function (x) { return x[1] && x[1].length; })
+      .map(function (x) { return "<tr><td>" + x[0] + "</td><td>" + x[1].map(fmt).join(" / ") + "</td></tr>"; });
+    if (m.potKw != null) rows.push("<tr><td>Potência</td><td>" + fmt(m.potKw) + " kW" + (m.potPct != null ? " (" + fmt(m.potPct) + "%)" : "") + "</td></tr>");
+    if (m.dcV != null) rows.push("<tr><td>Saída DC</td><td>" + fmt(m.dcV) + " V" + (m.dcI != null ? " / " + fmt(m.dcI) + " A" : "") + "</td></tr>");
+    if (r.leitura) rows.push("<tr><td>Leitura do medidor</td><td>" + esc(r.leitura) + "</td></tr>");
+    if (!rows.length) return "";
+    return '<div class="msec"><h4>Medições</h4><table class="tb"><tbody>' + rows.join("") + "</tbody></table></div>";
+  }
+  function fotosHtml(l) {
+    const r = l.rep;
+    if (!r || !r.fotos || !r.fotos.length) return "";
+    const bi = l.segKey === "ALARMES" ? r.fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); }) : -1;
+    const cards = r.fotos.map(function (f, i) {
+      const sel = [];
+      if (f.repetida) sel.push('<span class="refazer">Igual à foto ' + f.repetida + "</span>");
+      if (r.ocrFeito || f.carimbo !== null) sel.push(f.carimbo && f.carimbo.data ? dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") : '<span class="refazer">Sem data e hora</span>');
+      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + "</div></div>";
+    }).join("");
+    return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + (bi >= 0 ? bornesHtml(l, bi) : "");
+  }
+  const RESULT_BORNES = ["Sem jump", "Tipo A", "Tipo B", "Suspeito", "Ininteligível"];
+  function bornesHtml(l, bi) {
+    const b = E.bornes[l.rep.arquivo] || {};
+    return '<div class="msec" id="secBornes"><h4>Conferência dos bornes (QIT)</h4>' +
+      '<div class="bcv"><canvas id="cvBornes"></canvas></div>' +
+      '<div class="linha" style="margin-top:12px"><button class="btn2" id="bDesfazer">Desfazer círculo</button><button class="btn2" id="bLimpar">Limpar</button></div>' +
+      '<div class="linha"><div><div class="lab">Resultado <span class="laranja">*</span></div><select class="campo" id="bRes"><option value=""></option>' + RESULT_BORNES.map(function (x) { return '<option' + (b.resultado === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
+      '<div style="flex:1;min-width:260px"><div class="lab">Comentário <span class="laranja">*</span></div><input class="campo" id="bCom" style="width:100%" value="' + esc(b.comentario || "") + '"></div>' +
+      '<button class="btn" id="bSalvar" disabled>Registrar conferência</button></div><div class="g" id="bMsg">' + (b.gravado ? "Conferida por " + esc(b.por || "") : "") + "</div></div>";
+  }
+  function ligarBornes(l) {
+    const cv = $("cvBornes");
+    if (!cv) return;
+    const r = l.rep, bi = r.fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); });
+    const b = E.bornes[r.arquivo] = E.bornes[r.arquivo] || {};
+    b.circulos = b.circulos || [];
+    let img = null, arr = null;
+    function pintar(extra) {
+      const x = cv.getContext("2d");
+      x.drawImage(img, 0, 0, cv.width, cv.height);
+      x.strokeStyle = "#da1e28"; x.lineWidth = Math.max(3, cv.width / 160);
+      b.circulos.concat(extra ? [extra] : []).forEach(function (c) {
+        x.beginPath(); x.ellipse((c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2, Math.max(2, Math.abs(c.x1 - c.x0) / 2), Math.max(2, Math.abs(c.y1 - c.y0) / 2), 0, 0, Math.PI * 2); x.stroke();
+      });
+    }
+    function validar() { $("bSalvar").disabled = !($("bRes").value && $("bCom").value.trim()); }
+    carregarImg(r.fotos[bi].url).then(function (im) {
+      img = im; cv.width = im.naturalWidth; cv.height = im.naturalHeight; pintar();
+      function pos(e) { const rc = cv.getBoundingClientRect(); return { x: (e.clientX - rc.left) * cv.width / rc.width, y: (e.clientY - rc.top) * cv.height / rc.height }; }
+      cv.addEventListener("pointerdown", function (e) { const p = pos(e); arr = { x0: p.x, y0: p.y, x1: p.x, y1: p.y }; cv.setPointerCapture(e.pointerId); });
+      cv.addEventListener("pointermove", function (e) { if (!arr) return; const p = pos(e); arr.x1 = p.x; arr.y1 = p.y; pintar(arr); });
+      cv.addEventListener("pointerup", function () { if (arr && Math.abs(arr.x1 - arr.x0) > 8 && Math.abs(arr.y1 - arr.y0) > 8) b.circulos.push(arr); arr = null; pintar(); });
+    });
+    $("bDesfazer").addEventListener("click", function () { b.circulos.pop(); if (img) pintar(); });
+    $("bLimpar").addEventListener("click", function () { b.circulos = []; if (img) pintar(); });
+    $("bRes").addEventListener("change", validar);
+    $("bCom").addEventListener("input", validar);
+    validar();
+    $("bSalvar").addEventListener("click", async function () {
+      $("bSalvar").disabled = true; $("bMsg").textContent = "Gravando...";
+      b.resultado = $("bRes").value; b.comentario = $("bCom").value.trim();
+      const chave = [E.siteChave, E.mes, r.arquivo].join("|");
+      let erro = null;
+      try {
+        const blob = await new Promise(function (ok) { cv.toBlob(ok, "image/jpeg", 0.85); });
+        const caminho = E.siteChave + "/" + E.mes + "/" + r.arquivo + ".jpg";
+        const up = await banco.storage.from("bornes").upload(caminho, blob, { upsert: true, contentType: "image/jpeg" });
+        if (up.error) erro = up.error.message;
+        else {
+          const g = await banco.from("bornes_conferencia").upsert({ chave: chave, site_chave: E.siteChave, mes: E.mes + "-01", arquivo: r.arquivo, resultado: b.resultado, comentario: b.comentario, circulos: b.circulos, imagem_path: caminho, conferido_por: E.usuario, conferido_em: new Date().toISOString() }, { onConflict: "chave" });
+          if (g.error) erro = g.error.message;
+        }
+      } catch (e) { erro = String(e.message || e); }
+      if (erro) { $("bMsg").innerHTML = '<span class="erro">Erro ao gravar: ' + esc(erro) + "</span>"; $("bSalvar").disabled = false; return; }
+      b.gravado = true; b.por = E.usuario;
+      $("bMsg").textContent = "Conferência registrada.";
+      recalcular();
+    });
+  }
   function abrirDetalhe(l) {
     const r = l.rep, v = l.val;
     function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
@@ -457,10 +848,12 @@
       '<div class="mkv">' + kv("WO", l.wo ? l.tipoWo + " · " + l.wo : "Fora do Cronograma") + kv("Ticket", r && r.ticket) + kv("Resultado no relatório", r && r.situacaoFinal) +
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
       kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
+      medicoesHtml(r) + fotosHtml(l) +
       '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
       (l.faltando ? '<div class="ach">Aba obrigatória sem preenchimento no sistema do cliente</div>' : (l.achados || []).length ? l.achados.map(function (t) { return '<div class="ach">' + esc(t) + "</div>"; }).join("") : '<div class="g">Nenhum achado.</div>') + "</div>";
     $("modal").classList.remove("oculto");
     $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
+    ligarBornes(l);
   }
   $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) $("modal").classList.add("oculto"); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("modal").classList.add("oculto"); });
@@ -488,7 +881,7 @@
         site: E.siteTxt.toUpperCase(), site_chave: E.siteChave, mes: E.mes + "-01", segmento: l.seg, tag: r.tag || null, arquivo: r.arquivo,
         wo: l.wo || null, ticket: r.ticket || null, situacao_final: r.situacaoFinal || null,
         data_relatorio: iso ? iso + "T" + (r.horaInicio || "00:00:00") + "-03:00" : null,
-        fotos_qtd: 0, achados: (l.achados || []).map(function (t) { return { texto: t }; }), refazer: !!l.refazer,
+        fotos_qtd: (r.fotos || []).length, achados: (l.achados || []).map(function (t) { return { texto: t }; }), refazer: !!l.refazer,
         analisado_por: E.usuario, analisado_em: new Date().toISOString()
       };
     });
