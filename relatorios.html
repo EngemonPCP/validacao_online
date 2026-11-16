@@ -1068,7 +1068,7 @@
 
   function recalcular() {
     if (E.snapModo) {   // mostrando a análise gravada: reavalia as abas gravadas, sem PDFs
-      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); if (l.segTrocado) l.achados.push("Segmento informado incorretamente: " + l.segTrocado + " em vez de " + l.seg + "||O técnico preencheu o relatório como " + l.segTrocado + ", mas a aba prevista na WO é " + l.seg + ". O sistema aceitou o relatório como " + l.seg + " automaticamente."); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
       desenhar();
       return;
     }
@@ -1106,7 +1106,7 @@
       return { bloco: "Fora do Cronograma", tipoWo: null, wo: null, seg: rg ? rg.segmento : p.segmentoTxt, segKey: p.segmento, tag: p.tag, obrig: "—", doCrono: false, regra: rg, rep: p, extra: true };
     });
     const todas = esp.concat(extras);
-    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); if (l.segTrocado) l.achados.push("Segmento informado incorretamente: " + l.segTrocado + " em vez de " + l.seg + "||O técnico preencheu o relatório como " + l.segTrocado + ", mas a aba prevista na WO é " + l.seg + ". O sistema aceitou o relatório como " + l.seg + " automaticamente."); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
     E.linhas = todas;
     desenhar();
   }
