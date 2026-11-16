@@ -511,7 +511,11 @@
     const h = new Date();
     if (!$("mes").value) $("mes").value = h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0");
     const q = new URLSearchParams(location.search);
-    if (q.get("site")) { $("site").value = q.get("site"); if (/^\d{4}-\d{2}$/.test(q.get("mes") || "")) $("mes").value = q.get("mes"); consultar(); }
+    if (q.get("site")) {
+      $("site").value = q.get("site"); if (/^\d{4}-\d{2}$/.test(q.get("mes") || "")) $("mes").value = q.get("mes");
+      try { history.replaceState(null, "", location.pathname); } catch (e) { /* segue */ }   // ao recarregar, a página abre limpa
+      consultar();
+    }
   }
   $("botaoSair").addEventListener("click", async function () {
     try { await banco.auth.signOut(); } catch (e) {}
@@ -705,8 +709,10 @@
       d = iso; break;
     }
     const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
-    if (!d) return h ? { data: null, hora: h[0] } : null;
-    return { data: d, hora: h ? h[0] : null };
+    let hora = h ? h[0] : null;
+    if (h && /^\s*PM/i.test(t.slice(h.index + h[0].length)) && Number(h[1]) < 12) hora = (Number(h[1]) + 12) + hora.slice(hora.indexOf(":"));
+    if (!d) return hora ? { data: null, hora: hora } : null;
+    return { data: d, hora: hora };
   }
   // Data de carimbo plausível: entre 18 meses antes e 2 meses depois do mês consultado (etiquetas de fábrica ficam fora).
   function dataPlausivel(iso) {
@@ -743,6 +749,7 @@
   ];
   async function ocrFoto(w, foto) {
     const im = await carregarImg(foto.url);
+    const votos = {}, achados = []; let tentativas = 0;
     for (let k = 0; k < PLANOS_OCR.length; k++) {
       const p = PLANOS_OCR[k];
       const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = Math.floor(im.width * (p.r || 1)) - x0, ch = Math.floor(im.height * (p.b || 1)) - y0;
@@ -758,9 +765,18 @@
       await w.setParameters({ tessedit_pageseg_mode: p.psm });
       const r = await w.recognize(c);
       const ca = lerCarimbo(r.data.text, dataPlausivel);
-      if (ca && ca.data) return ca;
+      if (ca && ca.data) {
+        // confirma por votação: o OCR às vezes troca um dígito (3 por 8); a data só vale quando dois recortes diferentes concordam
+        votos[ca.data] = (votos[ca.data] || 0) + 1; achados.push(ca); tentativas++;
+        if (votos[ca.data] >= 2) return ca;
+        if (tentativas >= 5) break;
+      }
     }
-    return null;
+    if (!achados.length) return null;
+    // sem acordo: fica com a data mais votada (empate: a primeira lida)
+    let melhor = achados[0];
+    achados.forEach(function (a) { if (votos[a.data] > votos[melhor.data]) melhor = a; });
+    return melhor;
   }
   async function lerCarimbos() {
     const fila = [];
@@ -768,7 +784,13 @@
     if (!fila.length) return;
     $("msg").textContent = "Preparando a leitura de data e hora das fotos...";
     const w = await carregarTesseract();
-    if (!w) { $("msg").textContent = "Não consegui carregar a leitura de data e hora das fotos."; return; }
+    if (!w) {
+      $("msg").innerHTML = '<span class="erro">Não consegui carregar a leitura automática de data e hora (sem acesso ao serviço de leitura). Informe a data de cada foto manualmente no detalhe da aba.</span>';
+      E.pdfs.forEach(function (p) { (p.fotos || []).forEach(function (f) { if (f.carimbo === null) f.carimbo = false; }); p.ocrFeito = true; });
+      recalcular();
+      return;
+    }
+    E.lendoFotos = true;
     const consulta = E.siteChave + E.mes;
     for (let i = 0; i < fila.length; i++) {
       if (consulta !== E.siteChave + E.mes) return;
@@ -777,6 +799,7 @@
       fila[i][0].ocrFeito = (fila[i][0].fotos || []).every(function (f) { return f.carimbo !== null; });
       if (fila[i][0].ocrFeito) recalcular();
     }
+    E.lendoFotos = false;
     $("msg").textContent = E.ocrErro ? "Erro na leitura de data e hora das fotos: " + E.ocrErro : "";
     recalcular();
   }
@@ -963,7 +986,7 @@
       const nv = fotosValidas(fotos), mn = FOTOS_MIN[l.segKey];
       if (nv < mn) a.push("Fotos insuficientes: " + nv + " de " + mn + " no mínimo||O relatório de " + l.seg + " precisa ter pelo menos " + mn + " fotos válidas (não repetidas e não marcadas como inadequadas). Sem isso a aba precisa ser refeita.");
     }
-    if (rep.ocrFeito) {
+    if (rep.ocrFeito || E.snapModo) {
       const sem = fotos.filter(function (f) { return !(f.carimbo && f.carimbo.data); }).length;
       if (sem) a.push("Data não identificada em " + sem + " de " + fotos.length + " fotos||A data e a hora carimbadas na foto são obrigatórias. A leitura automática não encontrou a data nestas fotos: informe a data manualmente no detalhe da aba (se a foto mostra a data) ou peça ao técnico para refazer as fotos.");
       const fora = {};
@@ -1166,7 +1189,7 @@
       const ig = igualA(r.fotos, i);
       if (ig) sel.push('<span class="refazer">Igual à foto ' + ig + "</span>");
       if (f.carimbo && f.carimbo.data) sel.push(dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") + (f.carimbo.manual ? " (informada)" : ""));
-      else if (r.ocrFeito) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
+      else if (r.ocrFeito || E.snapModo) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
       if (f.invalida) sel.unshift('<span class="refazer">Marcada como inadequada</span>');
       return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + '</div><label class="g" style="display:block;margin-top:2px"><input type="checkbox" class="inad" data-i="' + i + '"' + (f.invalida ? " checked" : "") + '> Foto inadequada</label></div>';
     }).join("");
@@ -1414,6 +1437,7 @@
   });
 
   $("botaoGravar").addEventListener("click", async function () {
+    if (E.lendoFotos) { $("msg").innerHTML = '<span class="erro">Espere terminar a leitura de data e hora das fotos antes de gravar.</span>'; return; }
     const agora = new Date().toISOString();
     const lote = E.linhas.filter(function (l) { return l.rep; }).map(function (l) {
       const r = l.rep;
