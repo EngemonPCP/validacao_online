@@ -53,7 +53,7 @@
   .cab .v { font-size:14px; }
   .erro { color:#a2191f; }
   .ov { position:fixed; inset:0; background:rgba(22,22,22,.6); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:40px 16px; z-index:10; }
-  .mod { background:#fff; width:900px; max-width:100%; }
+  .mod { background:#fff; width:1000px; max-width:100%; }
   .mh { display:flex; justify-content:space-between; align-items:flex-start; padding:20px 24px; border-bottom:1px solid var(--cinza2); }
   .mh h3 { font-size:22px; font-weight:400; }
   .mkv { display:flex; flex-wrap:wrap; gap:16px 40px; padding:14px 24px; background:var(--cinza1); border-bottom:1px solid var(--cinza2); }
@@ -62,8 +62,8 @@
   .msec { padding:16px 24px; }
   .msec h4 { font-size:14px; font-weight:600; margin-bottom:10px; }
   .ach { border-left:3px solid var(--laranja); background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
-  .fotos { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
-  .fto img { width:100%; height:130px; object-fit:cover; background:var(--cinza2); display:block; margin-bottom:4px; }
+  .fotos { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; }
+  .fto img { width:100%; height:200px; cursor:zoom-in; object-fit:cover; background:var(--cinza2); display:block; margin-bottom:4px; }
   .fto { font-size:12px; }
   .cmt { background:var(--cinza1); padding:10px 14px; white-space:pre-wrap; }
   .leg { margin-top:12px; font-size:12px; color:var(--suave); }
@@ -218,13 +218,14 @@
   // ==== MEDIÇÕES E ALARMES =================================================
   // Limites usados na análise técnica. Ajuste aqui conforme a realidade da operação.
   const LIM = {
-    tensaoFN: [[105, 145], [190, 250]],      // fase-neutro: sistema 127 V ou 220 V
-    tensaoFF: [[190, 245], [340, 420]],      // fase-fase: 220 V ou 380 V
+    tensaoFN: [[117, 133]],                  // fase-neutro (rede 127 V)
+    tensaoFF: [[202, 231]],                  // fase-fase (rede 220 V)
     razaoFFFN: 1.732, tolRazao: 0.10,        // fase-fase deve ser ~1,73 x fase-neutro
     desqTensao: 10,                          // desequilíbrio máximo entre fases (%)
     desqCorrente: 25,                        // desequilíbrio máximo entre fases (%)
-    tempMax: 70,                             // temperatura máxima (ºC)
-    dcV: [44, 58],                           // tensão de saída DC do retificador (V)
+    balancMax: 30,                           // balanceamento de corrente máximo (%)
+    tempMax: 55,                             // temperatura máxima (ºC)
+    dcV: [42, 58.4],                         // tensão de saída DC do retificador (V)
     fatorAcDc: 5                             // corrente AC acima de 5x o esperado pela carga DC é suspeita
   };
 
@@ -266,7 +267,7 @@
       if (/^TENSÃO\(VCA\)/.test(tit)) { m.tensaoFN = vf(dados[0]); m.tensaoFF = vf(dados[1]); }
       else if (/^CORRENTE\(A\)/.test(tit)) { m.corrente = vf(dados[0]); }
       else if (/^TEMPERATURA/.test(tit)) { m.temp = vf(dados[0]); }
-      else if (/^BALANCEAMENTO/.test(tit)) { m.balanc = vf(dados[0]); }
+      else if (/^BALANCEAMENTO/.test(tit)) { if (dados[0]) { const n = nums(dados[0].l.t); if (n.length >= 4) m.balancPct = n[n.length - 1]; } }
       else if (/^TENSÃO ENT\. AC/.test(tit)) { m.acTensao = vf(dados[0]); }
       else if (/^CORRENTE DE ENTRADA AC/.test(tit)) { m.acCorrente = vf(dados[0]); }
       else if (/^POTÊNCIA/.test(tit)) { if (dados[0]) { const n = nums(dados[0].l.t); m.potKw = n[0]; m.potPct = n[1]; } }
@@ -284,7 +285,33 @@
         });
       }
     }
+    m.baterias = extrairBaterias(L);
+    m.disj = extrairDisjuntores(L);
     return m;
+  }
+  // Testes de bateria: tensão de cada elemento (se todos iguais, o técnico copiou o valor).
+  function extrairBaterias(L) {
+    const out = {};
+    let modo = null;
+    L.forEach(function (l) {
+      if (/^Teste de Equaliza/i.test(l.t)) { modo = "Equalização"; out[modo] = []; return; }
+      if (/^Teste de Descarga/i.test(l.t)) { modo = "Descarga"; out[modo] = []; return; }
+      if (/^(Medição - |Fotos do Relatório|Observação|Histórico|Disjuntores|Teste )/.test(l.t)) { modo = null; return; }
+      if (modo && /^\d+ \d+ -?\d+(?:[.,]\d+)? -?\d+/.test(l.t)) out[modo].push(parseFloat(l.t.split(" ")[2].replace(",", ".")));
+    });
+    return out;
+  }
+  // Disjuntores de distribuição (QDCA): quantos estão ATI e quantas correntes foram medidas.
+  function extrairDisjuntores(L) {
+    let em = false, achou = false, thr = null, ati = 0, med = 0;
+    L.forEach(function (l) {
+      if (/^Disjuntores de Distribuição/.test(l.t)) { em = true; achou = true; return; }
+      if (!em) return;
+      if (/^(Medição - |Teste de |Fotos do Relatório|Observação|Histórico de Ações)/.test(l.t)) { em = false; return; }
+      if (/Polos/.test(l.t) && /Med\. R/.test(l.t)) { const it = l.p.filter(function (q) { return /^Med\. R/.test(q.s); })[0]; if (it) thr = it.x - 15; return; }
+      l.p.forEach(function (q) { if (q.s === "ATI") ati++; if (thr != null && q.x >= thr && /^\d+(?:[.,]\d+)?$/.test(q.s)) med++; });
+    });
+    return achou ? { ati: ati, med: med } : null;
   }
 
   // Regras de coerência das medições. Cada achado vem como "título||explicação".
@@ -292,38 +319,55 @@
   function pres(v) { return (v || []).filter(function (x) { return x != null && !isNaN(x); }); }
   function media(v) { return v.reduce(function (s0, x) { return s0 + x; }, 0) / v.length; }
   function desq(v) { const med = media(v); return med ? (Math.max.apply(null, v) - Math.min.apply(null, v)) / med * 100 : 0; }
+  function positivos(v) { return (v || []).filter(function (x) { return x != null && !isNaN(x) && x > 0; }); }
   function analisarMedicoes(m) {
     const a = [];
-    const fn = pres(m.tensaoFN), ff = pres(m.tensaoFF), co = pres(m.corrente), ac = pres(m.acCorrente), tp = pres(m.temp);
-    if (fn.some(function (x) { return !dentro(x, LIM.tensaoFN); })) a.push("Tensão fase-neutro fora da faixa: " + lista(m.tensaoFN) + " V||O esperado é de 105 a 145 V (rede 127 V) ou de 190 a 250 V (rede 220 V). Valor fora disso costuma ser erro de digitação, medição na fase errada ou problema real na rede.");
-    if (fn.length >= 2 && desq(fn) > LIM.desqTensao) a.push("Tensão fase-neutro desequilibrada (" + fmt(desq(fn)) + "%): " + lista(m.tensaoFN) + " V||A diferença entre a maior e a menor fase é de " + fmt(desq(fn)) + "% da média; o limite adotado é " + LIM.desqTensao + "%. Fases muito diferentes indicam digitação errada ou rede com problema.");
-    if (fn.length === 3 && fn[0] === fn[1] && fn[1] === fn[2]) a.push("Tensão fase-neutro igual nas 3 fases: " + fmt(fn[0]) + " V||Três medições idênticas, sem nenhuma variação, sugerem que o valor foi copiado em vez de medido.");
-    if (ff.some(function (x) { return !dentro(x, LIM.tensaoFF); })) a.push("Tensão fase-fase fora da faixa: " + lista(m.tensaoFF) + " V||O esperado é de 190 a 245 V (rede 220 V) ou de 340 a 420 V (rede 380 V).");
-    if (ff.length >= 2 && desq(ff) > LIM.desqTensao) a.push("Tensão fase-fase desequilibrada (" + fmt(desq(ff)) + "%): " + lista(m.tensaoFF) + " V||A diferença entre a maior e a menor fase é de " + fmt(desq(ff)) + "% da média; o limite adotado é " + LIM.desqTensao + "%.");
+    const nFN = positivos(m.tensaoFN).length;
+    const nFases = nFN >= 3 ? 3 : nFN === 2 ? 2 : 0;            // a primeira linha define: 2 medições = bifásico, 3 = trifásico
+    const fn = positivos(m.tensaoFN), ff = positivos(m.tensaoFF), tp = (m.temp || []).filter(function (x) { return x != null && !isNaN(x); });
+    const sis = nFases === 2 ? "bifásico" : "trifásico";
+    if (m.tensaoFN && nFN === 0) a.push("Tensão fase-neutro não medida||Nenhum valor foi lançado na tabela de tensão fase-neutro.");
+    if (m.tensaoFN && nFN === 1) a.push("Tensão fase-neutro com apenas 1 medição||O sistema bifásico tem 2 medições fase-neutro e o trifásico tem 3. Foi lançada só 1.");
+    if (nFases) {
+      const esperadoFF = nFases === 2 ? 1 : 3;
+      if (ff.length < esperadoFF) a.push("Tensão fase-fase incompleta: " + ff.length + " de " + esperadoFF + " medições||Pelas medições fase-neutro (" + nFases + " lançadas) o sistema é " + sis + ", e nele a tensão fase-fase tem " + esperadoFF + " medição(ões). Faltou lançar.");
+    }
+    if (fn.some(function (x) { return !dentro(x, LIM.tensaoFN); })) a.push("Tensão fase-neutro fora da faixa: " + lista(m.tensaoFN) + " V||A faixa aceita é de " + LIM.tensaoFN[0][0] + " a " + LIM.tensaoFN[0][1] + " V (rede 127 V). Fora disso costuma ser erro de digitação, medição no ponto errado ou problema real na rede.");
+    if (ff.some(function (x) { return !dentro(x, LIM.tensaoFF); })) a.push("Tensão fase-fase fora da faixa: " + lista(m.tensaoFF) + " V||A faixa aceita é de " + LIM.tensaoFF[0][0] + " a " + LIM.tensaoFF[0][1] + " V (rede 220 V).");
+    if (fn.length >= 2 && desq(fn) > LIM.desqTensao) a.push("Tensão fase-neutro desequilibrada (" + fmt(desq(fn)) + "%): " + lista(m.tensaoFN) + " V||A diferença entre a maior e a menor fase é de " + fmt(desq(fn)) + "% da média; o limite é " + LIM.desqTensao + "%.");
+    if (ff.length >= 2 && desq(ff) > LIM.desqTensao) a.push("Tensão fase-fase desequilibrada (" + fmt(desq(ff)) + "%): " + lista(m.tensaoFF) + " V||A diferença entre a maior e a menor fase é de " + fmt(desq(ff)) + "% da média; o limite é " + LIM.desqTensao + "%.");
+    if (fn.length === 3 && fn[0] === fn[1] && fn[1] === fn[2]) a.push("Tensão fase-neutro igual nas 3 fases: " + fmt(fn[0]) + " V||Três medições idênticas sugerem que o valor foi copiado em vez de medido.");
     if (fn.length && ff.length) {
       const f1 = media(fn), f2 = media(ff);
       const razao = f2 / f1;
       const okRazao = Math.abs(razao - LIM.razaoFFFN) / LIM.razaoFFFN <= LIM.tolRazao || Math.abs(razao - 2) / 2 <= LIM.tolRazao;
-      if (f1 > 0 && !okRazao) a.push("Tensão fase-fase (" + fmt(f2) + " V) não combina com a fase-neutro (" + fmt(f1) + " V)||Numa rede trifásica a tensão entre fases é cerca de 1,73 vezes a tensão fase-neutro (numa rede com duas fases e neutro, 2 vezes). Com " + fmt(f1) + " V de fase-neutro esperava-se perto de " + fmt(f1 * LIM.razaoFFFN) + " V, mas foi lançado " + fmt(f2) + " V. Um dos dois valores deve estar errado.");
+      if (!okRazao) a.push("Tensão fase-fase (" + fmt(f2) + " V) não combina com a fase-neutro (" + fmt(f1) + " V)||A tensão entre fases é cerca de 1,73 vezes a tensão fase-neutro. Com " + fmt(f1) + " V de fase-neutro esperava-se perto de " + fmt(f1 * LIM.razaoFFFN) + " V, mas foi lançado " + fmt(f2) + " V. Um dos dois valores deve estar errado.");
     }
-    [["corrente", "Corrente", co, m.corrente], ["acCorrente", "Corrente de entrada AC", ac, m.acCorrente]].forEach(function (c) {
-      const v = c[2];
+    [["corrente", "Corrente", m.corrente], ["acCorrente", "Corrente de entrada AC", m.acCorrente]].forEach(function (c) {
+      const v = (c[2] || []).slice(0, nFases || 3).filter(function (x) { return x != null && !isNaN(x); });
       if (!v.length) return;
-      if (v.some(function (x) { return x === 0; }) && !v.every(function (x) { return x === 0; })) a.push(c[1] + " zerada em uma das fases: " + lista(c[3]) + " A||Uma fase com 0 A enquanto as outras têm carga indica fase desligada, disjuntor aberto ou valor digitado errado.");
-      else if (v.length >= 2 && desq(v) > LIM.desqCorrente) a.push(c[1] + " desequilibrada (" + fmt(desq(v)) + "%): " + lista(c[3]) + " A||A diferença entre a maior e a menor fase é de " + fmt(desq(v)) + "% da média; o limite adotado é " + LIM.desqCorrente + "%. Carga mal distribuída entre as fases ou valor errado.");
-      if (v.length === 3 && v[0] === v[1] && v[1] === v[2] && v[0] !== 0) a.push(c[1] + " igual nas 3 fases: " + fmt(v[0]) + " A||Três medições idênticas sugerem que o valor foi copiado em vez de medido.");
+      const pos = v.filter(function (x) { return x > 0; });
+      if (nFases && v.length === nFases && pos.length && pos.length < v.length) a.push(c[1] + " zerada em uma das fases: " + lista(c[2]) + " A||Uma fase com 0 A enquanto as outras têm carga indica fase desligada, disjuntor aberto ou valor digitado errado.");
+      else if (pos.length >= 2 && desq(pos) > LIM.desqCorrente) a.push(c[1] + " desequilibrada (" + fmt(desq(pos)) + "%): " + lista(c[2]) + " A||A diferença entre a maior e a menor fase é de " + fmt(desq(pos)) + "% da média; o limite é " + LIM.desqCorrente + "%.");
+      if (nFases === 3 && v.length === 3 && v[0] === v[1] && v[1] === v[2] && v[0] !== 0) a.push(c[1] + " igual nas 3 fases: " + fmt(v[0]) + " A||Três medições idênticas sugerem que o valor foi copiado em vez de medido.");
     });
-    if (tp.some(function (x) { return x > LIM.tempMax; })) a.push("Temperatura acima de " + LIM.tempMax + " ºC: " + lista(m.temp) + " ºC||Temperatura alta no quadro ou equipamento indica sobrecarga, mau contato ou ventilação ruim.");
-    if (m.dcV != null && !isNaN(m.dcV) && (m.dcV < LIM.dcV[0] || m.dcV > LIM.dcV[1])) a.push("Tensão de saída DC fora da faixa: " + fmt(m.dcV) + " V||O esperado para o retificador é de " + LIM.dcV[0] + " a " + LIM.dcV[1] + " V.");
+    if (m.balancPct != null && m.balancPct > LIM.balancMax) a.push("Balanceamento de corrente acima de " + LIM.balancMax + "%: " + fmt(m.balancPct) + "%||O balanceamento mostra o quanto as correntes das fases diferem entre si. Acima de " + LIM.balancMax + "% a carga está mal distribuída ou há valor errado.");
+    if (tp.some(function (x) { return x > LIM.tempMax; })) a.push("Temperatura acima de " + LIM.tempMax + " ºC: " + lista(m.temp) + " ºC||O limite é " + LIM.tempMax + " ºC. Temperatura alta no cabo ou quadro indica sobrecarga ou mau contato.");
+    if (m.dcV != null && !isNaN(m.dcV) && (m.dcV < LIM.dcV[0] || m.dcV > LIM.dcV[1])) a.push("Tensão de saída DC fora da faixa: " + fmt(m.dcV) + " V||A faixa aceita é de " + LIM.dcV[0] + " a " + fmt(LIM.dcV[1]) + " V.");
     if (m.dcV != null && m.dcI != null && m.potKw != null && m.dcV * m.dcI > 0) {
       const calc = m.dcV * m.dcI / 1000;
       if (Math.abs(calc - m.potKw) / calc > 0.25) a.push("Potência (" + fmt(m.potKw) + " kW) não bate com tensão x corrente DC (" + fmt(calc) + " kW)||Pela saída DC (" + fmt(m.dcV) + " V x " + fmt(m.dcI) + " A) a potência seria cerca de " + fmt(calc) + " kW, mas o controlador informa " + fmt(m.potKw) + " kW. Uma das leituras está errada.");
     }
-    const at = pres(m.acTensao);
+    const at = positivos(m.acTensao), ac = positivos(m.acCorrente);
     if (at.length && ac.length && m.potKw != null && m.potKw > 0) {
       const kva = (ac.length >= 3 ? 1.732 * media(at) * media(ac) : media(at) * ac.reduce(function (t, x) { return t + x; }, 0)) / 1000;
       if (kva > LIM.fatorAcDc * (m.potKw / 0.85)) a.push("Corrente de entrada AC incompatível com a potência consumida||A corrente de entrada (" + lista(m.acCorrente) + " A a cerca de " + fmt(media(at)) + " V) corresponde a cerca de " + fmt(kva) + " kVA, mas o retificador informa consumo de só " + fmt(m.potKw) + " kW. As duas leituras deveriam ser da mesma ordem de grandeza; confira se a corrente foi medida no ponto certo.");
     }
+    Object.keys(m.baterias || {}).forEach(function (k) {
+      const v = m.baterias[k];
+      if (v.length >= 2 && v.every(function (x) { return x === v[0]; })) a.push("Teste de " + k + " das baterias com a mesma tensão em todos os elementos: " + fmt(v[0]) + " V||Se todas as medições do campo são iguais, o técnico provavelmente não mediu e apenas copiou o valor.");
+    });
+    if (m.disj && m.disj.ati > 0 && m.disj.med === 0) a.push("Corrente dos disjuntores não medida||No QDCA é preciso medir a corrente em cada disjuntor ATI (ativo). Alguns campos podem ficar em branco (disjuntor retirado do painel), mas todos em branco não é aceito. Foram encontrados " + m.disj.ati + " disjuntores ATI sem nenhuma medição.");
     return a;
   }
 
@@ -509,7 +553,7 @@
       if (!cand.length) cand = noX.filter(function (t) { return t.transform[5] >= a.y + a.h - 2 && t.transform[5] <= a.y + a.h + 30; });
       cand.sort(function (u, v) { return Math.abs(u.transform[5] - a.y) - Math.abs(v.transform[5] - a.y) || u.transform[4] - v.transform[4]; });
       const legenda = cand.length ? cand.filter(function (t) { return Math.abs(t.transform[5] - cand[0].transform[5]) < 3; }).sort(function (u, v) { return u.transform[4] - v.transform[4]; }).map(function (t) { return t.str.trim(); }).join(" ") : "";
-      if (/^INFRATEL$/i.test(legenda) || (numPag === 1 && !legenda)) continue;   // logotipos do cabeçalho
+      if (numPag === 1 || /^INFRATEL$/i.test(legenda) || /Propriedade:|Status:/i.test(legenda)) continue;   // logotipos do cabeçalho
       const esc2 = Math.min(1, FOTO_MAX / c.width);
       const c2 = document.createElement("canvas"); c2.width = Math.round(c.width * esc2); c2.height = Math.round(c.height * esc2);
       c2.getContext("2d").drawImage(c, 0, 0, c2.width, c2.height);
@@ -699,7 +743,8 @@
   function analisarLinha(l) {
     const a = [];
     const rep = l.rep;
-    const cands = acharValidacao(l.segKey, l.tag || (rep && rep.tag), rep);
+    const candsTodas = acharValidacao(l.segKey, l.tag || (rep && rep.tag), rep);
+    const cands = candsTodas.filter(function (v) { return String(v.validacao || "").toUpperCase().trim() !== "INV"; });   // INV = ficha já invalidada pelo cliente
     const noMes = cands.filter(function (v) { return String(v.mes_inicio || v.inicio || "").slice(0, 7) === E.mes; });
     const val = (noMes.length ? noMes : cands).slice().sort(function (x, y) { return String(y.inicio).localeCompare(String(x.inicio)) || (y.ocorrencia || 1) - (x.ocorrencia || 1); })[0] || null;
     l.val = val;
@@ -708,7 +753,7 @@
       l.semPdf = l.obrig === "Sim" && !l.faltando && !!noMes.length;
       return a;
     }
-    if (l.dups && l.dups.length) a.push("Mais de um PDF para a mesma aba (" + [rep.arquivo].concat(l.dups.map(function (d) { return d.arquivo; })).join(" e ") + ")||O sistema do cliente conta uma ficha só por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
+    if (l.dups && l.dups.length && noMes.length !== 1) a.push("Mais de um PDF para a mesma aba (" + [rep.arquivo].concat(l.dups.map(function (d) { return d.arquivo; })).join(" e ") + ")||O sistema do cliente conta uma ficha só por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
     // ticket
     const tk = String(rep.ticket || "");
     if (!tk) a.push("Relatório sem ticket");
@@ -727,7 +772,8 @@
       }
     }
     // mês de início e validação
-    if (!val) a.push("Sem registro na validação do cliente||Esta aba não aparece na planilha de Validação carregada: o técnico não a finalizou ou a planilha está desatualizada.");
+    if (!val && candsTodas.length) a.push("Todas as fichas desta aba estão invalidadas (INV)||O cliente invalidou as fichas desta aba no sistema e não há ficha válida no mês. A aba precisa ser refeita.");
+    else if (!val) a.push("Sem registro na validação do cliente||Esta aba não aparece na planilha de Validação carregada: o técnico não a finalizou ou a planilha está desatualizada.");
     else {
       if (!noMes.length) a.push("Aba iniciada em " + nomeMes(String(val.inicio).slice(0, 7)) + ": não conta para " + nomeMes(E.mes) + "||O cliente conta a aba pelo mês em que ela foi iniciada. Iniciada em outro mês e finalizada neste, ela vale para o mês de início e precisa ser refeita.");
       if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente||O cliente só conta uma ficha por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
@@ -750,9 +796,14 @@
     const fotos = rep.fotos || [];
     const reps = fotos.map(function (f, i) { return f.repetida ? "foto " + (i + 1) + " igual à " + f.repetida : null; }).filter(Boolean);
     if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")||Duas fotos iguais no mesmo relatório indicam imagem reaproveitada; cada foto deve mostrar o equipamento naquele momento.");
+    const ob = FOTOS_OBRIG[l.segKey];
+    if (ob) {
+      const faltam = ob.filter(function (o) { return !fotos.some(function (f) { return chaveLegenda(f.legenda).indexOf(o[1]) >= 0; }); }).map(function (o) { return o[0]; });
+      if (faltam.length) a.push("Foto obrigatória ausente: " + faltam.join(", ") + "||O relatório de " + l.seg + " precisa ter estas fotos (as marcadas como \"Relato - Opcional\" não são cobradas). Sem elas a aba precisa ser refeita.");
+    }
     if (rep.ocrFeito) {
-      const sem = fotos.filter(function (f) { return !f.carimbo; }).length;
-      if (sem) a.push("Foto sem data e hora legível: " + sem + " de " + fotos.length + "||A data e a hora carimbadas na foto são obrigatórias. A leitura automática não achou o carimbo em " + sem + " foto(s); abra as fotos para ver se o carimbo realmente falta ou só está ilegível.");
+      const sem = fotos.filter(function (f) { return !(f.carimbo && f.carimbo.data); }).length;
+      if (sem) a.push("Data não identificada em " + sem + " de " + fotos.length + " fotos||A data e a hora carimbadas na foto são obrigatórias. A leitura automática não encontrou a data nestas fotos: informe a data manualmente no detalhe da aba (se a foto mostra a data) ou peça ao técnico para refazer as fotos.");
       const fora = {};
       fotos.forEach(function (f) { if (f.carimbo && f.carimbo.data && f.carimbo.data.slice(0, 7) !== E.mes) fora[f.carimbo.data] = 1; });
       Object.keys(fora).forEach(function (d) { a.push("Foto com data " + dataBr(d) + " fora de " + nomeMes(E.mes) + "||A foto foi tirada fora do mês da preventiva; o cliente não aceita e a aba precisa ser refeita."); });
@@ -890,9 +941,10 @@
   function medicoesHtml(r) {
     const m = r && r.medicoes;
     if (!m) return "";
-    const rows = [["Tensão fase-neutro (V)", m.tensaoFN], ["Tensão fase-fase (V)", m.tensaoFF], ["Corrente (A)", m.corrente], ["Temperatura (ºC)", m.temp], ["Balanceamento", m.balanc],
+    const rows = [["Tensão fase-neutro (V)", m.tensaoFN], ["Tensão fase-fase (V)", m.tensaoFF], ["Corrente (A)", m.corrente], ["Temperatura (ºC)", m.temp],
       ["Tensão entrada AC (V)", m.acTensao], ["Corrente entrada AC (A)", m.acCorrente]].filter(function (x) { return x[1] && pres(x[1]).length; })
       .map(function (x) { return "<tr><td>" + x[0] + "</td><td>" + lista(x[1]) + "</td></tr>"; });
+    if (m.balancPct != null) rows.push("<tr><td>Balanceamento de corrente</td><td>" + fmt(m.balancPct) + "%</td></tr>");
     if (m.potKw != null) rows.push("<tr><td>Potência</td><td>" + fmt(m.potKw) + " kW" + (m.potPct != null ? " (" + fmt(m.potPct) + "%)" : "") + "</td></tr>");
     if (m.dcV != null) rows.push("<tr><td>Saída DC</td><td>" + fmt(m.dcV) + " V" + (m.dcI != null ? " / " + fmt(m.dcI) + " A" : "") + "</td></tr>");
     if (r.leitura) rows.push("<tr><td>Leitura do medidor</td><td>" + esc(r.leitura) + "</td></tr>");
@@ -906,18 +958,28 @@
     const cards = r.fotos.map(function (f, i) {
       const sel = [];
       if (f.repetida) sel.push('<span class="refazer">Igual à foto ' + f.repetida + "</span>");
-      if (r.ocrFeito || f.carimbo !== null) sel.push(f.carimbo && f.carimbo.data ? dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") : '<span class="refazer">Sem data e hora</span>');
+      if (f.carimbo && f.carimbo.data) sel.push(dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") + (f.carimbo.manual ? " (informada)" : ""));
+      else if (r.ocrFeito) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
       return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + "</div></div>";
     }).join("");
     return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
+  const FOTOS_OBRIG = {
+    BAIXATENSAO: [["Leitura/Número Medidor", "LEITURANUMEROMEDIDOR"], ["Disjuntor Geral", "DISJUNTORGERAL"], ["Padrão Entrada", "PADRAOENTRADA"], ["Vista Frontal Site", "FRONTALSITE"]],
+    QDCA: [["Visão Geral QDCA", "VISAOGERALQDCA"], ["TAG QDCA", "TAGQDCA"], ["Vista Interna QDCA", "VISTAINTERNAQDCA"], ["Multimedidor (A)", "MULTIMEDIDOR"]],
+    TROCADORDECALOR: [["Equip. Antes MP", "ANTESMP"], ["Equip. Durante MP", "DURANTEMP"], ["Equip. Depois MP", "DEPOISMP"], ["Filtros de Ar", "FILTROSDEAR"]],
+    BALIZAMENTO: [["Vista Geral QCAB", "VISTAGERALQCAB"], ["QCAB Aberto", "QCABABERTO"]],
+    ALARMES: [["QIT", "QIT"], ["Módulo Receptor Dados", "MODULORECEPTORDADOS"]],
+    ZELADORIA: [["Portão", "PORTAO"], ["Limpeza Terreno", "LIMPEZATERRENO"], ["Vista Geral Terreno", "VISTAGERALTERRENO"], ["Vista Estrutura Física", "VISTAESTRUTURAFISICA"], ["Muro/Alambrado", "MUROALAMBRADO"], ["Caixa Passagem/Tampa", "CAIXAPASSAGEM"]]
+  };
+  function chaveLegenda(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   const RESULT_BORNES = ["Sem jump", "Tipo A", "Tipo B", "Suspeito", "Ininteligível"];
   const DESC_BORNES = {
-    "Sem jump": "Bornes com a ligação normal, sem ponte ou fio forçando o alarme.",
-    "Tipo A": "Jump evidente: fio ou ponte ligando dois bornes de forma direta, mantendo o alarme desligado.",
-    "Tipo B": "Jump possível: ligação fora do padrão (fio solto, emenda ou borne em curto) que pode estar escondendo um alarme.",
-    "Suspeito": "Não dá para afirmar pela foto, mas faltam alarmes que deveriam aparecer ou algo não bate; a validadora investiga.",
-    "Ininteligível": "A foto não permite avaliar (escura, tremida, longe ou fora de enquadramento); o técnico precisa refazer a foto."
+    "Sem jump": "Bornes com a ligação normal.",
+    "Tipo A": "Jump evidente: um único fio ligando dois bornes de forma direta.",
+    "Tipo B": "Jump possível: ligação fora do padrão (fio solto, emenda ou 2 cabos conectados no mesmo borne) que pode estar escondendo um alarme.",
+    "Suspeito": "Não dá para afirmar pela foto, mas faltam alarmes que deveriam aparecer ou algo não bate.",
+    "Ininteligível": "A foto não permite avaliar (escura, tremida, longe ou fora de enquadramento)."
   };
   function bornesHtml(l, bi) {
     const b = E.bornes[l.rep.arquivo] || {};
@@ -977,6 +1039,25 @@
       recalcular();
     });
   }
+  // Foto ampliada: clique fecha, setas trocam de foto.
+  function ampliar(imgs, k) {
+    const z = document.createElement("div");
+    z.style.cssText = "position:fixed;inset:0;background:rgba(22,22,22,.92);z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out;padding:20px";
+    function pintar() {
+      const leg = imgs[k].parentNode.children[1];
+      z.innerHTML = '<img src="' + imgs[k].src + '" style="max-width:100%;max-height:88%;object-fit:contain"><div style="color:#fff;margin-top:10px;font-size:14px">' + (leg ? esc(leg.textContent) : "") + '  ·  ' + (k + 1) + " de " + imgs.length + "  ·  setas para trocar, clique para fechar</div>";
+    }
+    function tecla(e) {
+      if (e.key === "ArrowRight" && k < imgs.length - 1) { k++; pintar(); }
+      else if (e.key === "ArrowLeft" && k > 0) { k--; pintar(); }
+      else if (e.key === "Escape") { fechar(); e.stopImmediatePropagation(); }
+    }
+    function fechar() { document.removeEventListener("keydown", tecla, true); z.remove(); }
+    z.addEventListener("click", fechar);
+    document.addEventListener("keydown", tecla, true);
+    pintar();
+    document.body.appendChild(z);
+  }
   function abrirDetalhe(l) {
     const r = l.rep, v = l.val;
     function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
@@ -992,6 +1073,17 @@
     $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
     ligarBornes(l);
     ligarEscal(l);
+    const imgs = Array.prototype.slice.call(document.querySelectorAll(".fto img"));
+    imgs.forEach(function (im, k) { im.addEventListener("click", function () { ampliar(imgs, k); }); });
+    Array.prototype.forEach.call(document.querySelectorAll(".dtm"), function (inp) {
+      inp.addEventListener("change", function () {
+        if (!inp.value) return;
+        l.rep.fotos[Number(inp.dataset.i)].carimbo = { data: inp.value, hora: null, manual: true };
+        recalcular();
+        const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0];
+        if (l2) abrirDetalhe(l2);
+      });
+    });
   }
   $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) $("modal").classList.add("oculto"); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("modal").classList.add("oculto"); });
