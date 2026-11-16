@@ -16,6 +16,8 @@
   .top b { font-weight:600; margin-right:24px; }
   .top span { color:#c6c6c6; }
   .top .dir { margin-left:auto; font-size:12px; }
+  .top .sair { margin-left:16px; background:transparent; color:#fff; border:1px solid #6f6f6f; height:28px; padding:0 14px; font:inherit; font-size:12px; cursor:pointer; border-radius:0; }
+  .top .sair:hover { background:#393939; }
   .wrap { padding:24px; max-width:1600px; margin:0 auto; }
   h1 { font-size:24px; font-weight:400; margin-bottom:16px; }
   .oculto { display:none !important; }
@@ -117,7 +119,7 @@
 </style>
 </head>
 <body>
-<div class="top"><b>Relatórios</b><span>Leitura e análise dos PDFs</span><span class="dir" id="usuario"></span></div>
+<div class="top"><b>Relatórios</b><span>Leitura e análise dos PDFs</span><span class="dir" id="usuario"></span><button type="button" class="sair" id="botaoSair">Sair</button></div>
 
 <section id="telaLogin" class="login-tela oculto">
       <div class="lg-meio">
@@ -509,6 +511,10 @@
     const q = new URLSearchParams(location.search);
     if (q.get("site")) { $("site").value = q.get("site"); if (/^\d{4}-\d{2}$/.test(q.get("mes") || "")) $("mes").value = q.get("mes"); consultar(); }
   }
+  $("botaoSair").addEventListener("click", async function () {
+    try { await banco.auth.signOut(); } catch (e) {}
+    location.reload();
+  });
   $("botaoEntrar").addEventListener("click", async function () {
     $("msgLogin").textContent = "";
     const r = await banco.auth.signInWithPassword({ email: $("email").value.trim(), password: $("senha").value });
