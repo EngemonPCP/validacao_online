@@ -700,8 +700,37 @@
     re = /(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/g;
     while ((m = re.exec(t))) cand.push([Number(m[1]), Number(m[2]), Number(m[3])]);
     const pad = function (n) { return (n < 10 ? "0" : "") + n; };
-    let d = null;
-    for (let k = 0; k < cand.length; k++) {
+    let d = null, incerta = false;
+    if (!cand.length || !cand.some(function (c) { return c[1] >= 1 && c[1] <= 12 && c[2] >= 1 && c[2] <= 31 && (!aceita || aceita(c[0] + "-" + pad(c[1]) + "-" + pad(c[2]))); })) {
+      // o "1" do dia sai do OCR como l, I, |, ], Tl, Nl... ("Nl de nov." é 11): lê o dia de forma tolerante e marca a leitura como incerta
+      const rl = /([^\s]{1,3})\s*(?:c?de|ae|da|d6)\s+([a-zA-Z]{3})[.,:;]?\s*(?:de|ae|da)?\s*(\S{0,6})/gi;
+      let q;
+      while ((q = rl.exec(t))) {
+        const mes = mesAprox(q[2]); if (!mes) continue;
+        const tk = q[1].replace(/[^A-Za-z0-9|!\]\[]/g, "");
+        if (!tk) continue;
+        let ok = true, lim = "";
+        for (let z = 0; z < tk.length; z++) {
+          const ch = tk[z];
+          if (/[0-9]/.test(ch)) lim += ch;
+          else if (/[lIi|!\]\[]/.test(ch)) lim += "1";
+          else if (/[Oo]/.test(ch)) lim += "0";
+          else if (/[TtNnHh]/.test(ch) && tk.length >= 2) lim += "1";
+          else { ok = false; break; }
+        }
+        const dia = Number(lim);
+        if (!ok || !(dia >= 1 && dia <= 31)) continue;
+        const ym = String(q[3]).replace(/[Oo]/g, "0").match(/20\d\d/);
+        const anos = ym ? [Number(ym[0])] : (E.mes ? [Number(E.mes.slice(0, 4)), Number(E.mes.slice(0, 4)) - 1] : []);
+        for (let z = 0; z < anos.length; z++) {
+          const iso = anos[z] + "-" + pad(mes) + "-" + pad(dia);
+          if (aceita && !aceita(iso)) continue;
+          d = iso; incerta = true; break;
+        }
+        if (d) break;
+      }
+    }
+    for (let k = 0; !d && k < cand.length; k++) {
       const c = cand[k];
       if (c[1] < 1 || c[1] > 12 || c[2] < 1 || c[2] > 31) continue;
       const iso = c[0] + "-" + pad(c[1]) + "-" + pad(c[2]);
@@ -712,7 +741,7 @@
     let hora = h ? h[0] : null;
     if (h && /^\s*PM/i.test(t.slice(h.index + h[0].length)) && Number(h[1]) < 12) hora = (Number(h[1]) + 12) + hora.slice(hora.indexOf(":"));
     if (!d) return hora ? { data: null, hora: hora } : null;
-    return { data: d, hora: hora };
+    return incerta ? { data: d, hora: hora, incerta: true } : { data: d, hora: hora };
   }
   // Data de carimbo plausível: entre 18 meses antes e 2 meses depois do mês consultado (etiquetas de fábrica ficam fora).
   function dataPlausivel(iso) {
@@ -744,6 +773,8 @@
   function carregarImg(url) { return new Promise(function (ok, no) { const im = new Image(); if (/^https?:/.test(url)) im.crossOrigin = "anonymous"; im.onload = function () { ok(im); }; im.onerror = no; im.src = url; }); }
   // O carimbo (data, hora e endereço) fica no canto inferior direito, em letra branca: recorta, amplia e isola o branco.
   const PLANOS_OCR = [
+    // carimbo no canto inferior direito, em tons de cinza com limiar baixo (o "1" do dia é fino e some com limiar alto)
+    { l: 0.45, t: 0.78, m: "g", th: 170, psm: "6", s: 5 }, { l: 0.45, t: 0.78, m: "g", th: 190, psm: "6", s: 5 }, { l: 0.45, t: 0.78, m: "g", th: 150, psm: "6", s: 5 },
     // letra branca sobre fundo colorido (céu, parede): usa o menor canal de cor, que fica baixo no azul e alto só no branco
     { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 200, psm: "11", s: 3 }, { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 220, psm: "6", s: 3 },
     { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 220, psm: "11", s: 3 }, { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 200, psm: "6", s: 3 },
@@ -761,7 +792,8 @@
   async function ocrFoto(w, foto) {
     // lê uma vez só: vale o primeiro recorte que trouxer uma data plausível (se vier errada, a validadora corrige na divergência de data)
     const im = await carregarImg(foto.url);
-    const total = Math.min(PLANOS_OCR.length, 14);   // os recortes mais prováveis primeiro; foto sem data nos 14 primeiros vai para preenchimento manual
+    let reserva = null;
+    const total = Math.min(PLANOS_OCR.length, 16);   // os recortes mais prováveis primeiro; foto sem data nos 14 primeiros vai para preenchimento manual
     for (let k = 0; k < total; k++) {
       const p = PLANOS_OCR[k];
       const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = Math.floor(im.width * (p.r || 1)) - x0, ch = Math.floor(im.height * (p.b || 1)) - y0;
@@ -777,9 +809,9 @@
       await w.setParameters({ tessedit_pageseg_mode: p.psm });
       const r = await w.recognize(c);
       const ca = lerCarimbo(r.data.text, dataPlausivel);
-      if (ca && ca.data) return ca;
+      if (ca && ca.data) { if (!ca.incerta) return ca; if (!reserva) reserva = ca; }
     }
-    return null;
+    return reserva;
   }
   async function lerCarimbos() {
     const fila = [];
@@ -1221,10 +1253,10 @@
       if (ig) sel.push('<span class="refazer">Igual à foto ' + ig + "</span>");
       if (f.carimbo && f.carimbo.data) {
         const c = f.carimbo, dif = base && c.data !== base;
-        if (!c.manual) sel.push((dif && !c.mantida ? "⚠ " : "") + dataBr(c.data) + (c.hora ? " " + esc(c.hora) : "") + (c.manual ? "" : c.mantida ? " (mantida)" : ""));
+        if (!c.manual) sel.push(((dif || c.incerta) && !c.mantida ? "⚠ " : "") + dataBr(c.data) + (c.hora ? " " + esc(c.hora) : "") + (c.manual ? "" : c.mantida ? " (mantida)" : ""));
         if (c.manual && c.auto) extra = '<div class="g" style="margin-top:4px"><b>Data ajustada:</b> <input type="date" class="campo dtm" data-i="' + i + '" value="' + c.data + '" style="padding:3px 6px;font-size:12px"> <button type="button" class="dtd" data-i="' + i + '" style="margin-left:4px;font-size:12px">Desfazer</button></div><div class="g" style="font-size:12px">Leitura automática: ' + dataBr(c.auto) + "</div>";
         else if (c.manual) extra = '<div class="g" style="margin-top:4px"><b>Data informada:</b> <input type="date" class="campo dtm" data-i="' + i + '" value="' + c.data + '" style="padding:3px 6px;font-size:12px"> <button type="button" class="dtl" data-i="' + i + '" style="margin-left:4px;font-size:12px">Remover</button></div>';
-        else if (dif && !c.manual && !c.mantida) extra = '<div class="g" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;padding:5px 7px;margin-top:4px;color:#92400e"><b>Data diferente das demais fotos</b> (' + dataBr(base) + '). A leitura automática pode ter errado: confira o carimbo na foto.<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input type="date" class="campo dtc" data-i="' + i + '" value="' + c.data + '" style="padding:4px 6px;font-size:12px"><button type="button" class="dta" data-i="' + i + '" style="font-size:12px">Aplicar correção</button><button type="button" class="dtk" data-i="' + i + '" style="font-size:12px">Manter ' + dataBr(c.data).slice(0, 5) + '</button></div></div>';
+        else if ((dif || c.incerta) && !c.manual && !c.mantida) extra = '<div class="g" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;padding:5px 7px;margin-top:4px;color:#92400e"><b>' + (dif ? "Data diferente das demais fotos</b> (" + dataBr(base) + "). A leitura automática pode ter errado: confira o carimbo na foto." : "Leitura incerta</b>. Não deu para ler todos os dígitos com segurança: confira o carimbo na foto.") + '<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input type="date" class="campo dtc" data-i="' + i + '" value="' + c.data + '" style="padding:4px 6px;font-size:12px"><button type="button" class="dta" data-i="' + i + '" style="font-size:12px">Aplicar correção</button><button type="button" class="dtk" data-i="' + i + '" style="font-size:12px">Manter ' + dataBr(c.data).slice(0, 5) + '</button></div></div>';
         else if (dif && c.mantida) extra = '<div class="g" style="margin-top:4px">Data confirmada pela validadora como diferente das demais.</div>';
       }
       if (!(f.carimbo && f.carimbo.data) && (r.ocrFeito || E.snapModo)) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
