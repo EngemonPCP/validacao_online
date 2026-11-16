@@ -777,7 +777,7 @@
       // ---- validação do cliente (aba "Validação" da Atualização_Preventiva) ---------
       let valParaGravar = [];
       const COLUNAS_VAL = { site: "site", regional: "regional", uf: "uf", inicio: "inicio", fim: "fim", fato: "fato",
-                            expurgo: "motivo do expurgo", equipamento: "equipamento", status: "status" };
+                            expurgo: "motivo do expurgo", equipamento: "equipamento", status: "status", validacao: "validacao" };
 
       function montarValidacao(matriz) {
         let cab = -1;
@@ -824,7 +824,7 @@
           mapa[chave] = { chave: chave, ocorrencia: n, site: site, site_chave: chaveDeSigla(site), regional: cel(l, "regional") || null, uf: cel(l, "uf") || null,
                           inicio: inicio, fim: dataDe(l, "fim"), fato: cel(l, "fato") || null, motivo_expurgo: cel(l, "expurgo") || null,
                           equipamento: equip, segmento: partes[0].trim() || null, tag: partes.length > 1 ? partes.slice(1).join(" - ").trim() : null,
-                          status: cel(l, "status") || null };
+                          status: cel(l, "status") || null, validacao: cel(l, "validacao") || null };
         }
         return { ambiguas: ambiguas, linhas: Object.keys(mapa).map(function (k) { return mapa[k]; }), semSite: semSite, semInicio: semInicio, repetidas: repetidas,
                  faltando: Object.keys(pos).filter(function (k) { return pos[k] < 0; }) };
