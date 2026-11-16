@@ -762,6 +762,7 @@
       <button data-tela="ResumoVal" data-grupo="" data-setor="">Resumo do dia</button>
       <button data-tela="FilaVal" data-grupo="" data-setor="">Fila de validação</button>
       <button data-tela="Offline" data-grupo="" data-setor="">Validação offline</button>
+      <button data-tela="Relatorios" data-grupo="" data-setor="">Relatórios</button>
       <button class="grupo" data-sub="Divergencias" aria-expanded="false">Divergências <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuDivergencias">
         <button data-tela="Divergencias" data-grupo="" data-setor="MÓVEL">Móvel</button>
@@ -858,6 +859,18 @@
         </div>
       </div>
       <div id="ofCorpo"></div>
+    </section>
+    <!-- VALIDAÇÃO · FILA -->
+    <section id="telaRelatorios" class="tela vl oculto">
+      <div class="tr">Painel / Validação / <span>Relatórios</span></div>
+      <div class="vl-topo">
+        <div><h1>Relatórios</h1><div class="sub">Pendências apuradas na análise dos PDFs dos técnicos, por site.</div></div>
+        <div class="vl-ferr">
+          <input type="text" id="rpBusca" placeholder="Pesquisar site">
+          <button class="bt" id="rpAtualizar">Atualizar</button>
+        </div>
+      </div>
+      <div id="rpCorpo"></div>
     </section>
     <!-- VALIDAÇÃO · FILA -->
     <section id="telaFilaVal" class="tela vl oculto">
@@ -1753,6 +1766,18 @@
   }
   function setorDe(l) { return String(l && l.equipe_engemon || "").trim().toUpperCase(); }
 
+  // Não atualiza a tela sozinha enquanto alguém está escrevendo: evita perder o texto digitado.
+  function digitando() {
+    const escrevendo = function (el) {
+      if (!el || el.disabled || el.offsetParent === null) return false;
+      if (el.tagName === "TEXTAREA") return String(el.value || "").trim().length > 0;
+      if (el.tagName === "INPUT" && /^(text|number|date|time)?$/.test(el.type || "") && !/busca|pesq|filtro/i.test(el.id || "")) return String(el.value || "").trim().length > 0;
+      return false;
+    };
+    if (escrevendo(document.activeElement)) return true;
+    const t = document.getElementById("tela" + estado.telaAtual);
+    return !!t && Array.prototype.some.call(t.querySelectorAll("textarea, input"), escrevendo);
+  }
   // grupo: "MOP", "EPS" ou "" (todos). Só a Conferência usa o grupo.
   function irParaTela(nome, grupo, setor) {
     grupo = grupo || "";
@@ -1778,24 +1803,25 @@
     if (nome === "ResumoVal") {
       estado.val.rvLista = null;
       atualizarResumoVal();
-      estado.pollId = setInterval(atualizarResumoVal, 120000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarResumoVal(); }, 120000);
     }
     if (nome === "Offline") {
       atualizarOffline();
-      estado.pollId = setInterval(atualizarOffline, 120000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarOffline(); }, 120000);
     }
+    if (nome === "Relatorios") atualizarRelatorios();
     if (nome === "FilaVal") {
       $("flSetor").value = estado.val.setor;
       atualizarFila();
-      estado.pollId = setInterval(atualizarFila, 60000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarFila(); }, 60000);
     }
     if (nome === "Campo") {
       atualizarCampo();
-      estado.pollId = setInterval(atualizarCampo, 30000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarCampo(); }, 30000);
     }
     if (nome === "Conferencia") {
       atualizarConferencia();
-      estado.pollId = setInterval(atualizarConferencia, 120000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarConferencia(); }, 120000);
     }
     if (nome === "Registrar") {
       (async function () {
@@ -1810,11 +1836,11 @@
     if (nome === "Expurgos") atualizarExpurgos();
     if (nome === "ResumoDia") {
       atualizarResumoDia();
-      estado.pollId = setInterval(atualizarResumoDia, 120000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarResumoDia(); }, 120000);
     }
     if (nome === "EPS") {
       atualizarEPS();
-      estado.pollId = setInterval(atualizarEPS, 300000);
+      estado.pollId = setInterval(function () { if (!digitando()) atualizarEPS(); }, 300000);
     }
   }
 
@@ -5646,7 +5672,107 @@
           if (vs.length) estado.val.visitaHoras[c.validacao_id] = { ent: vs[0].hora_entrada ? new Date(vs[0].hora_entrada).getTime() : null, sai: vs[0].hora_saida ? new Date(vs[0].hora_saida).getTime() : null };
         }
       } catch (e2) { /* sem horário */ }
+      try { if (r[0] && r[0].site_chave) r[0].relatorio = await buscarRelatorio(r[0].site_chave); } catch (e3) { if (r[0]) r[0].relatorio = null; }
     } catch (e) { O.vals[c.id] = null; }
+  }
+  // ==== VALIDAÇÃO · RELATÓRIOS (pendências gravadas pela página relatorios.html) ====
+  estado.rp = { dados: [], filtro: "pend", busca: "" };
+  async function atualizarRelatorios() {
+    try {
+      const fx = faixaDoPeriodo(), todos = [];
+      for (let de = 0; ; de += 1000) {
+        const d = conferir(await banco.from("relatorios_analise").select("*").gte("mes", fx[0]).lte("mes", fx[1]).order("id").range(de, de + 999));
+        for (const x of d) todos.push(x);
+        if (d.length < 1000) break;
+      }
+      estado.rp.dados = todos;
+    } catch (e) { $("rpCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar: ' + esc(e.message) + "</div>"; return; }
+    desenharRelatorios();
+  }
+  function rpTipo(r) { return r.tipo_linha === "faltando" ? "Faltando" : r.tipo_linha === "sem_pdf" ? "Sem PDF" : r.refazer ? "Refazer" : "Sem alerta"; }
+  function desenharRelatorios() {
+    const R = estado.rp, busca = String(R.busca || "").trim().toUpperCase();
+    const linhas = R.dados.filter(function (r) { return !busca || String(r.site || "").toUpperCase().indexOf(busca) >= 0 || String(r.site_chave || "").toUpperCase().indexOf(busca) >= 0; });
+    const n = { refazer: 0, faltando: 0, semPdf: 0, abas: 0 }, grupos = {};
+    linhas.forEach(function (r) {
+      const t = rpTipo(r);
+      if (t === "Refazer") n.refazer++; else if (t === "Faltando") n.faltando++; else if (t === "Sem PDF") n.semPdf++;
+      if (!r.tipo_linha || r.tipo_linha === "relatorio") n.abas++;
+      const k = r.site_chave + "|" + r.mes;
+      (grupos[k] = grupos[k] || { site: r.site, chave: r.site_chave, mes: r.mes, linhas: [] }).linhas.push(r);
+    });
+    const nPend = n.refazer + n.faltando + n.semPdf;
+    const filtros = [["pend", "Pendências", nPend], ["Refazer", "Refazer", n.refazer], ["Faltando", "Faltando", n.faltando], ["Sem PDF", "Sem PDF", n.semPdf], ["todas", "Todas", linhas.length]];
+    const passa = function (r) { const t = rpTipo(r); return R.filtro === "todas" ? true : R.filtro === "pend" ? t !== "Sem alerta" : t === R.filtro; };
+    const lista = Object.keys(grupos).map(function (k) { const g = grupos[k]; g.vis = g.linhas.filter(passa); g.pend = g.linhas.filter(function (r) { return rpTipo(r) !== "Sem alerta"; }).length; return g; })
+      .filter(function (g) { return g.vis.length; })
+      .sort(function (a, b) { return b.pend - a.pend || String(a.site).localeCompare(String(b.site)); });
+    let t = '<div class="vl-cards">' +
+      '<div class="vl-c"><div class="r">Sites analisados</div><div class="v">' + Object.keys(grupos).length + '</div></div>' +
+      '<div class="vl-c"><div class="r">Abas lidas</div><div class="v">' + n.abas + '</div></div>' +
+      '<div class="vl-c' + (n.refazer ? " amar" : "") + '"><div class="r">Para refazer</div><div class="v">' + n.refazer + '</div></div>' +
+      '<div class="vl-c' + (n.faltando ? " verm" : "") + '"><div class="r">Faltando</div><div class="v">' + n.faltando + '</div></div>' +
+      '<div class="vl-c"><div class="r">Sem PDF</div><div class="v">' + n.semPdf + '</div></div></div>';
+    t += '<div class="vl-chips">' + filtros.map(function (f) { return '<button data-rpf="' + esc(f[0]) + '"' + (R.filtro === f[0] ? ' class="ativo"' : "") + ">" + esc(f[1]) + " (" + f[2] + ")</button>"; }).join("") + "</div>";
+    if (!lista.length) { $("rpCorpo").innerHTML = t + '<div class="vl-vazio">' + (R.dados.length ? "Nada neste filtro." : "Nenhum relatório analisado neste período. Os resultados aparecem aqui depois que a análise é gravada na página Relatórios.") + "</div>"; return; }
+    t += "<table><tr><th>Segmento</th><th>Tag</th><th>Arquivo</th><th>Ticket</th><th>Alerta</th><th>Achados</th><th>Gravado por</th></tr>";
+    lista.forEach(function (g) {
+      const link = "relatorios.html?site=" + encodeURIComponent(g.site || g.chave) + "&mes=" + String(g.mes).slice(0, 7);
+      t += '<tr><td class="grp" colspan="7">' + esc(g.site) + ' · ' + esc(mesRel(g.mes)) + ' · ' + g.pend + (g.pend === 1 ? " pendência" : " pendências") + ' <a href="' + link + '" target="_blank" rel="noopener" style="margin-left:12px;font-weight:400;color:#0f62fe">Abrir em Relatórios</a></td></tr>';
+      g.vis.forEach(function (r) {
+        const tp = rpTipo(r);
+        const al = tp === "Refazer" || tp === "Faltando" ? '<span style="color:#ff832b;font-weight:600">' + tp + "</span>" : tp === "Sem PDF" ? '<span class="vl-mu" style="font-weight:600">Sem PDF</span>' : '<span class="vl-ok">Sem alerta</span>';
+        const ach = (r.achados || []).map(function (a) { const x = String(a && a.texto ? a.texto : a), i = x.indexOf(" — "); return '<div title="' + esc(i > 0 ? x.slice(i + 3) : x) + '">' + esc(i > 0 ? x.slice(0, i) : x) + "</div>"; }).join("") || '<span class="vl-mu">—</span>';
+        const quem = String(r.analisado_por || "").split("@")[0], quando = r.analisado_em ? new Date(r.analisado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+        t += "<tr><td>" + esc(r.segmento || "") + "</td><td>" + esc(r.tag || "—") + "</td><td>" + (r.tipo_linha && r.tipo_linha !== "relatorio" ? '<span class="vl-mu">Sem arquivo</span>' : esc(r.arquivo || "")) + "</td><td>" + esc(r.ticket || "—") + "</td><td>" + al + "</td><td>" + ach + '</td><td class="vl-mu">' + esc(quem) + (quando ? " · " + quando : "") + "</td></tr>";
+      });
+    });
+    $("rpCorpo").innerHTML = t + "</table>";
+  }
+
+  // Resultado da análise dos relatórios (gravado pela página relatorios.html).
+  async function buscarRelatorio(siteChave) {
+    return conferir(await banco.from("relatorios_analise").select("*").eq("site_chave", siteChave).order("mes", { ascending: false }).limit(300));
+  }
+  async function recarregarRelatorio(c) {
+    const v = (estado.off.vals || {})[c.id];
+    if (!v || !v.site_chave) return;
+    try { v.relatorio = await buscarRelatorio(v.site_chave); } catch (e) { v.relatorio = null; }
+  }
+  function relLinhas(c) {
+    const v = (estado.off.vals || {})[c.id], rows = (v && v.relatorio) || [];
+    if (!rows.length) return [];
+    const mes = rows[0].mes;
+    return rows.filter(function (r) { return r.mes === mes; });
+  }
+  function relTipoPend(texto) { return /sem preenchimento|não foi enviado/i.test(texto) ? "Aba faltando" : /foto/i.test(texto) ? "Foto fora do Padrão" : /jump|bornes/i.test(texto) ? "Jump" : "Pendência não apontada no Relatório"; }
+  function relAchados(c) {
+    const out = [], reg = {};
+    (c.pendencias || []).forEach(function (p) { reg[p.texto] = true; });
+    relLinhas(c).forEach(function (r) {
+      const nome = r.segmento + (r.tag ? " " + r.tag : "");
+      (r.achados || []).forEach(function (a, i) {
+        const txt = a && a.texto ? a.texto : String(a);
+        const texto = nome + " · " + txt;
+        out.push({ key: r.id + "#" + i, nome: nome, motivo: txt, texto: texto, tipo: relTipoPend(txt), registrada: !!reg[texto] });
+      });
+    });
+    return out;
+  }
+  function mesRel(m) { const x = String(m || "").match(/(\d{4})-(\d{2})/); return x ? ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"][Number(x[2]) - 1] + "/" + x[1] : "—"; }
+  function relatorioAba(c) {
+    const rows = relLinhas(c), ach = relAchados(c), novas = ach.filter(function (a) { return !a.registrada; });
+    const nRef = rows.filter(function (r) { return r.refazer || (r.tipo_linha && r.tipo_linha !== "relatorio"); }).length;
+    const link = "relatorios.html?site=" + encodeURIComponent(c.site) + (rows[0] ? "&mes=" + String(rows[0].mes).slice(0, 7) : "");
+    let t = '<div class="of-it" style="display:flex;justify-content:space-between;align-items:center"><span>' + (rows.length ? "Análise de " + esc(mesRel(rows[0].mes)) + " · " + rows.length + " relatórios · " + nRef + " para refazer" : '<span class="vl-mu">Nenhum relatório analisado para este site</span>') + '</span><a class="bt" href="' + link + '" target="_blank" rel="noopener" style="text-decoration:none">Abrir análise do site</a></div>';
+    if (!rows.length) return t;
+    if (!ach.length) return t + '<div class="of-it vl-mu">Nenhum achado nos relatórios analisados.</div>';
+    t += "<table><tr><th></th><th>Aba</th><th>Motivo</th><th>Pendência sugerida</th><th></th></tr>" + ach.map(function (a) {
+      return "<tr><td>" + (a.registrada ? "" : '<input type="checkbox" data-rl="' + esc(a.key) + '" checked>') + "</td><td>" + esc(a.nome) + "</td><td>" + esc(a.motivo) + "</td><td>" + esc(a.tipo) + "</td><td>" +
+        (a.registrada ? '<span class="vl-tag v1">Registrada</span>' : '<span style="color:#ff832b;font-weight:600">Refazer</span>') + "</td></tr>";
+    }).join("") + "</table>";
+    t += '<div style="padding:12px 16px"><button class="bt p" data-of="regrelatorio"' + (novas.length && !c.concluido_em ? "" : " disabled") + ">Registrar pendências selecionadas</button></div>";
+    return t;
   }
   function obsDaPendencia(c, p, usados) {
     if (p.obs) return p.obs;
@@ -5712,7 +5838,7 @@
       '<div><div class="vl-mu" style="font-size:12px">Tempo em análise</div><b>' + (v.analise_em && ult ? Math.max(0, Math.round((new Date(ult.em) - new Date(v.analise_em)) / 60000)) + " min" : "—") + "</b></div>" +
       '<div><div class="vl-mu" style="font-size:12px">Conferência online</div>' + (compl === null ? "—" : '<span class="vl-tag ' + (compl ? "v1" : "v3") + '">' + (compl ? "Completa" : "Incompleta" + (motivoInc ? " · " + esc(motivoInc) : "")) + "</span>") + "</div></div>" +
       (ult && ult.motivo ? '<div class="of-it"><div class="of-cm" style="margin:0"><small>Motivo informado pela validadora</small>' + esc(ult.motivo) + "</div></div>" : "") + "</div>";
-    t += '<div class="vl-chips" id="ofAbaRes" style="margin-bottom:0">' + [["eq", "Equipamentos e fotos · " + nAp + " apontamento(s)"], ["al", "Alarmes · " + nApAl + " apontamento(s)"], ["inv", "Inventário e bornes"], ["hist", "Histórico"]].map(function (a) { return '<button data-of="abares" data-a="' + a[0] + '"' + (aba === a[0] ? ' class="ativo"' : "") + ">" + a[1] + "</button>"; }).join("") + "</div>";
+    t += '<div class="vl-chips" id="ofAbaRes" style="margin-bottom:0">' + [["eq", "Equipamentos e fotos · " + nAp + " apontamento(s)"], ["al", "Alarmes · " + nApAl + " apontamento(s)"], ["inv", "Inventário e bornes"], ["rel", "Relatório" + (v.relatorio && v.relatorio.length ? " · " + relAchados(c).length + " achado(s)" : "")], ["hist", "Histórico"]].map(function (a) { return '<button data-of="abares" data-a="' + a[0] + '"' + (aba === a[0] ? ' class="ativo"' : "") + ">" + a[1] + "</button>"; }).join("") + "</div>";
     t += '<div class="of-box" style="margin-bottom:24px">';
     const amarelo = ' style="background:#fcf4d6"';
     if (aba === "eq") {
@@ -5764,6 +5890,8 @@
       const inv = v.inventario || {}, al = v.alarmes || {}, ik = Object.keys(inv);
       t += '<table><tr><th>Item</th><th>Situação</th></tr>' + (ik.length ? ik.map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(inv[k]) + "</td></tr>"; }).join("") : '<tr><td colspan="2" class="vl-mu">Sem inventário crítico nesta validação.</td></tr>') +
         "<tr><td>Bornes</td><td>" + esc(confBloco(al, "bornes").estado === "ok" ? "Ok" : confBloco(al, "bornes").estado === "nao" ? "Não ok" + (confBloco(al, "bornes").motivo ? " · " + confBloco(al, "bornes").motivo : "") : "Não conferido") + "</td></tr></table>";
+    } else if (aba === "rel") {
+      t += relatorioAba(c);
     } else {
       t += hv.length ? '<div class="of-tl" style="padding:12px 16px">' + hv.slice().reverse().map(function (e) {
         const tx = e.tipo === "encerramento" ? "Encerrada · " + (REGRAS.validacao.resultados[e.resultado] || e.resultado) + (e.motivo ? " · " + e.motivo : "") : (e.acao || e.tipo || "Registro");
@@ -5902,7 +6030,7 @@
         estado.off.trat = null;
       }
       else if (a === "assumir") { await salvarCaso(c, { responsavel: nomeDoEmail(quem), historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Responsável: " + nomeDoEmail(quem) }]) }); }
-      else if (a === "abares") { estado.off.abaRes = el.dataset.a; }
+      else if (a === "abares") { estado.off.abaRes = el.dataset.a; if (el.dataset.a === "rel") await recarregarRelatorio(c); }
       else if (a === "novapend") { estado.off.novaPend = true; estado.off.np = {}; }
       else if (a === "cancelarpend") { estado.off.novaPend = false; estado.off.np = null; }
       else if (a === "gravarpend") {
@@ -5913,6 +6041,14 @@
         const nv = { id: "m" + Date.now(), tipo: np.tipo, texto: eqn + " · " + np.desc.trim(), eq: eqn, wos: [np.wo], por: quem, estado: "Aberta", manual: true };
         await salvarCaso(c, { pendencias: (c.pendencias || []).concat([nv]), concluido_em: null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Pendência registrada", itens: [np.tipo + " · " + nv.texto + (wr ? " (" + tipoCurto(wr.tipo) + ")" : "")] }]) });
         estado.off.novaPend = false; estado.off.np = null;
+      }
+      else if (a === "regrelatorio") {
+        const marcadas = Array.prototype.map.call(document.querySelectorAll("#ofCorpo input[data-rl]:checked"), function (x) { return x.getAttribute("data-rl"); });
+        const alvo = relAchados(c).filter(function (x) { return !x.registrada && marcadas.indexOf(x.key) >= 0; });
+        if (!alvo.length) { mostrarAviso("Marque ao menos um achado.", "erro"); return; }
+        const wo = (c.wos || [])[0] ? c.wos[0].wo : null, base = Date.now();
+        const novas = alvo.map(function (x, i) { return { id: "r" + base + "_" + i, tipo: x.tipo, texto: x.texto, eq: x.nome, wos: wo ? [wo] : [], por: quem, estado: "Aberta", manual: true, origem: "relatorio" }; });
+        await salvarCaso(c, { pendencias: (c.pendencias || []).concat(novas), concluido_em: null, historico: (c.historico || []).concat([{ em: agora, por: quem, acao: "Pendências registradas pelo relatório", itens: novas.map(function (n) { return n.tipo + " · " + n.texto; }) }]) });
       }
       else if (a === "concluirconf") {
         const cf = confDoCaso(c), falta = CONF_ITENS.filter(function (i) { return !cf[i[0]]; });
@@ -5994,6 +6130,9 @@
   $("ofSetor").addEventListener("change", function () { estado.off.setor = $("ofSetor").value; desenharOffline(); });
   $("ofResp").addEventListener("change", function () { estado.off.resp = $("ofResp").value; desenharOffline(); });
   $("ofAtualizar").addEventListener("click", atualizarOffline);
+  $("rpAtualizar").addEventListener("click", atualizarRelatorios);
+  $("rpBusca").addEventListener("input", function () { estado.rp.busca = this.value; desenharRelatorios(); });
+  $("rpCorpo").addEventListener("click", function (e) { const b = e.target.closest("button[data-rpf]"); if (!b) return; estado.rp.filtro = b.dataset.rpf; desenharRelatorios(); });
 
   // A equipe saiu do site e a aba nunca foi pedida: o caso vai direto para a validação offline.
   async function enviarSemPedidoParaOffline(visitaId, motivoTxt) {
