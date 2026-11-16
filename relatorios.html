@@ -953,6 +953,10 @@
       if (faltam.length) a.push("Foto obrigatória ausente: " + faltam.join(", ") + "||O relatório de " + l.seg + " precisa ter estas fotos (as marcadas como \"Relato - Opcional\" não são cobradas). Sem elas a aba precisa ser refeita.");
       if (ruins.length) a.push("Foto obrigatória inadequada: " + ruins.join(", ") + "||A primeira foto com a imagem vale; as cópias da mesma foto em outras etapas não comprovam a etapa, e a foto que a validadora marcou como inadequada também não vale. O técnico precisa tirar a foto correta de cada etapa.");
     }
+    if (FOTOS_MIN[l.segKey]) {
+      const nv = fotosValidas(fotos), mn = FOTOS_MIN[l.segKey];
+      if (nv < mn) a.push("Fotos insuficientes: " + nv + " de " + mn + " no mínimo||O relatório de " + l.seg + " precisa ter pelo menos " + mn + " fotos válidas (não repetidas e não marcadas como inadequadas). Sem isso a aba precisa ser refeita.");
+    }
     if (rep.ocrFeito) {
       const sem = fotos.filter(function (f) { return !(f.carimbo && f.carimbo.data); }).length;
       if (sem) a.push("Data não identificada em " + sem + " de " + fotos.length + " fotos||A data e a hora carimbadas na foto são obrigatórias. A leitura automática não encontrou a data nestas fotos: informe a data manualmente no detalhe da aba (se a foto mostra a data) ou peça ao técnico para refazer as fotos.");
@@ -1124,6 +1128,10 @@
     return c.some(function (f) { return f.invalida; }) ? "Inadequada" : "Repetida";
   }
   function obrigHtml(l, fotos) {
+    if (FOTOS_MIN[l.segKey]) {
+      const nv = fotosValidas(fotos), mn = FOTOS_MIN[l.segKey];
+      return '<div class="msec"><h4>Fotos obrigatórias</h4><div style="font-size:13px">Mínimo de ' + mn + " fotos válidas: " + (nv >= mn ? nv + " (ok)" : '<span class="refazer">' + nv + " de " + mn + "</span>") + "</div></div>";
+    }
     const ob = FOTOS_OBRIG[l.segKey];
     if (!ob) return "";
     const itens = ob.map(function (o) {
@@ -1159,6 +1167,8 @@
     CLIMA: [["Equip. Antes da Limpeza", "ANTESDALIMPEZA"], ["Equip. Durante a Limpeza", "DURANTEALIMPEZA"], ["Equip. Depois da Limpeza", "DEPOISDALIMPEZA"], ["Equip. Interno Durante MP", "INTERNODURANTEMP"], ["Equip. Externo Durante MP", "EXTERNODURANTEMP"], ["Etiqueta Manutenção", "ETIQUETAMANUTENCAO"], ["PLC/IHM", "PLCIHM"], ["Filtros de Ar", "FILTROSDEAR"], ["Comandos Elétricos", "COMANDOSELETRICOS"]],
     ZELADORIA: [["Portão", "PORTAO"], ["Limpeza Terreno", "LIMPEZATERRENO"], ["Vista Geral Terreno", "VISTAGERALTERRENO"], ["Vista Estrutura Física", "VISTAESTRUTURAFISICA"], ["Muro/Alambrado", "MUROALAMBRADO"], ["Caixa Passagem/Tampa", "CAIXAPASSAGEM"]]
   };
+  const FOTOS_MIN = { ILUMINACAOETOMADAS: 4, ESPACOFISICO: 4 };   // segmentos sem etapa fixa: mínimo de fotos válidas
+  function fotosValidas(fotos) { return fotos.filter(function (f, i) { return !f.invalida && !igualA(fotos, i); }).length; }
   function chaveLegenda(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   const RESULT_BORNES = ["Sem jump", "Tipo A", "Tipo B", "Suspeito", "Ininteligível"];
   const DESC_BORNES = {
