@@ -618,6 +618,11 @@
     return bits;
   }
   function distHash(a, b) { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; }
+  // Foto repetida de verdade: igual a uma foto anterior que ainda vale (a validadora pode ter marcado a original como inadequada).
+  function igualA(fotos, i) {
+    for (let j = 0; j < i; j++) if (!fotos[j].invalida && distHash(fotos[i].hash, fotos[j].hash) <= FOTO_DIST) return j + 1;
+    return null;
+  }
 
   // Acha as fotos de uma página, com a legenda (texto logo abaixo ou acima).
   async function extrairFotos(lib, pag, numPag, items) {
@@ -938,7 +943,7 @@
     }
     // fotos
     const fotos = rep.fotos || [];
-    const reps = fotos.map(function (f, i) { return f.repetida ? "foto " + (i + 1) + " igual à " + f.repetida : null; }).filter(Boolean);
+    const reps = fotos.map(function (f, i) { const ig = igualA(fotos, i); return ig ? "foto " + (i + 1) + " igual à " + ig : null; }).filter(Boolean);
     if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")||Duas fotos iguais no mesmo relatório indicam imagem reaproveitada; cada foto deve mostrar o equipamento naquele momento.");
     const ob = FOTOS_OBRIG[l.segKey];
     if (ob) {
@@ -1115,7 +1120,7 @@
   function estadoObrig(o, fotos) {   // Presente, Repetida, Inadequada ou Ausente
     const c = fotos.filter(function (f) { return chaveLegenda(f.legenda).indexOf(o[1]) >= 0; });
     if (!c.length) return "Ausente";
-    if (c.some(function (f) { return !f.repetida && !f.invalida; })) return "Presente";
+    if (c.some(function (f) { return !f.invalida && !igualA(fotos, fotos.indexOf(f)); })) return "Presente";
     return c.some(function (f) { return f.invalida; }) ? "Inadequada" : "Repetida";
   }
   function obrigHtml(l, fotos) {
@@ -1134,7 +1139,8 @@
     const bi = l.segKey === "ALARMES" ? r.fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); }) : -1;
     const cards = r.fotos.map(function (f, i) {
       const sel = [];
-      if (f.repetida) sel.push('<span class="refazer">Igual à foto ' + f.repetida + "</span>");
+      const ig = igualA(r.fotos, i);
+      if (ig) sel.push('<span class="refazer">Igual à foto ' + ig + "</span>");
       if (f.carimbo && f.carimbo.data) sel.push(dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") + (f.carimbo.manual ? " (informada)" : ""));
       else if (r.ocrFeito) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
       if (f.invalida) sel.unshift('<span class="refazer">Marcada como inadequada</span>');
