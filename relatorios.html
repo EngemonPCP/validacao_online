@@ -1201,12 +1201,13 @@
       if (ig) sel.push('<span class="refazer">Igual à foto ' + ig + "</span>");
       if (f.carimbo && f.carimbo.data) {
         const c = f.carimbo, dif = base && c.data !== base;
-        sel.push((dif && !c.manual && !c.mantida ? "⚠ " : "") + dataBr(c.data) + (c.hora ? " " + esc(c.hora) : "") + (c.manual ? " (corrigida)" : c.mantida ? " (mantida)" : ""));
-        if (c.manual && c.auto) extra = '<div class="g" style="background:#ecfdf5;border:1px solid #34d399;border-radius:6px;padding:5px 7px;margin-top:4px;color:#065f46">Data ajustada pela validadora. Leitura automática: ' + dataBr(c.auto) + ' <button type="button" class="dtd" data-i="' + i + '" style="margin-left:4px;font-size:12px">Desfazer</button></div>';
+        if (!c.manual) sel.push((dif && !c.mantida ? "⚠ " : "") + dataBr(c.data) + (c.hora ? " " + esc(c.hora) : "") + (c.manual ? "" : c.mantida ? " (mantida)" : ""));
+        if (c.manual && c.auto) extra = '<div class="g" style="margin-top:4px"><b>Data ajustada:</b> <input type="date" class="campo dtm" data-i="' + i + '" value="' + c.data + '" style="padding:3px 6px;font-size:12px"> <button type="button" class="dtd" data-i="' + i + '" style="margin-left:4px;font-size:12px">Desfazer</button></div><div class="g" style="font-size:12px">Leitura automática: ' + dataBr(c.auto) + "</div>";
+        else if (c.manual) extra = '<div class="g" style="margin-top:4px"><b>Data informada:</b> <input type="date" class="campo dtm" data-i="' + i + '" value="' + c.data + '" style="padding:3px 6px;font-size:12px"> <button type="button" class="dtl" data-i="' + i + '" style="margin-left:4px;font-size:12px">Remover</button></div>';
         else if (dif && !c.manual && !c.mantida) extra = '<div class="g" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;padding:5px 7px;margin-top:4px;color:#92400e"><b>Data diferente das demais fotos</b> (' + dataBr(base) + '). A leitura automática pode ter errado: confira o carimbo na foto.<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input type="date" class="campo dtc" data-i="' + i + '" value="' + c.data + '" style="padding:4px 6px;font-size:12px"><button type="button" class="dta" data-i="' + i + '" style="font-size:12px">Aplicar correção</button><button type="button" class="dtk" data-i="' + i + '" style="font-size:12px">Manter ' + dataBr(c.data).slice(0, 5) + '</button></div></div>';
         else if (dif && c.mantida) extra = '<div class="g" style="margin-top:4px">Data confirmada pela validadora como diferente das demais.</div>';
       }
-      else if (r.ocrFeito || E.snapModo) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
+      if (!(f.carimbo && f.carimbo.data) && (r.ocrFeito || E.snapModo)) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
       if (f.invalida) sel.unshift('<span class="refazer">Marcada como inadequada</span>');
       return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + '</div>' + extra + '<label class="g" style="display:block;margin-top:2px"><input type="checkbox" class="inad" data-i="' + i + '"' + (f.invalida ? " checked" : "") + '> Foto inadequada</label></div>';
     }).join("");
@@ -1348,10 +1349,15 @@
     Array.prototype.forEach.call(document.querySelectorAll(".dtd"), function (b) {
       b.addEventListener("click", function () { const f = l.rep.fotos[Number(b.dataset.i)]; f.carimbo = { data: f.carimbo.auto, hora: f.carimbo.hora || null }; reabrir(); });
     });
+    Array.prototype.forEach.call(document.querySelectorAll(".dtl"), function (b) {
+      b.addEventListener("click", function () { l.rep.fotos[Number(b.dataset.i)].carimbo = false; reabrir(); });
+    });
     Array.prototype.forEach.call(document.querySelectorAll(".dtm"), function (inp) {
       inp.addEventListener("change", function () {
         if (!inp.value) return;
-        l.rep.fotos[Number(inp.dataset.i)].carimbo = { data: inp.value, hora: null, manual: true };
+        const ff = l.rep.fotos[Number(inp.dataset.i)], ant = ff.carimbo && ff.carimbo.data ? ff.carimbo : null;
+        ff.carimbo = { data: inp.value, hora: ant ? ant.hora || null : null, manual: true };
+        if (ant && ant.auto) ff.carimbo.auto = ant.auto;
         recalcular();
         const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0];
         if (l2) abrirDetalhe(l2);
