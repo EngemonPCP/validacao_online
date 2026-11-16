@@ -814,15 +814,18 @@
       const bloco = "WO " + tipo + " · " + wo;
       E.regras.forEach(function (r) {
         if (tipo !== "Energia" && temEnergia && r.situacao_wo === "Solta") return;   // abas soltas já estão na WO de Energia
-        const modo = tipo === "Energia" ? r.obrig_energia : tipo === "Climatização" ? r.obrig_clima : "nao";
-        if (!modo || modo === "nao" || modo === "outro_setor") return;
         const sk = chaveSeg(r.segmento);
+        let modo = tipo === "Energia" ? r.obrig_energia : tipo === "Climatização" ? r.obrig_clima : "nao";
+        const plcDoClima = sk === "PLC" && tipo === "Climatização" && temClima;   // onde há Clima, o PLC faz parte do cronograma
+        if (plcDoClima && modo !== "sempre") modo = "se_clima";
+        if (!modo || modo === "nao" || modo === "outro_setor") return;
         const eqs = E.equip.filter(function (e) { return tipoWO(e.tipo) === tipo && chaveSeg(e.segmento) === sk && ativo(e); });
+        if (sk === "TROCADORDECALOR" && !eqs.length) return;   // só é cobrado se o equipamento existe no Cronograma
         if (modo === "se_clima" && !temClima) return;
         if (modo === "cronograma") { eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: "Sim", doCrono: true, regra: r, eq: e }); }); return; }
         const obrig = modo === "condicional" ? "Condicional" : "Sim";
         if (eqs.length) eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: obrig, doCrono: true, regra: r, eq: e }); });
-        else out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: null, obrig: obrig, doCrono: false, regra: r });
+        else out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: null, obrig: obrig, doCrono: plcDoClima, regra: r });
       });
     });
     return out;
@@ -1049,18 +1052,28 @@
     if (!rows.length) return "";
     return '<div class="msec"><h4>Medições</h4><table class="tb"><tbody>' + rows.join("") + "</tbody></table></div>";
   }
+  function obrigHtml(l, fotos) {
+    const ob = FOTOS_OBRIG[l.segKey];
+    if (!ob) return "";
+    const itens = ob.map(function (o) {
+      const ok = fotos.some(function (f) { return chaveLegenda(f.legenda).indexOf(o[1]) >= 0; });
+      return '<li>' + (ok ? "Presente" : '<span class="refazer">Ausente</span>') + " · " + esc(o[0]) + "</li>";
+    }).join("");
+    return '<div class="msec"><h4>Fotos obrigatórias</h4><ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7">' + itens + "</ul></div>";
+  }
   function fotosHtml(l) {
     const r = l.rep;
-    if (!r || !r.fotos || !r.fotos.length) return "";
+    if (!r) return "";
+    if (!r.fotos || !r.fotos.length) return obrigHtml(l, []);
     const bi = l.segKey === "ALARMES" ? r.fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); }) : -1;
     const cards = r.fotos.map(function (f, i) {
       const sel = [];
       if (f.repetida) sel.push('<span class="refazer">Igual à foto ' + f.repetida + "</span>");
       if (f.carimbo && f.carimbo.data) sel.push(dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") + (f.carimbo.manual ? " (informada)" : ""));
       else if (r.ocrFeito) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
-      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + "</div></div>";
+      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + (f.legenda && /opcional/i.test(f.legenda) ? "" : "") + '</div><div class="g">' + sel.join(" · ") + "</div></div>";
     }).join("");
-    return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + (bi >= 0 ? bornesHtml(l, bi) : "");
+    return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + obrigHtml(l, r.fotos) + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
   const FOTOS_OBRIG = {
     BAIXATENSAO: [["Leitura/Número Medidor", "LEITURANUMEROMEDIDOR"], ["Disjuntor Geral", "DISJUNTORGERAL"], ["Padrão Entrada", "PADRAOENTRADA"], ["Vista Frontal Site", "FRONTALSITE"]],
@@ -1068,6 +1081,9 @@
     TROCADORDECALOR: [["Equip. Antes MP", "ANTESMP"], ["Equip. Durante MP", "DURANTEMP"], ["Equip. Depois MP", "DEPOISMP"], ["Filtros de Ar", "FILTROSDEAR"]],
     BALIZAMENTO: [["Vista Geral QCAB", "VISTAGERALQCAB"], ["QCAB Aberto", "QCABABERTO"]],
     ALARMES: [["QIT", "QIT"], ["Módulo Receptor Dados", "MODULORECEPTORDADOS"]],
+    SPDA: [["Vista Geral Captores", "GERALCAPTORES"], ["Vista Geral Caixa Inspeção", "CAIXAINSPECAO"], ["Vista Geral Malha Descida", "MALHADESCIDA"]],
+    FCC: [["Vista Geral FCC", "VISTAGERALFCC"], ["Vista Geral BB1", "VISTAGERALBB1"], ["Data Fabricação BB1", "DATAFABRICACAOBB1"], ["Vista Geral BB2", "VISTAGERALBB2"], ["Data Fabricação BB2", "DATAFABRICACAOBB2"], ["Display Controlador Corrente (A)", "DISPLAYCONTROLADOR"]],
+    CLIMA: [["Equip. Antes da Limpeza", "ANTESDALIMPEZA"], ["Equip. Durante a Limpeza", "DURANTEALIMPEZA"], ["Equip. Depois da Limpeza", "DEPOISDALIMPEZA"], ["Equip. Interno Durante MP", "INTERNODURANTEMP"], ["Equip. Externo Durante MP", "EXTERNODURANTEMP"], ["Etiqueta Manutenção", "ETIQUETAMANUTENCAO"], ["PLC/IHM", "PLCIHM"], ["Filtros de Ar", "FILTROSDEAR"], ["Comandos Elétricos", "COMANDOSELETRICOS"]],
     ZELADORIA: [["Portão", "PORTAO"], ["Limpeza Terreno", "LIMPEZATERRENO"], ["Vista Geral Terreno", "VISTAGERALTERRENO"], ["Vista Estrutura Física", "VISTAESTRUTURAFISICA"], ["Muro/Alambrado", "MUROALAMBRADO"], ["Caixa Passagem/Tampa", "CAIXAPASSAGEM"]]
   };
   function chaveLegenda(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
