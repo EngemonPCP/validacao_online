@@ -936,8 +936,11 @@
     if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")||Duas fotos iguais no mesmo relatório indicam imagem reaproveitada; cada foto deve mostrar o equipamento naquele momento.");
     const ob = FOTOS_OBRIG[l.segKey];
     if (ob) {
-      const faltam = ob.filter(function (o) { return !fotos.some(function (f) { return chaveLegenda(f.legenda).indexOf(o[1]) >= 0; }); }).map(function (o) { return o[0]; });
+      const estado = function (o) { return estadoObrig(o, fotos); };
+      const faltam = ob.filter(function (o) { return estado(o) === "Ausente"; }).map(function (o) { return o[0]; });
+      const ruins = ob.filter(function (o) { const s = estado(o); return s === "Repetida" || s === "Inadequada"; }).map(function (o) { return o[0] + " (" + estado(o).toLowerCase() + ")"; });
       if (faltam.length) a.push("Foto obrigatória ausente: " + faltam.join(", ") + "||O relatório de " + l.seg + " precisa ter estas fotos (as marcadas como \"Relato - Opcional\" não são cobradas). Sem elas a aba precisa ser refeita.");
+      if (ruins.length) a.push("Foto obrigatória inadequada: " + ruins.join(", ") + "||A primeira foto com a imagem vale; as cópias da mesma foto em outras etapas não comprovam a etapa, e a foto que a validadora marcou como inadequada também não vale. O técnico precisa tirar a foto correta de cada etapa.");
     }
     if (rep.ocrFeito) {
       const sem = fotos.filter(function (f) { return !(f.carimbo && f.carimbo.data); }).length;
@@ -1089,12 +1092,18 @@
     if (!rows.length) return "";
     return '<div class="msec"><h4>Medições</h4><table class="tb"><tbody>' + rows.join("") + "</tbody></table></div>";
   }
+  function estadoObrig(o, fotos) {   // Presente, Repetida, Inadequada ou Ausente
+    const c = fotos.filter(function (f) { return chaveLegenda(f.legenda).indexOf(o[1]) >= 0; });
+    if (!c.length) return "Ausente";
+    if (c.some(function (f) { return !f.repetida && !f.invalida; })) return "Presente";
+    return c.some(function (f) { return f.invalida; }) ? "Inadequada" : "Repetida";
+  }
   function obrigHtml(l, fotos) {
     const ob = FOTOS_OBRIG[l.segKey];
     if (!ob) return "";
     const itens = ob.map(function (o) {
-      const ok = fotos.some(function (f) { return chaveLegenda(f.legenda).indexOf(o[1]) >= 0; });
-      return '<li>' + (ok ? "Presente" : '<span class="refazer">Ausente</span>') + " · " + esc(o[0]) + "</li>";
+      const s = estadoObrig(o, fotos);
+      return '<li>' + (s === "Presente" ? s : '<span class="refazer">' + s + "</span>") + " · " + esc(o[0]) + "</li>";
     }).join("");
     return '<div class="msec"><h4>Fotos obrigatórias</h4><ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7">' + itens + "</ul></div>";
   }
@@ -1108,7 +1117,8 @@
       if (f.repetida) sel.push('<span class="refazer">Igual à foto ' + f.repetida + "</span>");
       if (f.carimbo && f.carimbo.data) sel.push(dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") + (f.carimbo.manual ? " (informada)" : ""));
       else if (r.ocrFeito) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
-      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + (f.legenda && /opcional/i.test(f.legenda) ? "" : "") + '</div><div class="g">' + sel.join(" · ") + "</div></div>";
+      if (f.invalida) sel.unshift('<span class="refazer">Marcada como inadequada</span>');
+      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + '</div><label class="g" style="display:block;margin-top:2px"><input type="checkbox" class="inad" data-i="' + i + '"' + (f.invalida ? " checked" : "") + '> Foto inadequada</label></div>';
     }).join("");
     return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + obrigHtml(l, r.fotos) + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
@@ -1226,6 +1236,14 @@
     ligarEscal(l);
     const imgs = Array.prototype.slice.call(document.querySelectorAll(".fto img"));
     imgs.forEach(function (im, k) { im.addEventListener("click", function () { ampliar(imgs, k); }); });
+    Array.prototype.forEach.call(document.querySelectorAll(".inad"), function (cb) {
+      cb.addEventListener("change", function () {
+        l.rep.fotos[Number(cb.dataset.i)].invalida = cb.checked;
+        recalcular();
+        const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0];
+        if (l2) abrirDetalhe(l2);
+      });
+    });
     Array.prototype.forEach.call(document.querySelectorAll(".dtm"), function (inp) {
       inp.addEventListener("change", function () {
         if (!inp.value) return;
@@ -1254,6 +1272,7 @@
   });
 
   $("botaoGravar").addEventListener("click", async function () {
+    const agora = new Date().toISOString();
     const lote = E.linhas.filter(function (l) { return l.rep; }).map(function (l) {
       const r = l.rep;
       const iso = dataIso(r.dataInicio);
@@ -1263,14 +1282,31 @@
         wo: l.wo || null, ticket: r.ticket || null, situacao_final: r.situacaoFinal || null,
         data_relatorio: iso ? iso + "T" + (r.horaInicio || "00:00:00") + "-03:00" : null,
         fotos_qtd: (r.fotos || []).length, achados: (l.achados || []).map(function (t) { return { texto: String(t).replace("||", " — ") }; }), refazer: !!l.refazer,
-        analisado_por: E.usuario, analisado_em: new Date().toISOString()
+        tipo_linha: "relatorio", analisado_por: E.usuario, analisado_em: agora
       };
     });
-    if (!lote.length) { $("msg").innerHTML = '<span class="erro">Não há relatórios lidos para gravar.</span>'; return; }
+    // Pendências sem PDF: aba obrigatória que não foi preenchida ou cujo PDF não foi enviado.
+    const pend = E.linhas.filter(function (l) { return !l.rep && (l.faltando || l.semPdf); }).map(function (l) {
+      const tipo = l.faltando ? "faltando" : "sem_pdf";
+      return {
+        chave: [E.siteChave, E.mes, l.segKey, chaveTag(l.tag), tipo].join("|"),
+        site: E.siteTxt.toUpperCase(), site_chave: E.siteChave, mes: E.mes + "-01", segmento: l.seg, tag: l.tag || null, arquivo: "(sem arquivo)",
+        wo: l.wo || null, ticket: null, situacao_final: null, data_relatorio: null, fotos_qtd: 0,
+        achados: [{ texto: l.faltando ? "Aba obrigatória sem preenchimento no sistema do cliente" : "Consta na Validação, mas o PDF não foi enviado" }],
+        refazer: false, tipo_linha: tipo, analisado_por: E.usuario, analisado_em: agora
+      };
+    });
+    if (!lote.length && !pend.length) { $("msg").innerHTML = '<span class="erro">Não há nada para gravar.</span>'; return; }
     $("botaoGravar").disabled = true;
-    const r = await banco.from("relatorios_analise").upsert(lote, { onConflict: "chave" });
+    let erro = null;
+    // Remove as pendências antigas deste site e mês (se a aba foi enviada depois, ela deixa de ser pendência).
+    const del = await banco.from("relatorios_analise").delete().eq("site_chave", E.siteChave).eq("mes", E.mes + "-01").neq("tipo_linha", "relatorio");
+    if (del.error) erro = del.error;
+    const todos = lote.concat(pend);
+    if (!erro && todos.length) { const up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" }); if (up.error) erro = up.error; }
     $("botaoGravar").disabled = false;
-    $("msg").innerHTML = r.error ? '<span class="erro">Erro ao gravar: ' + esc(r.error.message) + "</span>" : "Análise gravada: " + lote.length + " relatórios.";
+    $("msg").innerHTML = erro ? '<span class="erro">Erro ao gravar: ' + esc(erro.message) + (/tipo_linha/.test(erro.message) ? " (rode o arquivo relatorios_pendencias_sql.txt no Supabase)" : "") + "</span>"
+      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF.";
   });
 
   window.__rel = { interpretarPagina1: interpretarPagina1, juntarLinhas: juntarLinhas, segDoPdf: segDoPdf, E: E, recalcular: recalcular };
