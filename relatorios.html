@@ -947,6 +947,20 @@
       if (sem) a.push("Data não identificada em " + sem + " de " + fotos.length + " fotos||A data e a hora carimbadas na foto são obrigatórias. A leitura automática não encontrou a data nestas fotos: informe a data manualmente no detalhe da aba (se a foto mostra a data) ou peça ao técnico para refazer as fotos.");
       const fora = {};
       fotos.forEach(function (f) { if (f.carimbo && f.carimbo.data && f.carimbo.data.slice(0, 7) !== E.mes) fora[f.carimbo.data] = 1; });
+      // datas diferentes entre as fotos do mesmo relatório (vale também para a data digitada pela validadora)
+      const porDia = {};
+      fotos.forEach(function (f, i) { if (f.carimbo && f.carimbo.data) (porDia[f.carimbo.data] = porDia[f.carimbo.data] || []).push(i + 1); });
+      const dias = Object.keys(porDia);
+      if (dias.length > 1) {
+        dias.sort(function (x, y) { return porDia[y].length - porDia[x].length || (x < y ? -1 : 1); });
+        const txt = dias.map(function (d) { return dataBr(d) + " (foto" + (porDia[d].length > 1 ? "s " : " ") + porDia[d].join(", ") + ")"; }).join("; ");
+        a.push("Fotos com datas diferentes no mesmo relatório: " + txt + "||As fotos de uma mesma aba devem ser tiradas no mesmo atendimento. Uma data diferente das demais (lida pelo sistema ou informada pela validadora) indica foto de outro dia ou reaproveitada, e a aba precisa ser refeita.");
+      }
+      const di = dataIso(rep.dataInicio), df = dataIso(rep.dataFim) || di;
+      if (di) {
+        const foraTk = dias.filter(function (d) { return d < di || d > df; });
+        if (foraTk.length) a.push("Foto com data fora do período do ticket: " + foraTk.map(dataBr).join(", ") + "||O ticket vai de " + dataBr(di) + " a " + dataBr(df) + "; a foto deve ser tirada durante a execução da preventiva.");
+      }
       Object.keys(fora).forEach(function (d) { a.push("Foto com data " + dataBr(d) + " fora de " + nomeMes(E.mes) + "||A foto foi tirada fora do mês da preventiva; o cliente não aceita e a aba precisa ser refeita."); });
     }
     if (l.segKey === "ALARMES") {
