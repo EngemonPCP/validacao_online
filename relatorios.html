@@ -692,9 +692,9 @@
   function lerCarimbo(txt, aceita) {
     const t = String(txt || "").replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0").replace(/\s+/g, " ");
     const cand = [];
-    let m, re;
+    let m, re, umDigito = false;
     re = /(\d{1,2})\D{0,6}([a-zA-Z]{3})\.?\D{0,8}(20\d{2})/g;   // "03 nov. 2026" (formato do carimbo): tem prioridade
-    while ((m = re.exec(t))) { const mes = mesAprox(m[2]); if (mes) cand.push([Number(m[3]), mes, Number(m[1])]); }
+    while ((m = re.exec(t))) { const mes = mesAprox(m[2]); if (mes) { cand.push([Number(m[3]), mes, Number(m[1])]); if (m[1] === "1" && !/\d/.test(t.charAt(m.index - 1) || "")) umDigito = true; } }
     re = /(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(20\d{2})/g;
     while ((m = re.exec(t))) cand.push([Number(m[3]), Number(m[2]), Number(m[1])]);
     re = /(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/g;
@@ -725,7 +725,7 @@
         for (let z = 0; z < anos.length; z++) {
           const iso = anos[z] + "-" + pad(mes) + "-" + pad(dia);
           if (aceita && !aceita(iso)) continue;
-          d = iso; incerta = true; break;
+          d = iso; incerta = !(ym && /\d:\d\d/.test(t) && /^[lIi|!\]\[]{1,2}$/.test(tk) && tk.length === 2); break;
         }
         if (d) break;
       }
@@ -735,7 +735,7 @@
       if (c[1] < 1 || c[1] > 12 || c[2] < 1 || c[2] > 31) continue;
       const iso = c[0] + "-" + pad(c[1]) + "-" + pad(c[2]);
       if (aceita && !aceita(iso)) continue;   // ignora datas de etiquetas/placas que aparecem na foto
-      d = iso; break;
+      d = iso; if (umDigito && cand.length === 1) incerta = true; break;
     }
     const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
     let hora = h ? h[0] : null;
@@ -751,7 +751,9 @@
   }
   let tess = null, tessFalhou = false;
   let pool = null;
-  async function carregarPool() {
+  let poolPromessa = null;
+  function carregarPool() { if (!poolPromessa) poolPromessa = carregarPoolReal(); return poolPromessa; }
+  async function carregarPoolReal() {
     if (pool) return pool;
     const w0 = await carregarTesseract();
     if (!w0) return null;
@@ -774,7 +776,7 @@
   // O carimbo (data, hora e endereço) fica no canto inferior direito, em letra branca: recorta, amplia e isola o branco.
   const PLANOS_OCR = [
     // carimbo no canto inferior direito, em tons de cinza com limiar baixo (o "1" do dia é fino e some com limiar alto)
-    { l: 0.45, t: 0.78, m: "g", th: 170, psm: "6", s: 5 }, { l: 0.45, t: 0.78, m: "g", th: 190, psm: "6", s: 5 }, { l: 0.45, t: 0.78, m: "g", th: 150, psm: "6", s: 5 },
+    { l: 0.5, t: 0.8, b: 0.97, m: "g", th: 175, psm: "6", s: 6 }, { l: 0.55, t: 0.83, b: 0.93, m: "g", th: 175, psm: "6", s: 6 }, { l: 0.5, t: 0.8, b: 0.97, m: "g", th: 200, psm: "6", s: 6 }, { l: 0.5, t: 0.8, b: 0.97, m: "g", th: 150, psm: "6", s: 6 },
     // letra branca sobre fundo colorido (céu, parede): usa o menor canal de cor, que fica baixo no azul e alto só no branco
     { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 200, psm: "11", s: 3 }, { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 220, psm: "6", s: 3 },
     { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 220, psm: "11", s: 3 }, { l: 0, t: 0.45, r: 0.62, b: 0.9, m: "min", th: 200, psm: "6", s: 3 },
@@ -789,10 +791,30 @@
     { l: 0, t: 0, r: 0.6, b: 0.3, th: 225, psm: "6" }, { l: 0, t: 0, r: 0.6, b: 0.3, th: 245, psm: "6" },                           // superior esquerdo
     { l: 0, t: 0.55, th: 225, psm: "11" }
   ];
+  // Plano A: a inteligência artificial do Cloudflare (pelo Worker) lê o recorte do carimbo. Se falhar ou a cota do dia acabar, vale o plano B (Tesseract).
+  let iaOff = false, iaTexto = [];
+  async function iaFoto(im) {
+    if (iaOff || !FOTOS_URL) return null;
+    const x0 = Math.floor(im.width * 0.4), y0 = Math.floor(im.height * 0.7), cw = im.width - x0, ch = im.height - y0;
+    const es = Math.min(1, 720 / cw);
+    const c = document.createElement("canvas"); c.width = Math.round(cw * es); c.height = Math.round(ch * es);
+    c.getContext("2d").drawImage(im, x0, y0, cw, ch, 0, 0, c.width, c.height);
+    const blob = await new Promise(function (ok) { c.toBlob(ok, "image/jpeg", 0.85); });
+    if (!blob) return null;
+    let rs;
+    try { rs = await fetch(FOTOS_URL.replace(/\/+$/, "") + "/ler-carimbo", { method: "POST", headers: { Authorization: "Bearer " + (await tokenSessao()), "Content-Type": "image/jpeg" }, body: blob }); } catch (e) { return null; }
+    if (!rs.ok) { if (rs.status === 429 || rs.status === 401 || rs.status === 404 || rs.status === 500 || rs.status === 503) iaOff = true; return null; }
+    const j = await rs.json().catch(function () { return null; });
+    const texto = j && j.texto ? String(j.texto) : "";
+    if (iaTexto.length < 5) iaTexto.push(texto);
+    return texto ? lerCarimbo(texto, dataPlausivel) : null;
+  }
   async function ocrFoto(w, foto) {
     // lê uma vez só: vale o primeiro recorte que trouxer uma data plausível (se vier errada, a validadora corrige na divergência de data)
     const im = await carregarImg(foto.url);
     let reserva = null;
+    try { const ia = await iaFoto(im); if (ia && ia.data) { if (!ia.incerta) { ia.ia = true; return ia; } reserva = ia; } } catch (e) { /* segue para o plano B */ }
+    if (!w) { const pw = await carregarPool(); w = pw && pw[0]; if (!w) return reserva; }
     const total = Math.min(PLANOS_OCR.length, 16);   // os recortes mais prováveis primeiro; foto sem data nos 14 primeiros vai para preenchimento manual
     for (let k = 0; k < total; k++) {
       const p = PLANOS_OCR[k];
@@ -818,13 +840,8 @@
     E.pdfs.forEach(function (p) { (p.fotos || []).forEach(function (f) { if (f.carimbo === null) fila.push([p, f]); }); });
     if (!fila.length) return;
     $("msg").textContent = "Preparando a leitura de data e hora das fotos...";
-    const ws = await carregarPool(), w = ws && ws[0];
-    if (!w) {
-      $("msg").innerHTML = '<span class="erro">Não consegui carregar a leitura automática de data e hora (sem acesso ao serviço de leitura). Informe a data de cada foto manualmente no detalhe da aba.</span>';
-      E.pdfs.forEach(function (p) { (p.fotos || []).forEach(function (f) { if (f.carimbo === null) f.carimbo = false; }); p.ocrFeito = true; });
-      recalcular();
-      return;
-    }
+    iaOff = false; iaTexto = [];
+    const ws = [null, null, null, null];   // 4 leituras ao mesmo tempo; o Tesseract (plano B) só é carregado se a IA falhar
     E.lendoFotos = true;
     const consulta = E.siteChave + E.mes;
     let feitas = 0, prox = 0;
@@ -832,7 +849,7 @@
       while (prox < fila.length) {
         if (consulta !== E.siteChave + E.mes) return;
         const it = fila[prox++];
-        try { it[1].carimbo = (await ocrFoto(wk, it[1])) || false; } catch (e) { it[1].carimbo = false; E.ocrErro = String((e && e.message) || e); }
+        try { it[1].carimbo = (await ocrFoto(wk || (pool && pool[feitas % pool.length]) || null, it[1])) || false; } catch (e) { it[1].carimbo = false; E.ocrErro = String((e && e.message) || e); }
         feitas++;
         $("msg").textContent = "Lendo data e hora das fotos: " + feitas + " de " + fila.length;
         it[0].ocrFeito = (it[0].fotos || []).every(function (f) { return f.carimbo !== null; });
