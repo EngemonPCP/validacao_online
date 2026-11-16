@@ -1021,9 +1021,22 @@
     if (ob) {
       const estado = function (o) { return estadoObrig(o, fotos); };
       const faltam = ob.filter(function (o) { return estado(o) === "Ausente"; }).map(function (o) { return o[0]; });
-      const ruins = ob.filter(function (o) { const s = estado(o); return s === "Repetida" || s === "Inadequada"; }).map(function (o) { return o[0] + " (" + estado(o).toLowerCase() + ")"; });
+      const inad = [], repe = [], dInad = [], dRepe = [];
+      ob.forEach(function (o) {
+        const st = estado(o); if (st !== "Repetida" && st !== "Inadequada") return;
+        const c = fotos.map(function (f, i) { return [f, i]; }).filter(function (x) { return chaveLegenda(x[0].legenda).indexOf(o[1]) >= 0; });
+        if (st === "Inadequada") {
+          inad.push(o[0]);
+          const n = c.filter(function (x) { return x[0].invalida; }).map(function (x) { return x[1] + 1; });
+          dInad.push(o[0] + ": " + (n.length > 1 ? "fotos " + n.join(", ") + " marcadas" : "foto " + n[0] + " marcada") + " como inadequada na análise");
+        } else {
+          repe.push(o[0]);
+          dRepe.push(o[0] + ": " + c.map(function (x) { const ig = igualA(fotos, x[1]); return "a foto " + (x[1] + 1) + (ig ? " é igual à foto " + ig + (fotos[ig - 1] && fotos[ig - 1].legenda ? " (" + fotos[ig - 1].legenda + ")" : "") : ""); }).join("; "));
+        }
+      });
       if (faltam.length) a.push("Foto obrigatória ausente: " + faltam.join(", ") + "||O relatório de " + (l.segTrocado || l.seg) + " precisa ter estas fotos (as marcadas como \"Relato - Opcional\" não são cobradas). Sem elas a aba precisa ser refeita.");
-      if (ruins.length) a.push("Foto obrigatória inadequada: " + ruins.join(", ") + "||A primeira foto com a imagem vale; as cópias da mesma foto em outras etapas não comprovam a etapa, e a foto que a validadora marcou como inadequada também não vale. O técnico precisa tirar a foto correta de cada etapa.");
+      if (inad.length) a.push("Foto obrigatória inadequada: " + inad.join(", ") + "||" + dInad.join(" · ") + ". Refazer: o técnico precisa tirar uma nova foto " + (inad.length > 1 ? "de cada etapa." : "desta etapa."));
+      if (repe.length) a.push("Foto obrigatória repetida: " + repe.join(", ") + "||" + dRepe.join(" · ") + ". Só a primeira foto comprova a etapa: o técnico precisa tirar uma nova foto " + (repe.length > 1 ? "de cada etapa." : "desta etapa."));
     }
     if (FOTOS_MIN[segFoto(l)]) {
       const nv = fotosValidas(fotos), mn = FOTOS_MIN[segFoto(l)];
