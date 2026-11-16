@@ -4294,7 +4294,8 @@
 
   // ==== VALIDAÇÃO PREVENTIVA ====================================================
   REGRAS.validacao = {
-    inicio: "2026-11-11",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
+    inicio: "2026-10-30",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
+    inicioPendencias: "2026-11-11",             // só a tela Pendências (e a pendência da Ficha) ignora visitas anteriores a este dia; as visitas do Painel não mudam
     fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente", "Local diferente do site", "Inventário excluído"],
     pendencias: ["Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"],
     inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
@@ -5881,7 +5882,7 @@
   }
   // Corte: tudo cuja visita registrada seja anterior a REGRAS.validacao.inicio fica fora do sistema (continua guardado no banco).
   async function pdAplicarCorte(lista) {
-    const ini = REGRAS.validacao.inicio;
+    const ini = REGRAS.validacao.inicioPendencias;
     const chaves = []; lista.forEach(function (p) { if (chaves.indexOf(p.site_chave) < 0) chaves.push(p.site_chave); });
     const visitas = {};
     for (let i = 0; i < chaves.length; i += 100) {
