@@ -721,6 +721,17 @@
     return a >= b - 18 && a <= b + 2;
   }
   let tess = null, tessFalhou = false;
+  let pool = null;
+  async function carregarPool() {
+    if (pool) return pool;
+    const w0 = await carregarTesseract();
+    if (!w0) return null;
+    const n = Math.max(2, Math.min(4, (navigator.hardwareConcurrency || 4) - 1));
+    const ws = [w0];
+    try { for (let i = 1; i < n; i++) ws.push(await window.Tesseract.createWorker("eng")); } catch (e) { /* segue com os que abriram */ }
+    pool = ws;
+    return pool;
+  }
   async function carregarTesseract() {
     if (tess) return tess;
     if (tessFalhou) return null;
@@ -750,10 +761,11 @@
   async function ocrFoto(w, foto) {
     // lê uma vez só: vale o primeiro recorte que trouxer uma data plausível (se vier errada, a validadora corrige na divergência de data)
     const im = await carregarImg(foto.url);
-    for (let k = 0; k < PLANOS_OCR.length; k++) {
+    const total = Math.min(PLANOS_OCR.length, 14);   // os recortes mais prováveis primeiro; foto sem data nos 14 primeiros vai para preenchimento manual
+    for (let k = 0; k < total; k++) {
       const p = PLANOS_OCR[k];
       const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = Math.floor(im.width * (p.r || 1)) - x0, ch = Math.floor(im.height * (p.b || 1)) - y0;
-      const c = document.createElement("canvas"); const es = p.s || 3; c.width = cw * es; c.height = ch * es;
+      const c = document.createElement("canvas"); const es = Math.min(p.s || 3, cw * 3 > 1600 ? 1.5 : (p.s || 3)); c.width = Math.round(cw * es); c.height = Math.round(ch * es);
       const x = c.getContext("2d"); x.drawImage(im, x0, y0, cw, ch, 0, 0, c.width, c.height);
       const dd = x.getImageData(0, 0, c.width, c.height), px = dd.data;
       for (let i = 0; i < px.length; i += 4) {
@@ -774,7 +786,7 @@
     E.pdfs.forEach(function (p) { (p.fotos || []).forEach(function (f) { if (f.carimbo === null) fila.push([p, f]); }); });
     if (!fila.length) return;
     $("msg").textContent = "Preparando a leitura de data e hora das fotos...";
-    const w = await carregarTesseract();
+    const ws = await carregarPool(), w = ws && ws[0];
     if (!w) {
       $("msg").innerHTML = '<span class="erro">Não consegui carregar a leitura automática de data e hora (sem acesso ao serviço de leitura). Informe a data de cada foto manualmente no detalhe da aba.</span>';
       E.pdfs.forEach(function (p) { (p.fotos || []).forEach(function (f) { if (f.carimbo === null) f.carimbo = false; }); p.ocrFeito = true; });
@@ -783,13 +795,21 @@
     }
     E.lendoFotos = true;
     const consulta = E.siteChave + E.mes;
-    for (let i = 0; i < fila.length; i++) {
-      if (consulta !== E.siteChave + E.mes) return;
-      $("msg").textContent = "Lendo data e hora das fotos: " + (i + 1) + " de " + fila.length;
-      try { fila[i][1].carimbo = (await ocrFoto(w, fila[i][1])) || false; } catch (e) { fila[i][1].carimbo = false; E.ocrErro = String((e && e.message) || e); }
-      fila[i][0].ocrFeito = (fila[i][0].fotos || []).every(function (f) { return f.carimbo !== null; });
-      if (fila[i][0].ocrFeito) recalcular();
+    let feitas = 0, prox = 0;
+    async function trabalhador(wk) {
+      while (prox < fila.length) {
+        if (consulta !== E.siteChave + E.mes) return;
+        const it = fila[prox++];
+        try { it[1].carimbo = (await ocrFoto(wk, it[1])) || false; } catch (e) { it[1].carimbo = false; E.ocrErro = String((e && e.message) || e); }
+        feitas++;
+        $("msg").textContent = "Lendo data e hora das fotos: " + feitas + " de " + fila.length;
+        it[0].ocrFeito = (it[0].fotos || []).every(function (f) { return f.carimbo !== null; });
+        if (it[0].ocrFeito) recalcular();
+      }
     }
+    $("msg").textContent = "Lendo data e hora das fotos: 0 de " + fila.length;
+    await Promise.all(ws.map(trabalhador));
+    if (consulta !== E.siteChave + E.mes) return;
     E.lendoFotos = false;
     $("msg").textContent = E.ocrErro ? "Erro na leitura de data e hora das fotos: " + E.ocrErro : "";
     recalcular();
@@ -965,17 +985,17 @@
     const fotos = rep.fotos || [];
     const reps = fotos.map(function (f, i) { const ig = igualA(fotos, i); return ig ? "foto " + (i + 1) + " igual à " + ig : null; }).filter(Boolean);
     if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")||Duas fotos iguais no mesmo relatório indicam imagem reaproveitada; cada foto deve mostrar o equipamento naquele momento.");
-    const ob = FOTOS_OBRIG[l.segKey];
+    const ob = FOTOS_OBRIG[segFoto(l)];
     if (ob) {
       const estado = function (o) { return estadoObrig(o, fotos); };
       const faltam = ob.filter(function (o) { return estado(o) === "Ausente"; }).map(function (o) { return o[0]; });
       const ruins = ob.filter(function (o) { const s = estado(o); return s === "Repetida" || s === "Inadequada"; }).map(function (o) { return o[0] + " (" + estado(o).toLowerCase() + ")"; });
-      if (faltam.length) a.push("Foto obrigatória ausente: " + faltam.join(", ") + "||O relatório de " + l.seg + " precisa ter estas fotos (as marcadas como \"Relato - Opcional\" não são cobradas). Sem elas a aba precisa ser refeita.");
+      if (faltam.length) a.push("Foto obrigatória ausente: " + faltam.join(", ") + "||O relatório de " + (l.segTrocado || l.seg) + " precisa ter estas fotos (as marcadas como \"Relato - Opcional\" não são cobradas). Sem elas a aba precisa ser refeita.");
       if (ruins.length) a.push("Foto obrigatória inadequada: " + ruins.join(", ") + "||A primeira foto com a imagem vale; as cópias da mesma foto em outras etapas não comprovam a etapa, e a foto que a validadora marcou como inadequada também não vale. O técnico precisa tirar a foto correta de cada etapa.");
     }
-    if (FOTOS_MIN[l.segKey]) {
-      const nv = fotosValidas(fotos), mn = FOTOS_MIN[l.segKey];
-      if (nv < mn) a.push("Fotos insuficientes: " + nv + " de " + mn + " no mínimo||O relatório de " + l.seg + " precisa ter pelo menos " + mn + " fotos válidas (não repetidas e não marcadas como inadequadas). Sem isso a aba precisa ser refeita.");
+    if (FOTOS_MIN[segFoto(l)]) {
+      const nv = fotosValidas(fotos), mn = FOTOS_MIN[segFoto(l)];
+      if (nv < mn) a.push("Fotos insuficientes: " + nv + " de " + mn + " no mínimo||O relatório de " + (l.segTrocado || l.seg) + " precisa ter pelo menos " + mn + " fotos válidas (não repetidas e não marcadas como inadequadas). Sem isso a aba precisa ser refeita.");
     }
     if (rep.ocrFeito || E.snapModo) {
       const sem = fotos.filter(function (f) { return !(f.carimbo && f.carimbo.data); }).length;
@@ -1167,11 +1187,11 @@
     return c.some(function (f) { return f.invalida; }) ? "Inadequada" : "Repetida";
   }
   function obrigHtml(l, fotos) {
-    if (FOTOS_MIN[l.segKey]) {
-      const nv = fotosValidas(fotos), mn = FOTOS_MIN[l.segKey];
+    if (FOTOS_MIN[segFoto(l)]) {
+      const nv = fotosValidas(fotos), mn = FOTOS_MIN[segFoto(l)];
       return '<div class="msec"><h4>Fotos obrigatórias</h4><div style="font-size:13px">Mínimo de ' + mn + " fotos válidas: " + (nv >= mn ? nv + " (ok)" : '<span class="refazer">' + nv + " de " + mn + "</span>") + "</div></div>";
     }
-    const ob = FOTOS_OBRIG[l.segKey];
+    const ob = FOTOS_OBRIG[segFoto(l)];
     if (!ob) return "";
     const itens = ob.map(function (o) {
       const s = estadoObrig(o, fotos);
@@ -1213,6 +1233,8 @@
     }).join("");
     return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + obrigHtml(l, r.fotos) + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
+  // segmento trocado: as fotos cobradas são as do segmento em que o técnico realmente preencheu o relatório
+  function segFoto(l) { return l.segTrocado && l.rep && l.rep.segmento ? l.rep.segmento : l.segKey; }
   const FOTOS_OBRIG = {
     BAIXATENSAO: [["Leitura/Número Medidor", "LEITURANUMEROMEDIDOR"], ["Disjuntor Geral", "DISJUNTORGERAL"], ["Padrão Entrada", "PADRAOENTRADA"], ["Vista Frontal Site", "FRONTALSITE"]],
     QDCA: [["Visão Geral QDCA", "VISAOGERALQDCA"], ["TAG QDCA", "TAGQDCA"], ["Vista Interna QDCA", "VISTAINTERNAQDCA"], ["Multimedidor (A)", "MULTIMEDIDOR"]],
