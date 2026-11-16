@@ -6225,7 +6225,21 @@
     // alarmes
     let alh = "";
     try { if (regAl) alh = desenharPermanencia(analisePermanencia(regAl)); } catch (e) { alh = ""; }
-    h += '<div class="fi-bl"><h3>Alarmes · Permanência x alarmes<span>consulta</span></h3><div style="padding:6px 8px">' + (alh || '<div class="vl-vazio">Sem histórico de alarmes importado para este site neste mês.</div>') + "</div></div>";
+    // o que foi marcado na validação online sobre alarmes (inclusive "site sem alarme externado")
+    let alst = "";
+    try {
+      const vAl = vd.filter(function (v) { const x = v.alarmes || {}; return x.semConfig || x.config || x.hist || (x.conf && (x.conf.bornes || x.conf.fotos)) || confBloco(x, "bornes").estado || confBloco(x, "fotos").estado; }).pop();
+      if (vAl) {
+        const x = vAl.alarmes || {}, por = String(vAl.analista || "").split("@")[0], quando = vAl.data ? dataBR(vAl.data).slice(0, 5) : "";
+        const bl = function (k) { const c = confBloco(x, k); return c.estado === "ok" ? "Conforme" : c.estado === "nao" ? "Não conforme" + (c.motivo ? ": " + esc(c.motivo) : "") : '<span class="fi-mu">Não conferido</span>'; };
+        alst = '<table><tr><th style="width:230px">Validação online</th><th>Resultado</th></tr>' +
+          "<tr><td>Configuração de alarme</td><td>" + (x.semConfig ? "<b>Site sem alarme externado</b> (marcado: sem configuração de alarme para conferir)" : x.config ? "Carregada" + (x.config.reaproveitada ? " (reaproveitada de validação anterior)" : "") : '<span class="fi-mu">Não carregada</span>') + "</td></tr>" +
+          "<tr><td>Histórico de alarmes</td><td>" + (x.semConfig ? '<span class="fi-mu">Não se aplica</span>' : x.hist ? (x.hist.vazio ? "Carregado, sem alarmes no período" : "Carregado") : '<span class="fi-mu">Não carregado</span>') + "</td></tr>" +
+          "<tr><td>Bornes sem jump</td><td>" + bl("bornes") + "</td></tr><tr><td>Fotos das abas de alarme</td><td>" + bl("fotos") + "</td></tr>" +
+          (por ? "<tr><td>Conferido por</td><td>" + esc(por) + (quando ? " · visita de " + quando : "") + "</td></tr>" : "") + "</table>";
+      }
+    } catch (e) { alst = ""; }
+    h += '<div class="fi-bl"><h3>Alarmes · Permanência x alarmes<span>consulta</span></h3>' + alst + '<div style="padding:6px 8px">' + (alh || (alst ? "" : '<div class="vl-vazio">Sem histórico de alarmes importado para este site neste mês.</div>')) + "</div></div>";
     // pendências e tratativas (somente consulta; a tratativa é feita em Pendências)
     const ORI = { validacao_online: "Validação online", relatorios: "Relatórios", manual: "Manual" };
     h += '<div class="fi-bl"><h3>Pendências e tratativas<span>as tratativas são feitas na tela Pendências</span></h3>' + (pds.length ? "<table><tr><th>Aba</th><th>Pendência</th><th>Origem</th><th>Responsável</th><th>Tratativa</th><th>Situação</th></tr>" + pds.map(function (p) {
