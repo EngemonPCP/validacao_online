@@ -1120,8 +1120,8 @@
   // ==== TELA ===============================================================
   function marca(l) {
     if (l.faltando) return '<span class="refazer">Faltando</span>';
-    if (l.refazer) return '<span class="refazer">Refazer</span>' + (l.segTrocado ? '<br><span class="g" style="font-size:11px">segmento informado: ' + esc(l.segTrocado) + "</span>" : "");
-    if (l.segTrocado) return '<span class="g" style="font-size:12px">Segmento informado: ' + esc(l.segTrocado) + " (aceito como " + esc(l.seg) + ")</span>";
+    if (l.refazer) return '<span class="refazer">Refazer</span>' + (l.segTrocado ? '<br><span class="g" style="font-size:11px">previsto na WO: ' + esc(l.seg) + "</span>" : "");
+    if (l.segTrocado) return '<span class="g" style="font-size:12px">Previsto na WO: ' + esc(l.seg) + " (técnico informou " + esc(l.segTrocado) + ")</span>";
     if (l.semPdf) return '<span class="g">Sem PDF</span>';
     return "";
   }
@@ -1151,7 +1151,7 @@
           const i = E.linhas.indexOf(l), r = l.rep, v = l.val;
           const prov = r && ehProvisorio(r.ticket);
           const sub = !r;
-          return '<tr class="clic" data-i="' + i + '"><td>' + esc(l.seg) + "</td><td>" + esc((r && r.tag) || l.tag || "—") + "</td><td>" + l.obrig + "</td>" +
+          return '<tr class="clic" data-i="' + i + '"><td>' + esc(l.segTrocado || l.seg) + "</td><td>" + esc((r && r.tag) || l.tag || "—") + "</td><td>" + l.obrig + "</td>" +
             "<td" + (sub ? ' class="g"' : "") + ">" + (r ? esc(r.arquivo) + (l.dups && l.dups.length ? ' <span class="tag">+' + l.dups.length + " repetido</span>" : "") : "Sem relatório") + "</td><td>" + (r ? esc(r.situacaoFinal || "—") : "—") + "</td>" +
             "<td>" + (v ? esc(v.fato || "—") : "—") + "</td><td>" + (v ? esc(v.status || "—") : "—") + "</td>" +
             "<td>" + (r ? esc(r.ticket || "—") + (prov ? ' <span class="tag">Provisório</span>' : "") : "—") + "</td><td>" + marca(l) + "</td></tr>";
@@ -1372,7 +1372,7 @@
   function abrirDetalhe(l) {
     const r = l.rep, v = l.val;
     function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
-    $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.seg) + (l.tag ? " – " + esc(l.tag) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
+    $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.segTrocado || l.seg) + (l.tag ? " – " + esc(l.tag) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
       '<div class="mkv">' + kv("WO", l.wo ? l.tipoWo + " · " + l.wo : "Fora do Cronograma") + kv("Ticket", r && r.ticket) + kv("Resultado no relatório", r && r.situacaoFinal) +
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
       kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Aba prevista pela regra do segmento (não tem equipamento próprio no Cronograma)" : "")) +
@@ -1513,15 +1513,15 @@
     const out = [];
     E.linhas.forEach(function (l) {
       const tag = l.tag || (l.rep && l.rep.tag) || "";
-      const base = { aba: l.seg, tag: tag || null, setor: null };
+      const base = { aba: l.segTrocado || l.seg, tag: tag || null, setor: null };
       if (!l.rep && (l.faltando || l.semPdf)) {
         const tx = l.faltando ? "Aba obrigatória sem preenchimento no sistema do cliente" : "Consta na Validação, mas o PDF não foi enviado", t = pendTipo(tx);
-        out.push(Object.assign({}, base, { chave: pendChave(l.seg, tag, tx), tipo: t[0], texto: tx, evidencia: { wo: l.wo || null } }));
+        out.push(Object.assign({}, base, { chave: pendChave(l.segTrocado || l.seg, tag, tx), tipo: t[0], texto: tx, evidencia: { wo: l.wo || null } }));
         return;
       }
       (l.achados || []).forEach(function (a) {
         const q = String(a).split("||"), t = pendTipo(q[0]);
-        out.push(Object.assign({}, base, { chave: pendChave(l.seg, tag, q[0]), tipo: t[0], texto: q[0], evidencia: { arquivo: l.rep ? l.rep.arquivo : null, detalhe: q[1] || null, fotos: l.rep && l.rep.fotos ? l.rep.fotos.length : 0, wo: l.wo || null } }));
+        out.push(Object.assign({}, base, { chave: pendChave(l.segTrocado || l.seg, tag, q[0]), tipo: t[0], texto: q[0], evidencia: { arquivo: l.rep ? l.rep.arquivo : null, detalhe: q[1] || null, fotos: l.rep && l.rep.fotos ? l.rep.fotos.length : 0, wo: l.wo || null } }));
       });
     });
     return out;
@@ -1578,7 +1578,7 @@
     const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico"];
     const linhas = E.linhas.map(function (l) {
       const r = l.rep, v = l.val;
-      return [l.bloco, l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
+      return [l.bloco, l.segTrocado || l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
         l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — "), r ? ((r.comentario || "") + (r.justificativa ? " | Justificativa: " + r.justificativa : "")) : ""];
     });
     const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas));
