@@ -944,7 +944,8 @@
     }
     if (l.segKey === "ZELADORIA") {
       const restrito = /RESTRI|NAO OK/.test(semAcento(fatoAba).toUpperCase());
-      if (restrito && RE_ZELADORIA.test(txt) && !(E.escal && E.escal.chamado)) a.push("Zeladoria com restrição por vegetação ou similar, sem chamado de escalonamento||Quando o motivo é mato alto, vegetação ou algo parecido, o técnico precisa abrir chamado de escalonamento com a detentora. A foto não prova isso, então a validadora confere e registra o número do chamado aqui no detalhe da aba; ele fica guardado para o site.");
+      if (restrito && RE_ZELADORIA.test(txt) && E.escal && E.escal.chamado === SEM_TOA) a.push("Sem escalonamento via TOA||O motivo da restrição (vegetação ou similar) exigia chamado de escalonamento com a detentora pelo TOA, e o técnico não abriu. Fora do procedimento: a pendência segue para a validação offline, onde precisa ser respondida.");
+      else if (restrito && RE_ZELADORIA.test(txt) && !(E.escal && E.escal.chamado)) a.push("Zeladoria com restrição por vegetação ou similar, sem chamado de escalonamento||Quando o motivo é mato alto, vegetação ou algo parecido, o técnico precisa abrir chamado de escalonamento com a detentora. A foto não prova isso, então a validadora confere e registra o número do chamado aqui no detalhe da aba; ele fica guardado para o site.");
     }
     // fotos
     const fotos = rep.fotos || [];
@@ -1092,25 +1093,30 @@
     const f = semAcento(String((v && v.fato) || (r && r.situacaoFinal) || "")).toUpperCase();
     return l.segKey === "ZELADORIA" && /RESTRI|NAO OK/.test(f);
   }
+  const SEM_TOA = "SEM ESCALONAMENTO VIA TOA";
   function escalHtml(l) {
     if (!l.rep || !restritoZel(l)) return "";
-    const e = E.escal || {};
+    const e = E.escal || {}, sem = e.chamado === SEM_TOA;
     return '<div class="msec" id="secEscal"><h4>Chamado de escalonamento com a detentora</h4>' +
-      '<div class="linha"><div><div class="lab">Número do chamado <span class="laranja">*</span></div><input class="campo" id="eChamado" value="' + esc(e.chamado || "") + '"></div>' +
+      '<div class="linha"><div><div class="lab">Número do chamado <span class="laranja">*</span></div><input class="campo" id="eChamado" value="' + (sem ? "" : esc(e.chamado || "")) + '"' + (sem ? " disabled" : "") + '></div>' +
       '<div style="flex:1;min-width:240px"><div class="lab">Observação</div><input class="campo" id="eObs" style="width:100%" value="' + esc(e.observacao || "") + '"></div>' +
-      '<button class="btn" id="eSalvar" disabled>Registrar chamado</button></div><div class="g" id="eMsg">' + (e.chamado ? "Registrado por " + esc(e.registrado_por || "") : "") + "</div></div>";
+      '<button class="btn" id="eSalvar" disabled>Registrar</button></div>' +
+      '<label style="display:block;margin-top:8px;font-size:13px"><input type="checkbox" id="eSemToa"' + (sem ? " checked" : "") + '> Sem escalonamento via TOA (o técnico não abriu o chamado)</label>' +
+      '<div class="g" id="eMsg">' + (e.chamado ? (sem ? "Registrado como sem escalonamento via TOA por " : "Registrado por ") + esc(e.registrado_por || "") : "") + "</div></div>";
   }
   function ligarEscal(l) {
     if (!$("eSalvar")) return;
-    function validar() { $("eSalvar").disabled = !$("eChamado").value.trim(); }
-    $("eChamado").addEventListener("input", validar); validar();
+    function validar() { $("eSalvar").disabled = !($("eSemToa").checked || $("eChamado").value.trim()); }
+    $("eChamado").addEventListener("input", validar);
+    $("eSemToa").addEventListener("change", function () { $("eChamado").disabled = $("eSemToa").checked; if ($("eSemToa").checked) $("eChamado").value = ""; validar(); });
+    validar();
     $("eSalvar").addEventListener("click", async function () {
       $("eSalvar").disabled = true; $("eMsg").textContent = "Gravando...";
-      const row = { chave: E.siteChave + "|" + E.mes + "|zeladoria", site_chave: E.siteChave, mes: E.mes + "-01", motivo: (l.rep.comentario || "").slice(0, 300), chamado: $("eChamado").value.trim(), observacao: $("eObs").value.trim() || null, registrado_por: E.usuario, registrado_em: new Date().toISOString() };
+      const row = { chave: E.siteChave + "|" + E.mes + "|zeladoria", site_chave: E.siteChave, mes: E.mes + "-01", motivo: (l.rep.comentario || "").slice(0, 300), chamado: $("eSemToa").checked ? SEM_TOA : $("eChamado").value.trim(), observacao: $("eObs").value.trim() || null, registrado_por: E.usuario, registrado_em: new Date().toISOString() };
       const g = await banco.from("escalonamentos").upsert(row, { onConflict: "chave" });
       if (g.error) { $("eMsg").innerHTML = '<span class="erro">Erro ao gravar: ' + esc(g.error.message) + "</span>"; $("eSalvar").disabled = false; return; }
       E.escal = row;
-      $("eMsg").textContent = "Chamado registrado.";
+      $("eMsg").textContent = row.chamado === SEM_TOA ? "Registrado como sem escalonamento via TOA. Clique em Gravar análise para enviar a pendência à validação offline." : "Chamado registrado.";
       recalcular();
     });
   }

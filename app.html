@@ -5747,7 +5747,7 @@
     const mes = rows[0].mes;
     return rows.filter(function (r) { return r.mes === mes; });
   }
-  function relTipoPend(texto) { return /sem preenchimento|não foi enviado/i.test(texto) ? "Aba faltando" : /foto/i.test(texto) ? "Foto fora do Padrão" : /jump|bornes/i.test(texto) ? "Jump" : "Pendência não apontada no Relatório"; }
+  function relTipoPend(texto) { return /sem escalonamento/i.test(texto) ? "Sem escalonamento via TOA" : /sem preenchimento|não foi enviado/i.test(texto) ? "Aba faltando" : /foto/i.test(texto) ? "Foto fora do Padrão" : /jump|bornes/i.test(texto) ? "Jump" : "Pendência não apontada no Relatório"; }
   function relAchados(c) {
     const out = [], reg = {};
     (c.pendencias || []).forEach(function (p) { reg[p.texto] = true; });
