@@ -188,6 +188,8 @@
   // ==== CONFIGURACAO =======================================================
   const ENDERECO = "https://aigibnwaqagbrwsvvaty.supabase.co";
   const CHAVE = "sb_publishable_kzyiGqvi1DbP1yAsc7SSrA_9wg1IOQD";
+  // Endereço do Worker da Cloudflare (guarda as fotos no R2). Vazio = usa a pasta de fotos do Supabase.
+  const FOTOS_URL = "https://fotos-engemon.performance-telecom.workers.dev";
   const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs";
   const PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs";
   // Ticket provisório = mês e ano (112026 = novembro/2026, 102026 = outubro/2026).
@@ -582,7 +584,9 @@
       '<div><div class="k">WOs do mês</div><div class="v">' + (E.wos.length ? Object.keys(tipos).map(function (t) { return esc(t) + " " + esc(tipos[t].join(", ")); }).join(" · ") : '<span class="refazer">Nenhuma WO deste site neste mês</span>') + "</div></div>" +
       '<div><div class="k">Validação do cliente</div><div class="v">' + E.vals.filter(function (v) { return String(v.mes_inicio || "").slice(0, 7) === E.mes; }).length + " linhas no mês</div></div></div>";
     $("areaPdf").classList.remove("oculto");
-    recalcular();
+    E.snapModo = false;
+    try { await restaurarTela(); } catch (e) { E.snapModo = false; }
+    if (!E.snapModo) recalcular();
   }
   $("botaoConsultar").addEventListener("click", consultar);
   $("site").addEventListener("keydown", function (e) { if (e.key === "Enter") consultar(); });
@@ -720,7 +724,7 @@
       return tess;
     } catch (e) { tessFalhou = true; return null; }
   }
-  function carregarImg(url) { return new Promise(function (ok, no) { const im = new Image(); im.onload = function () { ok(im); }; im.onerror = no; im.src = url; }); }
+  function carregarImg(url) { return new Promise(function (ok, no) { const im = new Image(); if (/^https?:/.test(url)) im.crossOrigin = "anonymous"; im.onload = function () { ok(im); }; im.onerror = no; im.src = url; }); }
   // O carimbo (data, hora e endereço) fica no canto inferior direito, em letra branca: recorta, amplia e isola o branco.
   const PLANOS_OCR = [
     // letra branca sobre fundo colorido (céu, parede): usa o menor canal de cor, que fica baixo no azul e alto só no branco
@@ -813,6 +817,7 @@
   async function receberArquivos(lista) {
     const arqs = Array.prototype.slice.call(lista).filter(function (f) { return /\.pdf$/i.test(f.name); });
     if (!arqs.length) return;
+    E.snapModo = false;
     for (let i = 0; i < arqs.length; i++) {
       $("msg").textContent = "Lendo " + (i + 1) + " de " + arqs.length + "...";
       let r;
@@ -995,6 +1000,11 @@
   }
 
   function recalcular() {
+    if (E.snapModo) {   // mostrando a análise gravada: reavalia as abas gravadas, sem PDFs
+      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); l.refazer = l.achados.length > 0; });
+      desenhar();
+      return;
+    }
     const esp = montarEsperado();
     const usados = {};
     esp.forEach(function (l) {
@@ -1239,6 +1249,7 @@
       b.gravado = true; b.por = E.usuario;
       $("bMsg").textContent = "Conferência registrada.";
       recalcular();
+      $("modal").classList.add("oculto");
     });
   }
   // Foto ampliada: clique fecha, setas trocam de foto.
@@ -1298,6 +1309,90 @@
   $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) $("modal").classList.add("oculto"); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("modal").classList.add("oculto"); });
 
+  // ==== TELA GRAVADA (análise sem os PDFs) =================================
+  function nomeFoto(arquivo, i) { return E.siteChave + "/" + E.mes + "/" + String(arquivo).replace(/[^A-Za-z0-9_.-]/g, "_") + "-" + (i + 1) + ".jpg"; }
+  async function miniatura(url) {
+    const im = await carregarImg(url), s = Math.min(1, 560 / im.naturalWidth);
+    const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * s); c.height = Math.round(im.naturalHeight * s);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+    return await new Promise(function (ok) { c.toBlob(ok, "image/jpeg", 0.55); });
+  }
+  function copiaRep(rep) {
+    const c = JSON.parse(JSON.stringify(rep, function (k, v) { return k === "url" ? undefined : v; }));
+    (c.fotos || []).forEach(function (f, i) { f.path = nomeFoto(rep.arquivo, i); });
+    return c;
+  }
+  async function tokenSessao() { const s = await banco.auth.getSession(); return s.data && s.data.session ? s.data.session.access_token : ""; }
+  async function subirFoto(caminho, blob) {
+    if (FOTOS_URL) {
+      const rs = await fetch(FOTOS_URL.replace(/\/+$/, "") + "/" + encodeURI(caminho), { method: "PUT", headers: { Authorization: "Bearer " + (await tokenSessao()), "Content-Type": "image/jpeg" }, body: blob });
+      if (!rs.ok) throw new Error("fotos " + rs.status);
+      return;
+    }
+    const up = await banco.storage.from("analises").upload(caminho, blob, { upsert: true, contentType: "image/jpeg" });
+    if (up.error) throw new Error(up.error.message);
+  }
+  async function enderecosFotos(caminhos) {
+    const urls = {};
+    if (FOTOS_URL) {
+      const tk = await tokenSessao(), fila = caminhos.slice();
+      async function um() {
+        while (fila.length) {
+          const c = fila.shift();
+          try { const rs = await fetch(FOTOS_URL.replace(/\/+$/, "") + "/" + encodeURI(c), { headers: { Authorization: "Bearer " + tk } }); if (rs.ok) urls[c] = URL.createObjectURL(await rs.blob()); } catch (e) { /* foto não carregada */ }
+        }
+      }
+      await Promise.all([um(), um(), um(), um(), um(), um()]);
+      return urls;
+    }
+    for (let i = 0; i < caminhos.length; i += 100) {
+      const sg = await banco.storage.from("analises").createSignedUrls(caminhos.slice(i, i + 100), 3600 * 4);
+      (sg.data || []).forEach(function (x) { if (x && x.path && x.signedUrl) urls[x.path] = x.signedUrl; });
+    }
+    return urls;
+  }
+  async function gravarTela() {
+    const linhas = E.linhas.map(function (l) {
+      return { bloco: l.bloco, tipoWo: l.tipoWo, wo: l.wo, seg: l.seg, segKey: l.segKey, tag: l.tag, obrig: l.obrig, doCrono: l.doCrono, extra: !!l.extra, eq: l.eq || null, val: l.val || null,
+        dups: (l.dups || []).map(function (p) { return { arquivo: p.arquivo }; }), rep: l.rep ? copiaRep(l.rep) : null };
+    });
+    const fila = [];
+    E.linhas.forEach(function (l) { if (l.rep) (l.rep.fotos || []).forEach(function (f, i) { if (f.url) fila.push({ f: f, caminho: nomeFoto(l.rep.arquivo, i) }); }); });
+    let feitas = 0, falhas = 0;
+    async function um() {
+      while (fila.length) {
+        const it = fila.shift();
+        try {
+          const blob = await miniatura(it.f.url);
+          await subirFoto(it.caminho, blob);
+        } catch (e) { falhas++; E.erroTela = String((e && e.message) || e); }
+        feitas++;
+        $("msg").textContent = "Gravando as fotos da tela: " + feitas + " de " + (feitas + fila.length);
+      }
+    }
+    await Promise.all([um(), um(), um(), um()]);
+    const g = await banco.from("relatorios_tela").upsert({ site_chave: E.siteChave, mes: E.mes + "-01", site: E.siteTxt.toUpperCase(), dados: { linhas: linhas }, fotos_qtd: feitas - falhas, gravado_por: E.usuario, gravado_em: new Date().toISOString() }, { onConflict: "site_chave,mes" });
+    if (g.error) throw new Error(g.error.message);
+    return { fotos: feitas - falhas, falhas: falhas };
+  }
+  async function restaurarTela() {
+    const rs = await banco.from("relatorios_tela").select("*").eq("site_chave", E.siteChave).eq("mes", E.mes + "-01");
+    if (rs.error || !(rs.data || []).length || E.pdfs.length) return;
+    const t = rs.data[0], linhas = (t.dados && t.dados.linhas) || [];
+    if (!linhas.length) return;
+    const caminhos = [];
+    linhas.forEach(function (l) { if (l.rep) (l.rep.fotos || []).forEach(function (f) { if (f.path) caminhos.push(f.path); }); });
+    $("msg").textContent = "Carregando as fotos gravadas...";
+    const urls = await enderecosFotos(caminhos);
+    linhas.forEach(function (l) {
+      l.regra = regraDe(l.segKey);
+      if (l.rep) { (l.rep.fotos || []).forEach(function (f) { f.url = urls[f.path] || ""; }); }
+    });
+    E.linhas = linhas; E.pdfs = []; E.snapModo = true;
+    recalcular();
+    $("msg").textContent = "Mostrando a análise gravada em " + new Date(t.gravado_em).toLocaleDateString("pt-BR") + " por " + String(t.gravado_por || "").split("@")[0] + ". Para reanalisar, envie os PDFs.";
+  }
+
   // ==== EXPORTAR E GRAVAR ==================================================
   $("botaoExcel").addEventListener("click", function () {
     const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico"];
@@ -1345,9 +1440,13 @@
     if (del.error) erro = del.error;
     const todos = lote.concat(pend);
     if (!erro && todos.length) { const up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" }); if (up.error) erro = up.error; }
+    let tela = null;
+    if (!erro) {
+      try { tela = await gravarTela(); } catch (e) { erro = { message: "a análise foi gravada, mas não consegui gravar a tela (" + String((e && e.message) || e) + "). Rode o arquivo relatorios_tela_sql.txt no Supabase" }; }
+    }
     $("botaoGravar").disabled = false;
     $("msg").innerHTML = erro ? '<span class="erro">Erro ao gravar: ' + esc(erro.message) + (/tipo_linha/.test(erro.message) ? " (rode o arquivo relatorios_pendencias_sql.txt no Supabase)" : "") + "</span>"
-      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF.";
+      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF." + (tela ? " Tela gravada com " + tela.fotos + " fotos" + (tela.falhas ? " (" + tela.falhas + " não gravadas: " + esc(E.erroTela || "") + ")" : "") + "." : "");
   });
 
   window.__rel = { interpretarPagina1: interpretarPagina1, juntarLinhas: juntarLinhas, segDoPdf: segDoPdf, E: E, recalcular: recalcular };
