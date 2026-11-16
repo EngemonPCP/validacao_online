@@ -748,8 +748,8 @@
     { l: 0, t: 0.55, th: 225, psm: "11" }
   ];
   async function ocrFoto(w, foto) {
+    // lê uma vez só: vale o primeiro recorte que trouxer uma data plausível (se vier errada, a validadora corrige na divergência de data)
     const im = await carregarImg(foto.url);
-    const votos = {}, achados = []; let tentativas = 0;
     for (let k = 0; k < PLANOS_OCR.length; k++) {
       const p = PLANOS_OCR[k];
       const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = Math.floor(im.width * (p.r || 1)) - x0, ch = Math.floor(im.height * (p.b || 1)) - y0;
@@ -765,18 +765,9 @@
       await w.setParameters({ tessedit_pageseg_mode: p.psm });
       const r = await w.recognize(c);
       const ca = lerCarimbo(r.data.text, dataPlausivel);
-      if (ca && ca.data) {
-        // confirma por votação: o OCR às vezes troca um dígito (3 por 8); a data só vale quando dois recortes diferentes concordam
-        votos[ca.data] = (votos[ca.data] || 0) + 1; achados.push(ca); tentativas++;
-        if (votos[ca.data] >= 2) return ca;
-        if (tentativas >= 5) break;
-      }
+      if (ca && ca.data) return ca;
     }
-    if (!achados.length) return null;
-    // sem acordo: fica com a data mais votada (empate: a primeira lida)
-    let melhor = achados[0];
-    achados.forEach(function (a) { if (votos[a.data] > votos[melhor.data]) melhor = a; });
-    return melhor;
+    return null;
   }
   async function lerCarimbos() {
     const fila = [];
@@ -1025,7 +1016,7 @@
 
   function recalcular() {
     if (E.snapModo) {   // mostrando a análise gravada: reavalia as abas gravadas, sem PDFs
-      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); l.refazer = l.achados.length > 0; });
+      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); if (l.segTrocado) l.achados.push("Segmento informado incorretamente: " + l.segTrocado + " em vez de " + l.seg + "||O técnico preencheu o relatório como " + l.segTrocado + ", mas a aba prevista na WO é " + l.seg + ". O sistema aceitou o relatório como " + l.seg + " automaticamente."); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
       desenhar();
       return;
     }
@@ -1043,6 +1034,15 @@
       });
       if (achou) { usados[achou.arquivo] = true; l.rep = achou; }
     });
+    // segmento trocado pelo técnico: aba obrigatória sem relatório + relatório "fora do cronograma" com o mesmo tag e outro segmento
+    esp.forEach(function (l) {
+      if (l.rep || !l.tag || l.obrig !== "Sim") return;
+      const p = E.pdfs.filter(function (q) {
+        if (usados[q.arquivo] || q.segmento === l.segKey || !q.tag || chaveTag(q.tag) !== chaveTag(l.tag)) return false;
+        return !esp.some(function (o) { return o !== l && o.segKey === q.segmento && o.tag && chaveTag(o.tag) === chaveTag(q.tag); });
+      })[0];
+      if (p) { usados[p.arquivo] = true; l.rep = p; l.segTrocado = p.segmentoTxt || p.segmento; }
+    });
     esp.forEach(function (l) { l.dups = []; });
     const sobra = E.pdfs.filter(function (p) { return !usados[p.arquivo]; }).filter(function (p) {
       const dono = esp.filter(function (l) { return l.rep && l.segKey === p.segmento && chaveTag(l.rep.tag || l.tag) === chaveTag(p.tag); })[0];
@@ -1054,7 +1054,7 @@
       return { bloco: "Fora do Cronograma", tipoWo: null, wo: null, seg: rg ? rg.segmento : p.segmentoTxt, segKey: p.segmento, tag: p.tag, obrig: "—", doCrono: false, regra: rg, rep: p, extra: true };
     });
     const todas = esp.concat(extras);
-    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); l.refazer = l.achados.length > 0; });
+    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); if (l.segTrocado) l.achados.push("Segmento informado incorretamente: " + l.segTrocado + " em vez de " + l.seg + "||O técnico preencheu o relatório como " + l.segTrocado + ", mas a aba prevista na WO é " + l.seg + ". O sistema aceitou o relatório como " + l.seg + " automaticamente."); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
     E.linhas = todas;
     desenhar();
   }
@@ -1062,7 +1062,8 @@
   // ==== TELA ===============================================================
   function marca(l) {
     if (l.faltando) return '<span class="refazer">Faltando</span>';
-    if (l.refazer) return '<span class="refazer">Refazer</span>';
+    if (l.refazer) return '<span class="refazer">Refazer</span>' + (l.segTrocado ? '<br><span class="g" style="font-size:11px">segmento informado: ' + esc(l.segTrocado) + "</span>" : "");
+    if (l.segTrocado) return '<span class="g" style="font-size:12px">Segmento informado: ' + esc(l.segTrocado) + " (aceito como " + esc(l.seg) + ")</span>";
     if (l.semPdf) return '<span class="g">Sem PDF</span>';
     return "";
   }
@@ -1425,6 +1426,45 @@
     } catch (e) { return String((e && e.message) || e); }
     return null;
   }
+  // ==== PENDÊNCIAS (o que a análise encontrou vira pendência para tratar na aba Pendências) ====
+  function pendNorm(t) { return semAcento(String(t || "")).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim(); }
+  function pendHash(t) { let h = 5381; const s = String(t); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function pendTipo(texto) {
+    const x = String(texto || "");
+    if (/sem escalonamento/i.test(x)) return ["Sem escalonamento via TOA", "ESCAL"];
+    if (/alarmes n[aã]o analisados/i.test(x)) return ["Alarmes não analisados", "ALARMES"];
+    if (/sem preenchimento|obrigat[oó]ria sem/i.test(x)) return ["Aba faltando", "ABAFALTA"];
+    if (/pdf n[aã]o foi enviado/i.test(x)) return ["PDF não enviado", "SEMPDF"];
+    if (/jump|bornes/i.test(x)) return ["Jump", "JUMP"];
+    if (/foto/i.test(x)) return ["Foto fora do Padrão", "FOTO"];
+    return ["Pendência não apontada no Relatório", "OUTRO"];
+  }
+  function pendChave(aba, tag, titulo) {
+    const t = pendTipo(titulo), base = pendNorm(aba + " " + (tag || "")).replace(/ /g, "") + "|" + t[1];
+    return t[1] === "FOTO" || t[1] === "OUTRO" ? base + "|" + pendHash(pendNorm(titulo).replace(/[0-9]+/g, "").slice(0, 70)) : base;
+  }
+  function itensDePendencias() {
+    const out = [];
+    E.linhas.forEach(function (l) {
+      const tag = l.tag || (l.rep && l.rep.tag) || "";
+      const base = { aba: l.seg, tag: tag || null, setor: null };
+      if (!l.rep && (l.faltando || l.semPdf)) {
+        const tx = l.faltando ? "Aba obrigatória sem preenchimento no sistema do cliente" : "Consta na Validação, mas o PDF não foi enviado", t = pendTipo(tx);
+        out.push(Object.assign({}, base, { chave: pendChave(l.seg, tag, tx), tipo: t[0], texto: tx, evidencia: { wo: l.wo || null } }));
+        return;
+      }
+      (l.achados || []).forEach(function (a) {
+        const q = String(a).split("||"), t = pendTipo(q[0]);
+        out.push(Object.assign({}, base, { chave: pendChave(l.seg, tag, q[0]), tipo: t[0], texto: q[0], evidencia: { arquivo: l.rep ? l.rep.arquivo : null, detalhe: q[1] || null, fotos: l.rep && l.rep.fotos ? l.rep.fotos.length : 0, wo: l.wo || null } }));
+      });
+    });
+    return out;
+  }
+  async function enviarPendencias() {
+    const g = await banco.rpc("pendencias_sincronizar", { p_site_chave: E.siteChave, p_site: E.siteTxt.toUpperCase(), p_mes: E.mes + "-01", p_origem: "relatorios", p_itens: itensDePendencias(), p_resolver: true });
+    if (g.error) throw new Error(g.error.message);
+    return g.data || {};
+  }
   async function gravarTela() {
     const linhas = E.linhas.map(function (l) {
       return { bloco: l.bloco, tipoWo: l.tipoWo, wo: l.wo, seg: l.seg, segKey: l.segKey, tag: l.tag, obrig: l.obrig, doCrono: l.doCrono, extra: !!l.extra, eq: l.eq || null, val: l.val || null,
@@ -1516,13 +1556,17 @@
     const todos = lote.concat(pend);
     if (!erro && todos.length) { const up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" }); if (up.error) erro = up.error; }
     if (!erro) { const pe = await gravarPendentesConferencia(); if (pe) erro = { message: pe }; }
+    let sincro = null;
+    if (!erro) {
+      try { sincro = await enviarPendencias(); } catch (e) { erro = { message: "a análise foi gravada, mas não consegui enviar as pendências para a aba Pendências (" + String((e && e.message) || e) + "). Rode o arquivo pendencias_sql.txt no Supabase" }; }
+    }
     let tela = null;
     if (!erro) {
       try { tela = await gravarTela(); } catch (e) { erro = { message: "a análise foi gravada, mas não consegui gravar a tela (" + String((e && e.message) || e) + "). Rode o arquivo relatorios_tela_sql.txt no Supabase" }; }
     }
     $("botaoGravar").disabled = false;
     $("msg").innerHTML = erro ? '<span class="erro">Erro ao gravar: ' + esc(erro.message) + (/tipo_linha/.test(erro.message) ? " (rode o arquivo relatorios_pendencias_sql.txt no Supabase)" : "") + "</span>"
-      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF." + (tela ? " Tela gravada com " + tela.fotos + " fotos" + (tela.falhas ? " (" + tela.falhas + " não gravadas: " + esc(E.erroTela || "") + ")" : "") + "." : "");
+      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF." + (sincro ? " Pendências enviadas: " + sincro.novas + " novas" + (sincro.juntas ? ", " + sincro.juntas + " juntadas a outras" : "") + (sincro.resolvidas ? ", " + sincro.resolvidas + " resolvidas por correção" : "") + "." : "") + (tela ? " Tela gravada com " + tela.fotos + " fotos" + (tela.falhas ? " (" + tela.falhas + " não gravadas: " + esc(E.erroTela || "") + ")" : "") + "." : "");
   });
 
   window.__rel = { interpretarPagina1: interpretarPagina1, juntarLinhas: juntarLinhas, segDoPdf: segDoPdf, E: E, recalcular: recalcular };
