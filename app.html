@@ -5676,7 +5676,7 @@
     } catch (e) { O.vals[c.id] = null; }
   }
   // ==== VALIDAÇÃO · RELATÓRIOS (pendências gravadas pela página relatorios.html) ====
-  estado.rp = { dados: [], filtro: "pend", busca: "" };
+  estado.rp = { dados: [], filtro: "pend", busca: "", abertos: {} };
   async function atualizarRelatorios() {
     try {
       const fx = faixaDoPeriodo(), todos = [];
@@ -5713,13 +5713,15 @@
       '<div class="vl-c' + (n.refazer ? " amar" : "") + '"><div class="r">Para refazer</div><div class="v">' + n.refazer + '</div></div>' +
       '<div class="vl-c' + (n.faltando ? " verm" : "") + '"><div class="r">Faltando</div><div class="v">' + n.faltando + '</div></div>' +
       '<div class="vl-c"><div class="r">Sem PDF</div><div class="v">' + n.semPdf + '</div></div></div>';
-    t += '<div class="vl-chips">' + filtros.map(function (f) { return '<button data-rpf="' + esc(f[0]) + '"' + (R.filtro === f[0] ? ' class="ativo"' : "") + ">" + esc(f[1]) + " (" + f[2] + ")</button>"; }).join("") + "</div>";
+    t += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div class="vl-chips">' + filtros.map(function (f) { return '<button data-rpf="' + esc(f[0]) + '"' + (R.filtro === f[0] ? ' class="ativo"' : "") + ">" + esc(f[1]) + " (" + f[2] + ")</button>"; }).join("") + '</div><div><button class="bt peq" data-rpx="abrir">Expandir tudo</button> <button class="bt peq" data-rpx="fechar">Recolher tudo</button></div></div>';
     if (!lista.length) { $("rpCorpo").innerHTML = t + '<div class="vl-vazio">' + (R.dados.length ? "Nada neste filtro." : "Nenhum relatório analisado neste período. Os resultados aparecem aqui depois que a análise é gravada na página Relatórios.") + "</div>"; return; }
     t += "<table><tr><th>Segmento</th><th>Tag</th><th>Arquivo</th><th>Ticket</th><th>Alerta</th><th>Achados</th><th>Gravado por</th></tr>";
+    estado.rp.chaves = lista.map(function (g) { return g.chave + "|" + g.mes; });
     lista.forEach(function (g) {
+      const gk = g.chave + "|" + g.mes, aberto = !!R.abertos[gk];
       const link = "relatorios.html?site=" + encodeURIComponent(g.site || g.chave) + "&mes=" + String(g.mes).slice(0, 7);
-      t += '<tr><td class="grp" colspan="7">' + esc(g.site) + ' · ' + esc(mesRel(g.mes)) + ' · ' + g.pend + (g.pend === 1 ? " pendência" : " pendências") + ' <a href="' + link + '" target="_blank" rel="noopener" style="margin-left:12px;font-weight:400;color:#0f62fe">Abrir em Relatórios</a></td></tr>';
-      g.vis.forEach(function (r) {
+      t += '<tr><td class="grp" colspan="7" data-rpg="' + esc(gk) + '" style="cursor:pointer"><span style="display:inline-block;width:16px">' + (aberto ? "▾" : "▸") + "</span>" + esc(g.site) + ' · ' + esc(mesRel(g.mes)) + ' · ' + g.pend + (g.pend === 1 ? " pendência" : " pendências") + ' <a href="' + link + '" target="_blank" rel="noopener" style="margin-left:12px;font-weight:400;color:#0f62fe">Abrir em Relatórios</a></td></tr>';
+      if (aberto) g.vis.forEach(function (r) {
         const tp = rpTipo(r);
         const al = tp === "Refazer" || tp === "Faltando" ? '<span style="color:#ff832b;font-weight:600">' + tp + "</span>" : tp === "Sem PDF" ? '<span class="vl-mu" style="font-weight:600">Sem PDF</span>' : '<span class="vl-ok">Sem alerta</span>';
         const ach = (r.achados || []).map(function (a) { const x = String(a && a.texto ? a.texto : a), i = x.indexOf(" — "); return '<div title="' + esc(i > 0 ? x.slice(i + 3) : x) + '">' + esc(i > 0 ? x.slice(0, i) : x) + "</div>"; }).join("") || '<span class="vl-mu">—</span>';
@@ -6132,7 +6134,14 @@
   $("ofAtualizar").addEventListener("click", atualizarOffline);
   $("rpAtualizar").addEventListener("click", atualizarRelatorios);
   $("rpBusca").addEventListener("input", function () { estado.rp.busca = this.value; desenharRelatorios(); });
-  $("rpCorpo").addEventListener("click", function (e) { const b = e.target.closest("button[data-rpf]"); if (!b) return; estado.rp.filtro = b.dataset.rpf; desenharRelatorios(); });
+  $("rpCorpo").addEventListener("click", function (e) {
+    if (e.target.closest("a")) return;
+    const x = e.target.closest("button[data-rpx]");
+    if (x) { estado.rp.abertos = {}; if (x.dataset.rpx === "abrir") (estado.rp.chaves || []).forEach(function (k) { estado.rp.abertos[k] = true; }); desenharRelatorios(); return; }
+    const g = e.target.closest("[data-rpg]");
+    if (g) { estado.rp.abertos[g.dataset.rpg] = !estado.rp.abertos[g.dataset.rpg]; desenharRelatorios(); return; }
+    const b = e.target.closest("button[data-rpf]"); if (!b) return; estado.rp.filtro = b.dataset.rpf; desenharRelatorios();
+  });
 
   // A equipe saiu do site e a aba nunca foi pedida: o caso vai direto para a validação offline.
   async function enviarSemPedidoParaOffline(visitaId, motivoTxt) {
