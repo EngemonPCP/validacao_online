@@ -813,6 +813,24 @@
     .pd-gf{display:flex;gap:6px;padding:8px 14px}.pd-gf span{cursor:pointer;padding:2px 10px;background:#e8e8e8;font-size:12px}.pd-gf .at{background:#161616;color:#fff}
     .pd-gi{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.pd-gi.at{background:#edf5ff}.pd-gi.ok{opacity:.7}
     .pd-d{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:0 0 10px}
+    /* estilo IBM: neutro, cor só no que está selecionado e no ponto de status */
+    .pd-tg{background:#fff;border:1px solid #c6c6c6;border-radius:2px;color:#393939}
+    .pd-e1:before,.pd-e2:before,.pd-e3:before,.pd-e4:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+    .pd-e1:before{background:#f1c21b}.pd-e2:before{background:#0f62fe}.pd-e3:before{background:#24a148}.pd-e4:before{background:#da1e28}
+    .pd-o1,.pd-o2,.pd-o3{background:#fff;color:#393939}
+    .pd-rail{width:160px;flex:0 0 160px;align-items:stretch;padding:0;gap:0}
+    .pd-rg{display:flex;justify-content:space-between;gap:6px;padding:9px 10px;font-size:12px;font-weight:600;border-bottom:1px solid #e0e0e0;cursor:pointer}
+    .pd-rg i{font-style:normal;font-weight:400;color:#525252}.pd-rg.at{background:#edf5ff;box-shadow:inset 3px 0 0 #0f62fe}.pd-rg.lk{color:#0f62fe;font-weight:400}
+    .pd-rs{display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px 9px;border-bottom:1px solid #e0e0e0}.pd-rs>span{cursor:pointer}
+    .pd-nb{display:inline-block;width:22px;height:22px;line-height:19px;border-radius:50%;border:1.5px solid #8d8d8d;text-align:center;font-size:11px;background:#fff;color:#161616}
+    .pd-nb.at{border-color:#0f62fe;color:#0f62fe;font-weight:600}.pd-nb.ok{border-color:#24a148;color:#24a148}
+    .pd-seg{border-bottom:1px solid #e0e0e0}.pd-seg .sh{display:flex;align-items:center;padding:10px 14px;background:#f4f4f4;border-bottom:1px solid #e0e0e0;font-weight:600;font-size:14px}.pd-seg .sh span{margin-left:auto;font-weight:400;font-size:12px;color:#525252}
+    .pd-seg .li{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #e0e0e0;font-size:13px;cursor:pointer}.pd-seg .li:last-child{border-bottom:0}.pd-seg .li.at{background:#edf5ff;box-shadow:inset 3px 0 0 #0f62fe}
+    .pd-seg .li .e{margin-left:auto;font-size:12px;color:#525252;white-space:nowrap}
+    .pd-gg{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f4f4f4;border-bottom:1px solid #e0e0e0;font-weight:600;font-size:13px;cursor:pointer}.pd-gg i{font-style:normal;color:#525252;width:12px}.pd-gg span{margin-left:auto;font-weight:400;color:#525252;font-size:12px}
+    .pd-gi{padding-left:34px}.pd-gi.at{box-shadow:inset 3px 0 0 #0f62fe}
+    .pd-bar i{background:#161616;border-radius:0}.pd-bar{border-radius:0;height:4px}.pd-bar i{height:4px}
+    .pd-steps .at{background:#fff;color:#161616;border-bottom:3px solid #0f62fe;font-weight:600}.pd-steps div{background:#fff;border-bottom:3px solid #e0e0e0}.pd-steps .ok{background:#fff;color:#161616;border-bottom-color:#24a148}
     .pd-mod{position:fixed;z-index:6;top:8vh;left:50%;transform:translateX(-50%);width:560px;max-width:94vw;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.4)}
     .pd-lin2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.pd-lin2 select{width:100%;padding:6px}.pd-fix{background:#f4f4f4;padding:6px 8px}
 </style>
@@ -5900,10 +5918,10 @@
   function fiTxt(v) { return v == null || v === "" ? "—" : esc(v); }
   function fiTag(txt, cor) { return '<span class="fi-tg ' + (cor || "") + '">' + esc(txt) + "</span>"; }
   // ==== PENDÊNCIAS (substitui a lista da Validação offline) ====================
-  estado.pd = { itens: [], sitesConcl: {}, filtro: "tratar", origem: "", tipo: "", resp: "", busca: "", abertos: {}, marcadas: {}, sel: null, pend: null, gaveta: false, gfiltro: "abertas", ev: {}, rasc: {}, modalNova: false, info: {} };
+  estado.pd = { itens: [], sitesConcl: {}, filtro: "tratar", origem: "", tipo: "", resp: "", busca: "", abertos: {}, marcadas: {}, sel: null, pend: null, gaveta: false, gfiltro: "abertas", ev: {}, rasc: {}, modalNova: false, info: {}, gdr: {} };
   const PD_ORIG = { validacao_online: ["Validação online", "pd-o1"], relatorios: ["Relatórios", "pd-o2"], manual: ["Manual", "pd-o3"] };
   const PD_ABAS = ["Alarmes", "Zeladoria", "Baixa Tensão", "QDCA", "Clima", "Espaço Físico", "Iluminação e Tomadas", "SPDA", "FCC", "Balizamento", "Trocador de Calor", "PLC", "Inventário", "Outra"];
-  const PD_TIPOS = ["Foto fora do Padrão", "Jump", "Aba faltando", "Sem escalonamento via TOA", "Alarmes não analisados", "Pendência não apontada no Relatório"];
+  const PD_TIPOS = ["Foto fora do Padrão", "Jump", "Aba faltando", "Sem escalonamento via TOA", "Alarmes não analisados", "Alarmes a tratar", "Pendência não apontada no Relatório"];
   function pdEu() { return String(estado.usuarioEmail || "").toLowerCase(); }
   function pdAberta(p) { return p.estado === "Nova" || p.estado === "Em tratativa"; }
   function pdDias(p) { return Math.max(0, Math.floor((Date.now() - new Date(p.criado_em).getTime()) / 86400000)); }
@@ -6002,7 +6020,19 @@
   }
 
   // ---- painel do site
-  function pdDoSite() { return estado.pd.itens.filter(function (p) { return pdChaveSite(p) === estado.pd.sel; }).sort(function (a, b) { return (pdAberta(b) ? 1 : 0) - (pdAberta(a) ? 1 : 0) || a.id - b.id; }); }
+  function pdKGrupo(p) { return String(p.aba || "Outra").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/\s+/g, " ").trim(); }
+  function pdDoSite() {
+    const ord = []; const its = estado.pd.itens.filter(function (p) { return pdChaveSite(p) === estado.pd.sel; });
+    its.forEach(function (p) { const k = pdKGrupo(p); if (ord.indexOf(k) < 0) ord.push(k); });
+    ord.sort(function (a, b) { const ia = PD_ABAS.findIndex(function (x) { return pdKGrupo({ aba: x }) === a; }), ib = PD_ABAS.findIndex(function (x) { return pdKGrupo({ aba: x }) === b; }); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
+    return its.sort(function (a, b) { return ord.indexOf(pdKGrupo(a)) - ord.indexOf(pdKGrupo(b)) || (pdAberta(b) ? 1 : 0) - (pdAberta(a) ? 1 : 0) || a.id - b.id; });
+  }
+  function pdGrupos(its) {
+    const gs = [];
+    its.forEach(function (p) { const k = pdKGrupo(p); let g = gs.find(function (x) { return x.k === k; }); if (!g) { g = { k: k, nome: p.aba || "Outra", itens: [] }; gs.push(g); } g.itens.push(p); });
+    return gs;
+  }
+  function pdNb(p, i, cur) { return '<span class="pd-nb' + (p.id === cur ? " at" : "") + (pdAberta(p) ? "" : " ok") + '">' + (pdAberta(p) ? i + 1 : "✔") + "</span>"; }
   async function pdCarregarEventos(id) {
     try { estado.pd.ev[id] = conferir(await banco.from("pendencias_eventos").select("*").eq("pendencia_id", id).order("id")); } catch (e) { estado.pd.ev[id] = []; }
   }
@@ -6036,12 +6066,24 @@
       '<div class="pd-prog"><div class="k">Progresso do site · <b>' + feitas + " de " + its.length + ' concluídas</b></div><div class="pd-bar"><i style="width:' + Math.round(feitas / its.length * 100) + '%"></i></div></div>' +
       '<div style="text-align:right"><a class="rv-lk" data-pdficha="' + esc(P.sel) + '">Ver ficha do site</a><br>' + (sc ? '<span class="vl-mu" style="font-size:12px">Site concluído por ' + esc(nomeDoEmail(sc.concluido_por)) + " em " + esc(pdQuando(sc.concluido_em).slice(0, 5)) + "</span>" : '<button class="bt" data-pda="concluirsite"' + (feitas === its.length ? "" : " disabled") + ' title="Só libera quando todas as pendências estiverem concluídas">Concluir site</button>') + "</div></div>";
     // faixa + gaveta
-    h += '<div class="pd-wrap"><div class="pd-rail"><div class="pd-exp" data-pda="gaveta">▶<br>Abrir</div>' + its.map(function (p, i) { return '<div class="pd-rit' + (p.id === cur.id ? " at" : "") + '" data-pdp="' + p.id + '" title="' + esc(p.aba + " · " + p.texto) + '"><span class="pd-n" style="background:' + pdCorEstado(p.estado) + '">' + (i + 1) + "</span></div>"; }).join("") + '<div class="pd-exp" data-pda="nova" title="Registrar pendência nova">＋</div></div>';
-    h += '<div class="pd-det">' + pdDetalhe(cur, its.indexOf(cur), me, coord) + "</div>";
+    const gs = pdGrupos(its), gCur = pdKGrupo(cur);
+    h += '<div class="pd-wrap"><div class="pd-rail">' + gs.map(function (g) {
+      const ab = g.itens.filter(pdAberta), alvo = (g.k === gCur ? cur : (ab[0] || g.itens[0]));
+      return '<div class="pd-rg' + (g.k === gCur ? " at" : "") + '" data-pdp="' + alvo.id + '" title="' + esc(g.nome) + '"><span>' + esc(g.nome) + "</span><i>" + (ab.length || "✔") + "</i></div>" +
+        (g.k === gCur ? '<div class="pd-rs">' + g.itens.map(function (p, i) { return '<span data-pdp="' + p.id + '" title="' + esc(p.texto) + '">' + pdNb(p, i, cur.id) + "</span>"; }).join("") + "</div>" : "");
+    }).join("") + '<div class="pd-rg lk" data-pda="gaveta">▶ Lista completa</div><div class="pd-rg lk" data-pda="nova">＋ Registrar nova</div></div>';
+    const gA = gs.find(function (g) { return g.k === gCur; });
+    const segBl = '<div class="pd-seg"><div class="sh">' + esc(gA.nome) + "<span>" + gA.itens.filter(pdAberta).length + " abertas · " + gA.itens.filter(function (p) { return !pdAberta(p); }).length + " concluídas</span></div>" +
+      gA.itens.map(function (p, i) { return '<div class="li' + (p.id === cur.id ? " at" : "") + '" data-pdp="' + p.id + '">' + pdNb(p, i, cur.id) + "<span>" + esc((p.tag ? p.tag + " · " : "") + p.texto) + '</span><span class="e">' + esc(p.estado + (p.estado === "Em tratativa" && p.responsavel ? " · " + nomeDoEmail(p.responsavel).split(" ")[0] : "")) + "</span></div>"; }).join("") + "</div>";
+    h += '<div class="pd-det">' + segBl + pdDetalhe(cur, its.indexOf(cur), me, coord) + "</div>";
     if (P.gaveta) {
       const gl = its.filter(function (p) { return P.gfiltro === "todas" ? true : P.gfiltro === "conc" ? !pdAberta(p) : pdAberta(p); });
       h += '<div class="pd-veu" data-pda="gaveta"></div><div class="pd-gav"><div class="pd-gh">Pendências · ' + esc(p0.site) + '<a class="rv-lk" data-pda="gaveta" style="font-weight:400">◀ Fechar</a></div><div class="pd-gf">' + [["abertas", "Abertas", its.filter(pdAberta).length], ["todas", "Todas", its.length], ["conc", "Concluídas", feitas]].map(function (c) { return '<span data-pdg2="' + c[0] + '" class="' + (P.gfiltro === c[0] ? "at" : "") + '">' + c[1] + " · " + c[2] + "</span>"; }).join("") + "</div>" +
-        gl.map(function (p) { return '<div class="pd-gi' + (p.id === cur.id ? " at" : "") + (pdAberta(p) ? "" : " ok") + '" data-pdp="' + p.id + '" data-fecha="1"><span class="pd-d" style="background:' + pdCorEstado(p.estado) + '"></span><div><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + "</b><br>" + esc(p.texto) + "<br>" + pdTagsOrigem(p) + " " + pdTagEstado(p.estado) + "</div></div>"; }).join("") +
+        pdGrupos(gl).map(function (g) {
+          const aberto = P.gdr[g.k] != null ? P.gdr[g.k] : g.k === gCur;
+          return '<div class="pd-gg" data-pdgr="' + esc(g.k) + '"><i>' + (aberto ? "▾" : "▸") + "</i>" + esc(g.nome) + "<span>" + g.itens.length + (g.itens.length === 1 ? " pendência" : " pendências") + "</span></div>" +
+            (aberto ? g.itens.map(function (p) { return '<div class="pd-gi' + (p.id === cur.id ? " at" : "") + (pdAberta(p) ? "" : " ok") + '" data-pdp="' + p.id + '" data-fecha="1"><div>' + esc((p.tag ? p.tag + " · " : "") + p.texto) + "<br>" + pdTagEstado(p.estado) + " " + pdTagsOrigem(p) + "</div></div>"; }).join("") : "");
+        }).join("") +
         '<div style="padding:12px 14px"><button class="bt" data-pda="nova">+ Registrar pendência nova</button></div></div>';
     }
     h += "</div>";
@@ -6057,7 +6099,7 @@
     const roti = { criada: "Pendência criada", assumida: "Assumida", liberada: "Liberada", reatribuida: "Reatribuída", estado: "Estado alterado", concluida: "Concluída", reaberta: "Reaberta", origem: "Origem atualizada", andamento: "Andamento" };
     let h = '<div class="pd-dh"><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + " · " + esc(p.texto) + "</b><span>" + pdTagsOrigem(p) + " " + pdTagEstado(p.estado) + "</span></div>" +
       '<div class="pd-steps"><div class="' + (etapa > 1 ? "ok" : "at") + '">' + (etapa > 1 ? "✔ " : "") + '1 Entender</div><div class="' + (etapa > 2 ? "ok" : etapa === 2 ? "at" : "") + '">' + (etapa > 2 ? "✔ " : "") + '2 Tratar</div><div class="' + (etapa === 3 ? "at" : "") + '">3 Concluir</div></div><div class="pd-dois"><div>' +
-      '<div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe) + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
+      '<div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe).replace(/\n/g, "<br>") + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
       (ev_.arquivo ? '<div class="lb" style="margin-top:10px">Evidência</div><div id="pdFotos" class="pd-fotos vl-mu">Carregando fotos…</div><div style="margin-top:6px"><a class="rv-lk" href="relatorios.html?site=' + encodeURIComponent(p.site) + "&mes=" + String(p.mes).slice(0, 7) + '" target="_blank">Abrir análise completa com fotos</a></div>' : "") +
       (p.tipo === "Alarmes não analisados" && aberta ? '<div style="margin-top:12px"><button class="bt p" data-pda="alarmes">Analisar alarmes</button><div class="vl-mu" style="font-size:12px;margin-top:4px">Abre a análise de alarmes (configuração, histórico e permanência). Depois volte e conclua esta pendência.</div></div>' : "") + "</div><div>" +
       '<div class="lb">Responsável</div><div class="pd-resp"><b>' + (p.responsavel ? esc(nomeDoEmail(p.responsavel)) : "Sem responsável") + "</b>" +
@@ -6071,7 +6113,7 @@
       '<div class="lb" style="margin-top:12px">Histórico</div><div class="pd-tl">' + (ev.length ? ev.map(function (e) { return "<div><b>" + esc(roti[e.tipo] || e.tipo) + "</b>" + (e.tipo === "andamento" || e.tipo === "concluida" ? "<br>" + esc(String(e.texto || "").replace(/^[^\n]*\n/, e.tipo === "concluida" ? "" : "")) : "") + "<small>" + esc(e.por === "sistema" ? "Sistema" : nomeDoEmail(e.por)) + " · " + esc(pdQuando(e.em)) + "</small></div>"; }).join("") : '<span class="vl-mu">Sem registros.</span>') + "</div>" +
       (!aberta && (minha || coord) ? '<div style="margin-top:8px"><button class="bt peq" data-pda="reabrir">Reabrir pendência</button></div>' : "") + "</div></div>" +
       '<div class="pd-rod"><span class="vl-mu">' + (aberta ? "Para concluir, escreva a resposta em “O que foi feito”." : "Concluída" + (p.concluida_por ? " por " + esc(p.concluida_por === "sistema" ? "sistema" : nomeDoEmail(p.concluida_por)) : "") + (p.resposta ? ": " + esc(p.resposta) : "")) + '</span><span style="margin-left:auto"></span>' +
-      '<button class="bt pd-ok" data-pda="resolvida"' + (pode ? "" : " disabled") + '>✔ Resolvida</button><button class="bt pd-no" data-pda="nao"' + (pode ? "" : " disabled") + '>✖ Não resolvida</button><button class="bt" data-pda="proxima">Próxima ›</button></div>';
+      '<button class="bt pd-ok" data-pda="resolvida"' + (pode ? "" : " disabled") + '>✔ Resolvida</button><button class="bt pd-no" data-pda="nao"' + (pode ? "" : " disabled") + '>✖ Não resolvida</button><button class="bt" data-pda="anterior">‹ Anterior</button><button class="bt" data-pda="proxima">Próxima ›</button></div>';
     return h;
   }
   function pdEmails() {
@@ -6144,6 +6186,10 @@
         P.rasc[cur.id] = ""; await pdRecarregar(true); mostrarAviso("Pendência concluída."); return;
       }
       if (a === "reabrir") { conferir(await banco.from("pendencias").update({ estado: "Em tratativa" }).eq("id", cur.id).select()); await pdRecarregar(true); return; }
+      if (a === "anterior") {
+        pdLerRascunho(); const ab = its.filter(pdAberta), base = ab.length ? ab : its, i = base.findIndex(function (p) { return p.id === cur.id; }), nx = base[(i - 1 + base.length) % base.length];
+        P.pend = nx.id; await pdCarregarEventos(nx.id); desenharSitePend(); return;
+      }
       if (a === "proxima") {
         pdLerRascunho(); const ab = its.filter(pdAberta), base = ab.length ? ab : its, i = base.findIndex(function (p) { return p.id === cur.id; }), nx = base[(i + 1) % base.length];
         P.pend = nx.id; await pdCarregarEventos(nx.id); desenharSitePend(); return;
@@ -6163,6 +6209,7 @@
     const fi = e.target.closest("[data-pdficha]"); if (fi) { const p = fi.dataset.pdficha.split("|"); abrirFicha(p[0], p[1] + "-01"); return; }
     const ac = e.target.closest("[data-pda]"); if (ac) { pdAcao(ac.dataset.pda); return; }
     const pp = e.target.closest("[data-pdp]"); if (pp) { pdLerRascunho(); P.pend = Number(pp.dataset.pdp); if (pp.dataset.fecha) P.gaveta = false; pdCarregarEventos(P.pend).then(desenharSitePend); return; }
+    const gx = e.target.closest("[data-pdgr]"); if (gx) { const k = gx.dataset.pdgr, ab = P.gdr[k] != null ? P.gdr[k] : (pdKGrupo(pdDoSite().find(function (p) { return p.id === P.pend; }) || {}) === k); P.gdr[k] = !ab; desenharSitePend(); return; }
     const g2 = e.target.closest("[data-pdg2]"); if (g2) { P.gfiltro = g2.dataset.pdg2; desenharSitePend(); return; }
     const sn = e.target.closest("[data-pds]"); if (sn) { pdAbrirSite(sn.dataset.pds); return; }
     const gr = e.target.closest("[data-pdg]"); if (gr) { const k = gr.dataset.pdg, atual = P.abertos[k] !== undefined ? P.abertos[k] : !!String(P.busca || "").trim(); P.abertos[k] = !atual; desenharPendencias(); return; }

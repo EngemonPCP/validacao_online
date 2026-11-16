@@ -1549,10 +1549,14 @@
         out.push(Object.assign({}, base, { chave: pendChave(l.segTrocado || l.seg, tag, tx), tipo: t[0], texto: tx, evidencia: { wo: l.wo || null } }));
         return;
       }
+      const alarmes = [];
       (l.achados || []).forEach(function (a) {
         const q = String(a).split("||"), t = pendTipo(q[0]);
+        if (/^Alarme \d+\s*-/i.test(q[0])) { alarmes.push(q[0].replace(/^Alarme\s+/i, "")); return; }   // alarmes ficam juntos, numa pendência só
         out.push(Object.assign({}, base, { chave: pendChave(l.segTrocado || l.seg, tag, q[0]), tipo: t[0], texto: q[0], evidencia: { arquivo: l.rep ? l.rep.arquivo : null, detalhe: q[1] || null, fotos: l.rep && l.rep.fotos ? l.rep.fotos.length : 0, wo: l.wo || null } }));
       });
+      if (alarmes.length) out.push(Object.assign({}, base, { chave: pendNorm((l.segTrocado || l.seg) + " " + (tag || "")).replace(/ /g, "") + "|ALARMESGRUPO", tipo: "Alarmes a tratar", texto: "Alarmes a tratar: " + alarmes.length + (alarmes.length === 1 ? " item" : " itens"),
+        evidencia: { arquivo: l.rep ? l.rep.arquivo : null, detalhe: alarmes.map(function (x) { return "• " + x.replace(/: final N[ÃA]O OK$/i, " — final NÃO OK"); }).join("\n"), fotos: l.rep && l.rep.fotos ? l.rep.fotos.length : 0, wo: l.wo || null } }));
     });
     return out;
   }
