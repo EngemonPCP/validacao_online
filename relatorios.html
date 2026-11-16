@@ -1095,6 +1095,12 @@
       })[0];
       if (p) { usados[p.arquivo] = true; l.rep = p; l.segTrocado = p.segmentoTxt || p.segmento; }
     });
+    // PLC só é obrigatório onde existe Clima de verdade: se todo o Clima da WO foi aceito como outro segmento (ex.: Trocador de Calor), o PLC deixa de ser cobrado
+    esp.forEach(function (l) {
+      if (l.segKey !== "PLC" || l.rep || l.obrig !== "Sim") return;
+      const clima = esp.filter(function (o) { return o.bloco === l.bloco && o.segKey === "CLIMA"; });
+      if (clima.length && clima.every(function (o) { return !!o.segTrocado; })) { l.obrig = "Não"; l.faltando = false; l.semPdf = false; l.plcDispensado = true; }
+    });
     esp.forEach(function (l) { l.dups = []; });
     const sobra = E.pdfs.filter(function (p) { return !usados[p.arquivo]; }).filter(function (p) {
       const dono = esp.filter(function (l) { return l.rep && l.segKey === p.segmento && chaveTag(l.rep.tag || l.tag) === chaveTag(p.tag); })[0];
