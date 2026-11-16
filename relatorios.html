@@ -668,12 +668,20 @@
 
   // Lê data e hora carimbadas na foto (texto do OCR).
   const MESES_ABR = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
+  function mesAprox(s) {   // aceita erro do OCR (ex.: "nay" = nov)
+    s = s.toLowerCase();
+    if (MESES_ABR[s]) return MESES_ABR[s];
+    const nz = function (x) { return x.replace(/[aeo0]/g, "o").replace(/[yv]/g, "v").replace(/[il1]/g, "i").replace(/[rn]/g, "n").replace(/[uw]/g, "u"); };
+    let ach = null, n = 0;
+    Object.keys(MESES_ABR).forEach(function (k) { if (nz(k) === nz(s)) { ach = MESES_ABR[k]; n++; } });
+    return n === 1 ? ach : null;
+  }
   function lerCarimbo(txt) {
     const t = String(txt || "").replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0").replace(/\s+/g, " ");
     let d = null, m;
     if ((m = t.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(20\d{2})/))) d = [Number(m[3]), Number(m[2]), Number(m[1])];
     else if ((m = t.match(/(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/))) d = [Number(m[1]), Number(m[2]), Number(m[3])];
-    else if ((m = t.match(/(\d{1,2})\D{0,6}(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\D{0,8}(20\d{2})/i))) d = [Number(m[3]), MESES_ABR[m[2].toLowerCase()], Number(m[1])];
+    else if ((m = t.match(/(\d{1,2})\D{0,6}([a-zA-Z]{3})\.?\D{0,8}(20\d{2})/))) { const mes = mesAprox(m[2]); if (mes) d = [Number(m[3]), mes, Number(m[1])]; }
     const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
     if (!d || d[1] < 1 || d[1] > 12 || d[2] < 1 || d[2] > 31) return h ? { data: null, hora: h[0] } : null;
     const pad = function (n) { return (n < 10 ? "0" : "") + n; };
@@ -691,13 +699,21 @@
   }
   function carregarImg(url) { return new Promise(function (ok, no) { const im = new Image(); im.onload = function () { ok(im); }; im.onerror = no; im.src = url; }); }
   // O carimbo (data, hora e endereço) fica no canto inferior direito, em letra branca: recorta, amplia e isola o branco.
-  const PLANOS_OCR = [{ l: 0.45, t: 0.72, th: 215, psm: "6" }, { l: 0.45, t: 0.72, th: 235, psm: "6" }, { l: 0.45, t: 0.72, th: 250, psm: "6" }, { l: 0.45, t: 0.72, th: 0, psm: "6" }, { l: 0, t: 0.55, th: 225, psm: "11" }];
+  const PLANOS_OCR = [
+    { l: 0, t: 0.5, th: 0, psm: "11", s: 2 }, { l: 0, t: 0, b: 0.5, th: 0, psm: "11", s: 2 },   // metade de baixo e metade de cima, foto inteira
+    { l: 0, t: 0.5, th: 0, psm: "6", s: 2 }, { l: 0, t: 0, b: 0.5, th: 0, psm: "6", s: 2 },
+    { l: 0.45, t: 0.72, th: 215, psm: "6" }, { l: 0.45, t: 0.72, th: 235, psm: "6" }, { l: 0.45, t: 0.72, th: 0, psm: "6" },      // inferior direito
+    { l: 0, t: 0.6, r: 0.6, th: 225, psm: "6" }, { l: 0, t: 0.6, r: 0.6, th: 245, psm: "6" },                                        // inferior esquerdo
+    { l: 0.45, t: 0, b: 0.3, th: 215, psm: "6" }, { l: 0.45, t: 0, b: 0.3, th: 240, psm: "6" },                                      // superior direito
+    { l: 0, t: 0, r: 0.6, b: 0.3, th: 225, psm: "6" }, { l: 0, t: 0, r: 0.6, b: 0.3, th: 245, psm: "6" },                           // superior esquerdo
+    { l: 0, t: 0.55, th: 225, psm: "11" }
+  ];
   async function ocrFoto(w, foto) {
     const im = await carregarImg(foto.url);
     for (let k = 0; k < PLANOS_OCR.length; k++) {
       const p = PLANOS_OCR[k];
-      const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = im.width - x0, ch = im.height - y0;
-      const c = document.createElement("canvas"); c.width = cw * 3; c.height = ch * 3;
+      const x0 = Math.floor(im.width * p.l), y0 = Math.floor(im.height * p.t), cw = Math.floor(im.width * (p.r || 1)) - x0, ch = Math.floor(im.height * (p.b || 1)) - y0;
+      const c = document.createElement("canvas"); const es = p.s || 3; c.width = cw * es; c.height = ch * es;
       const x = c.getContext("2d"); x.drawImage(im, x0, y0, cw, ch, 0, 0, c.width, c.height);
       const dd = x.getImageData(0, 0, c.width, c.height), px = dd.data;
       for (let i = 0; i < px.length; i += 4) {
@@ -813,7 +829,7 @@
       const wo = E.wos.filter(function (w) { return tipoWO(w.tipo) === tipo; }).map(function (w) { return w.wo; }).join(", ");
       const bloco = "WO " + tipo + " · " + wo;
       E.regras.forEach(function (r) {
-        if (tipo !== "Energia" && temEnergia && r.situacao_wo === "Solta") return;   // abas soltas já estão na WO de Energia
+        if (tipo !== "Energia" && temEnergia && r.situacao_wo === "Solta" && chaveSeg(r.segmento) !== "PLC") return;   // abas soltas já estão na WO de Energia
         const sk = chaveSeg(r.segmento);
         let modo = tipo === "Energia" ? r.obrig_energia : tipo === "Climatização" ? r.obrig_clima : "nao";
         const plcDoClima = sk === "PLC" && tipo === "Climatização" && temClima;   // onde há Clima, o PLC faz parte do cronograma
@@ -827,6 +843,9 @@
         if (eqs.length) eqs.forEach(function (e) { out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: e.tag || null, obrig: obrig, doCrono: true, regra: r, eq: e }); });
         else out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: r.segmento, segKey: sk, tag: null, obrig: obrig, doCrono: plcDoClima, regra: r });
       });
+      if (tipo === "Climatização" && temClima && !out.some(function (o) { return o.bloco === bloco && o.segKey === "PLC"; })) {
+        out.push({ bloco: bloco, tipoWo: tipo, wo: wo, seg: "PLC", segKey: "PLC", tag: null, obrig: "Sim", doCrono: true, regra: regraDe("PLC") });   // com Clima, o PLC sempre é esperado
+      }
     });
     return out;
   }
