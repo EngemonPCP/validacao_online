@@ -676,16 +676,34 @@
     Object.keys(MESES_ABR).forEach(function (k) { if (nz(k) === nz(s)) { ach = MESES_ABR[k]; n++; } });
     return n === 1 ? ach : null;
   }
-  function lerCarimbo(txt) {
+  function lerCarimbo(txt, aceita) {
     const t = String(txt || "").replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0").replace(/\s+/g, " ");
-    let d = null, m;
-    if ((m = t.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(20\d{2})/))) d = [Number(m[3]), Number(m[2]), Number(m[1])];
-    else if ((m = t.match(/(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/))) d = [Number(m[1]), Number(m[2]), Number(m[3])];
-    else if ((m = t.match(/(\d{1,2})\D{0,6}([a-zA-Z]{3})\.?\D{0,8}(20\d{2})/))) { const mes = mesAprox(m[2]); if (mes) d = [Number(m[3]), mes, Number(m[1])]; }
-    const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
-    if (!d || d[1] < 1 || d[1] > 12 || d[2] < 1 || d[2] > 31) return h ? { data: null, hora: h[0] } : null;
+    const cand = [];
+    let m, re;
+    re = /(\d{1,2})\D{0,6}([a-zA-Z]{3})\.?\D{0,8}(20\d{2})/g;   // "03 nov. 2026" (formato do carimbo): tem prioridade
+    while ((m = re.exec(t))) { const mes = mesAprox(m[2]); if (mes) cand.push([Number(m[3]), mes, Number(m[1])]); }
+    re = /(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(20\d{2})/g;
+    while ((m = re.exec(t))) cand.push([Number(m[3]), Number(m[2]), Number(m[1])]);
+    re = /(20\d{2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/g;
+    while ((m = re.exec(t))) cand.push([Number(m[1]), Number(m[2]), Number(m[3])]);
     const pad = function (n) { return (n < 10 ? "0" : "") + n; };
-    return { data: d[0] + "-" + pad(d[1]) + "-" + pad(d[2]), hora: h ? h[0] : null };
+    let d = null;
+    for (let k = 0; k < cand.length; k++) {
+      const c = cand[k];
+      if (c[1] < 1 || c[1] > 12 || c[2] < 1 || c[2] > 31) continue;
+      const iso = c[0] + "-" + pad(c[1]) + "-" + pad(c[2]);
+      if (aceita && !aceita(iso)) continue;   // ignora datas de etiquetas/placas que aparecem na foto
+      d = iso; break;
+    }
+    const h = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/);
+    if (!d) return h ? { data: null, hora: h[0] } : null;
+    return { data: d, hora: h ? h[0] : null };
+  }
+  // Data de carimbo plausível: entre 18 meses antes e 2 meses depois do mês consultado (etiquetas de fábrica ficam fora).
+  function dataPlausivel(iso) {
+    if (!E.mes) return true;
+    const a = Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7)), b = Number(E.mes.slice(0, 4)) * 12 + Number(E.mes.slice(5, 7));
+    return a >= b - 18 && a <= b + 2;
   }
   let tess = null, tessFalhou = false;
   async function carregarTesseract() {
@@ -724,7 +742,7 @@
       x.putImageData(dd, 0, 0);
       await w.setParameters({ tessedit_pageseg_mode: p.psm });
       const r = await w.recognize(c);
-      const ca = lerCarimbo(r.data.text);
+      const ca = lerCarimbo(r.data.text, dataPlausivel);
       if (ca && ca.data) return ca;
     }
     return null;
