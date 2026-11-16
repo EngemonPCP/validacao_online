@@ -769,6 +769,41 @@
     .vl-passo select, .vl-passo textarea { width:100%; }
     @media print { #telaOffline { display:none; } }
     @media print { #telaResumoVal, #telaFilaVal, #telaSiteVal { display:none; } }
+
+    .pd-filtros{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0}
+    .pd-sel label{display:block;font-size:11px;color:#525252}.pd-sel select,.pd-sel input{padding:5px 8px;border:1px solid #8d8d8d;background:#fff;font-size:13px}
+    .pd-lote{margin:6px 0 10px}
+    .pd-tg{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:#e0e0e0;color:#262626;white-space:nowrap}
+    .pd-e1{background:#fcf4d6;color:#684e00}.pd-e2{background:#d0e2ff;color:#0043ce}.pd-e3{background:#defbe6;color:#0e6027}.pd-e4{background:#ffd7d9;color:#a2191f}
+    .pd-o1{background:#e8daff;color:#6929c4}.pd-o2{background:#d0e2ff;color:#0043ce}.pd-o3{background:#e0e0e0;color:#393939}
+    .pd-grp td{background:#f4f4f4;border-top:2px solid #c6c6c6}.pd-site{cursor:pointer;color:#0f62fe}.pd-lin td{vertical-align:top}
+    .pd-cab{display:flex;flex-wrap:wrap;gap:22px;align-items:center;background:#fff;border:1px solid #d0d0d0;padding:10px 14px;margin-bottom:10px}
+    .pd-cab h1{margin:0;font-size:22px}.pd-cab .k{font-size:11px;color:#525252}.pd-cab .v{font-weight:600}
+    .pd-prog{flex:1 1 220px}.pd-bar{height:8px;background:#e0e0e0;border-radius:4px;margin-top:4px}.pd-bar i{display:block;height:8px;background:#198038;border-radius:4px}
+    .pd-wrap{display:flex;gap:0;position:relative;align-items:stretch}
+    .pd-rail{width:58px;flex:0 0 58px;background:#fff;border:1px solid #d0d0d0;display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:6px}
+    .pd-exp{font-size:11px;text-align:center;cursor:pointer;color:#0f62fe;padding:4px 2px}
+    .pd-rit{cursor:pointer;padding:2px;border-radius:50%}.pd-rit.at{outline:2px solid #161616}
+    .pd-n{display:inline-block;width:28px;height:28px;line-height:28px;border-radius:50%;color:#fff;text-align:center;font-weight:600;font-size:13px}
+    .pd-det{flex:1;background:#fff;border:1px solid #d0d0d0;border-left:0;min-width:0}
+    .pd-dh{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid #e0e0e0}
+    .pd-steps{display:flex;gap:6px;padding:8px 14px}.pd-steps div{padding:3px 12px;background:#e8e8e8;font-size:12px}.pd-steps .at{background:#161616;color:#fff}.pd-steps .ok{background:#defbe6;color:#0e6027}
+    .pd-dois{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:6px 14px 12px}@media(max-width:800px){.pd-dois{grid-template-columns:1fr}}
+    .pd-dois .lb,.pd-mod .lb{font-size:11px;color:#525252;text-transform:uppercase;margin-bottom:3px}
+    .pd-ev{background:#f4f4f4;padding:8px 10px}.pd-resp{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pd-av{background:#fcf4d6;padding:6px 10px;font-size:12px;margin-top:6px}.pd-reat{margin-top:6px}
+    .pd-dois textarea,.pd-mod textarea{width:100%;box-sizing:border-box;padding:6px;border:1px solid #8d8d8d;font:inherit}
+    .pd-tl>div{border-left:2px solid #c6c6c6;padding:2px 0 8px 10px;font-size:13px}.pd-tl small{display:block;color:#6f6f6f}
+    .pd-rod{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid #e0e0e0;flex-wrap:wrap}
+    .bt.pd-ok{background:#198038;color:#fff;border-color:#198038}.bt.pd-no{background:#fff;color:#a2191f;border-color:#a2191f}
+    .pd-veu{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:3}
+    .pd-gav{position:fixed;top:0;left:0;bottom:0;width:380px;max-width:92vw;background:#fff;z-index:4;overflow:auto;box-shadow:2px 0 12px rgba(0,0,0,.3)}
+    .pd-gh{display:flex;justify-content:space-between;padding:12px 14px;font-weight:600;border-bottom:1px solid #e0e0e0}
+    .pd-gf{display:flex;gap:6px;padding:8px 14px}.pd-gf span{cursor:pointer;padding:2px 10px;background:#e8e8e8;font-size:12px}.pd-gf .at{background:#161616;color:#fff}
+    .pd-gi{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.pd-gi.at{background:#edf5ff}.pd-gi.ok{opacity:.7}
+    .pd-d{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:0 0 10px}
+    .pd-mod{position:fixed;z-index:6;top:8vh;left:50%;transform:translateX(-50%);width:560px;max-width:94vw;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+    .pd-lin2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.pd-lin2 select{width:100%;padding:6px}.pd-fix{background:#f4f4f4;padding:6px 8px}
 </style>
 </head>
 <body>
@@ -788,7 +823,7 @@
       <div class="nav-titulo">Validação</div>
       <button data-tela="ResumoVal" data-grupo="" data-setor="">Resumo do dia</button>
       <button data-tela="FilaVal" data-grupo="" data-setor="">Fila de validação</button>
-      <button data-tela="Offline" data-grupo="" data-setor="">Validação offline</button>
+      <button data-tela="Pendencias" data-grupo="" data-setor="">Pendências</button>
       <button data-tela="Relatorios" data-grupo="" data-setor="">Relatórios</button>
       <button class="grupo" data-sub="Divergencias" aria-expanded="false">Divergências <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuDivergencias">
@@ -903,6 +938,17 @@
       <div id="rpCorpo"></div>
     </section>
     <!-- FICHA DO SITE (somente consulta) -->
+    <section id="telaPendencias" class="tela vl oculto">
+      <div id="pdListaTela">
+        <div class="tr">Painel / Validação / <span>Pendências</span></div>
+        <div class="vl-topo"><div><h1>Pendências</h1><div class="sub">Tudo o que precisa de tratativa, vindo da Validação online, dos Relatórios ou registrado à mão.</div></div></div>
+        <div class="vl-cards" id="pdCards"></div>
+        <div class="pd-filtros" id="pdFiltros"></div>
+        <div class="pd-lote" id="pdLote"></div>
+        <div id="pdTabela"></div>
+      </div>
+      <div id="pdSiteTela" class="oculto"><div id="pdSite"></div></div>
+    </section>
     <section id="telaFicha" class="tela vl oculto">
       <div class="tr">Painel / Validação / <a class="rv-lk" id="fiVoltar">Relatórios</a> / <span>Ficha do site</span></div>
       <div id="fiCorpo"></div>
@@ -1820,7 +1866,7 @@
     estado.grupoAtual = grupo;
     estado.setor = setor;
     document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-      b.classList.toggle("ativo", b.dataset.tela === (nome === "SiteVal" ? "FilaVal" : nome === "Ficha" ? "Relatorios" : nome) && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
+      b.classList.toggle("ativo", b.dataset.tela === (nome === "SiteVal" ? "FilaVal" : nome === "Ficha" ? "Relatorios" : nome === "Offline" ? "Pendencias" : nome) && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
     });
     const subDe = { Registrar: "Registrar", Campo: "Campo", Conferencia: "EPS", EPS: "EPS", Divergencias: "Divergencias" }[nome];
     if (subDe) definirSubmenu(subDe, true);
@@ -1840,6 +1886,10 @@
       estado.val.rvLista = null;
       atualizarResumoVal();
       estado.pollId = setInterval(function () { if (!digitando()) atualizarResumoVal(); }, 120000);
+    }
+    if (nome === "Pendencias") {
+      estado.pd.sel = null; atualizarPendencias();
+      estado.pollId = setInterval(function () { if (!digitando() && !estado.pd.sel) atualizarPendencias(); }, 120000);
     }
     if (nome === "Offline") {
       atualizarOffline();
@@ -4244,7 +4294,7 @@
 
   // ==== VALIDAÇÃO PREVENTIVA ====================================================
   REGRAS.validacao = {
-    inicio: "2026-10-30",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
+    inicio: "2026-11-11",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
     fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente", "Local diferente do site", "Inventário excluído"],
     pendencias: ["Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"],
     inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
@@ -4860,7 +4910,7 @@
         const reg = x.e.reg, c = casoDe(reg);
         if (x.e.resultado === "devolvida" && !c) return reg.situacao === "encerrada" ? "Revalidada" : "Aguardando técnico";
         if (!c) return "—";
-        return c.concluido_em ? "Concluído em " + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) : 'Em aberto · <a class="rv-lk" data-go="Offline">Abrir →</a>';
+        return c.concluido_em ? "Concluído em " + dataBR(dataLocalDe(c.concluido_em)).slice(0, 5) : 'Em aberto · <a class="rv-lk" data-go="Pendencias">Abrir →</a>';
       };
       return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>Com pendências · " + esc(nomeP) + " · " + fmt(rows.length) + " WOs</span></div>" +
         '<div class="rv-chips">' + Object.keys(ROT).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + ROT[k] + " · " + cont(k) + "</button>"; }).join("") + "</div>" +
@@ -4914,11 +4964,11 @@
         nm(d.mopExec, "Total executadas", fmt(d.campoNaBase) + " em campo" + (d.execSemCampo ? " · " + fmt(d.execSemCampo) + " sem visita de campo " + lk("ver", "wlista", "exec:semcampo") : "") + "<br>" + lk("ver lista", "wlista", "exec:todas")) +
         nm(d.campo, "Executadas em campo", (d.campo ? lk("ver todas as visitas", "wlista", "campo:todas") + "<br>" + fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise " + lk("ver", "semval") : "")) +
         nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo" + (A.exec ? "<br>" + lk("ver lista", "vlista", "periodo:todas") : "")) + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
-        nm(pendTot, "Com pendências", fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Offline"), true) + "</div></div>";
+        nm(pendTot, "Com pendências", fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Pendencias"), true) + "</div></div>";
       t += barras;
       t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m4">' +
         nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva", d.sem ? lk("ver lista", "vlista", "dia:validada") : "") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
-        nm(d.filaOff, "Para validação offline", (d.filaOffSem ? fmt(d.filaOffSem) + " sem análise online<br>" : "") + lk("ver", "Offline")) + "</div></div>";
+        nm(d.filaOff, "Para validação offline", (d.filaOffSem ? fmt(d.filaOffSem) + " sem análise online<br>" : "") + lk("ver", "Pendencias")) + "</div></div>";
       const tk = Object.keys(d.tipos).sort(function (x, y) { return d.tipos[y] - d.tipos[x]; }), mx = tk.length ? d.tipos[tk[0]] : 1;
       t += '<div class="rv-2 rv-2b"><div class="rv-bl"><div class="rv-hd">Pendências por tipo · ' + (d.dia === hoje() ? "hoje" : "no dia") + '</div>' + (tk.length ? '<div style="padding:6px 0">' + tk.map(function (k) {
         return '<div class="rv-pr"><span>' + esc(k) + '</span><div class="t"><div style="width:' + Math.max(4, Math.round(d.tipos[k] * 100 / mx)) + '%"></div></div><b>' + d.tipos[k] + "</b></div>";
@@ -5345,7 +5395,7 @@
     const el = e.target.closest("[data-sv]");
     if (!el) return;
     const reg = estado.val.atual, a = el.dataset.sv;
-    if (a === "voltar") { if (estado.val.voltarOffline) { estado.val.voltarOffline = false; estado.off.vals = {}; irParaTela("Offline"); } else irParaTela("FilaVal"); return; }
+    if (a === "voltar") { if (estado.val.voltarOffline) { estado.val.voltarOffline = false; estado.off.vals = {}; irParaTela("Pendencias"); } else irParaTela("FilaVal"); return; }
     if (a === "pg") { const bq = bloqueioAba(reg, estado.val.equip, el.dataset.p); if (bq) { mostrarAviso(bq + ".", "erro"); return; } estado.val.pagina = el.dataset.p; if (estado.val.motivo == null && rascunhoDe(reg) && rascunhoDe(reg).motivo != null) estado.val.motivo = rascunhoDe(reg).motivo; desenharSiteVal(); return; }
     if (reg && a === "reabrir" && ehCoordenacao()) { estado.val.reabrindo = true; desenharSiteVal(); return; }
     if (reg && a === "reabcancel") { estado.val.reabrindo = false; desenharSiteVal(); return; }
@@ -5547,7 +5597,45 @@
   }
   function validacaoIniciada(c) { const h = c.historico || [], i = ultimoSemAnalise(h); return i >= 0 && h.slice(i + 1).some(function (e) { return e.iniciou; }); }
 
+  // ==== PENDÊNCIAS: o que a validação online encontra também entra na aba Pendências ====
+  function pendNorm(t) { return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim(); }
+  function pendHash(t) { let h = 5381; const s = String(t); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function pendTipo(texto) {
+    const x = String(texto || "");
+    if (/sem escalonamento/i.test(x)) return ["Sem escalonamento via TOA", "ESCAL"];
+    if (/alarmes n[aã]o analisados/i.test(x)) return ["Alarmes não analisados", "ALARMES"];
+    if (/sem preenchimento|obrigat[oó]ria sem|aba faltando/i.test(x)) return ["Aba faltando", "ABAFALTA"];
+    if (/pdf n[aã]o foi enviado/i.test(x)) return ["PDF não enviado", "SEMPDF"];
+    if (/jump|bornes/i.test(x)) return ["Jump", "JUMP"];
+    if (/foto/i.test(x)) return ["Foto fora do Padrão", "FOTO"];
+    return ["Pendência não apontada no Relatório", "OUTRO"];
+  }
+  function pendChave(aba, tag, titulo) {
+    const t = pendTipo(titulo), base = pendNorm(aba + " " + (tag || "")).replace(/ /g, "") + "|" + t[1];
+    return t[1] === "FOTO" || t[1] === "OUTRO" ? base + "|" + pendHash(pendNorm(titulo).replace(/[0-9]+/g, "").slice(0, 70)) : base;
+  }
+  async function enviarPendenciasOnline(reg, resultado, pend, motivo) {
+    const itens = [];
+    const lista = resultado === "validada" ? [] : (pend && pend.length ? pend : [{ tipo: "Outros", texto: motivo || "Sem detalhe" }]);
+    lista.forEach(function (p) {
+      const texto = String(p.texto || ""), t = pendTipo((p.tipo || "") + " " + texto);
+      let aba = texto.indexOf(" · ") > 0 ? texto.slice(0, texto.indexOf(" · ")) : (p.tipo || "Geral");
+      if (t[1] === "JUMP" || t[1] === "ALARMES") aba = "Alarmes"; else if (t[1] === "ESCAL") aba = "Zeladoria";
+      itens.push({ chave: pendChave(aba, "", t[1] === "FOTO" || t[1] === "OUTRO" ? texto : t[0]), aba: aba, tag: null, tipo: t[0], texto: texto || t[0], setor: reg.setor || null, evidencia: { validacao_id: reg.id, obs: p.obs || null, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
+    });
+    const al = reg.alarmes || {};
+    if (!al.hist && !al.semConfig) itens.push({ chave: pendChave("Alarmes", "", "Alarmes não analisados"), aba: "Alarmes", tag: null, tipo: "Alarmes não analisados", texto: "Alarmes não analisados na validação online", setor: reg.setor || null, evidencia: { validacao_id: reg.id, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
+    if (!itens.length) return;
+    const g = await banco.rpc("pendencias_sincronizar", { p_site_chave: reg.site_chave, p_site: String(reg.site || "").toUpperCase(), p_mes: String(reg.data).slice(0, 7) + "-01", p_origem: "validacao_online", p_itens: itens, p_resolver: false });
+    if (g.error) throw new Error(g.error.message);
+  }
   async function sincronizarCasoOffline(reg, resultado, pend, motivo, origemCaso, completa, wosCaso) {
+    await sincronizarCasoOfflineBase(reg, resultado, pend, motivo, origemCaso, completa, wosCaso);
+    try { await enviarPendenciasOnline(reg, resultado, pend || [], motivo); }
+    catch (e) { mostrarAviso("Caso gravado, mas as pendências não foram enviadas à aba Pendências: " + e.message + " (o SQL pendencias_sql.txt já foi rodado?)", "erro"); }
+  }
+
+  async function sincronizarCasoOfflineBase(reg, resultado, pend, motivo, origemCaso, completa, wosCaso) {
     const agora = new Date().toISOString(), quem = estado.usuarioEmail;
     const existente = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", reg.id).limit(1))[0];
     if (resultado === "validada") {
@@ -5765,6 +5853,302 @@
   // ==== FICHA DO SITE (somente consulta): reúne o que já está gravado, não grava nada ====
   function fiTxt(v) { return v == null || v === "" ? "—" : esc(v); }
   function fiTag(txt, cor) { return '<span class="fi-tg ' + (cor || "") + '">' + esc(txt) + "</span>"; }
+  // ==== PENDÊNCIAS (substitui a lista da Validação offline) ====================
+  estado.pd = { itens: [], sitesConcl: {}, filtro: "tratar", origem: "", tipo: "", resp: "", busca: "", abertos: {}, marcadas: {}, sel: null, pend: null, gaveta: false, gfiltro: "abertas", ev: {}, rasc: {}, modalNova: false, info: {} };
+  const PD_ORIG = { validacao_online: ["Validação online", "pd-o1"], relatorios: ["Relatórios", "pd-o2"], manual: ["Manual", "pd-o3"] };
+  const PD_ABAS = ["Alarmes", "Zeladoria", "Baixa Tensão", "QDCA", "Clima", "Espaço Físico", "Iluminação e Tomadas", "SPDA", "FCC", "Balizamento", "Trocador de Calor", "PLC", "Inventário", "Outra"];
+  const PD_TIPOS = ["Foto fora do Padrão", "Jump", "Aba faltando", "Sem escalonamento via TOA", "Alarmes não analisados", "Pendência não apontada no Relatório"];
+  function pdEu() { return String(estado.usuarioEmail || "").toLowerCase(); }
+  function pdAberta(p) { return p.estado === "Nova" || p.estado === "Em tratativa"; }
+  function pdDias(p) { return Math.max(0, Math.floor((Date.now() - new Date(p.criado_em).getTime()) / 86400000)); }
+  function pdChaveSite(p) { return p.site_chave + "|" + String(p.mes).slice(0, 7); }
+  function pdTagEstado(e) { const c = { "Nova": "pd-e1", "Em tratativa": "pd-e2", "Resolvida": "pd-e3", "Não resolvida": "pd-e4" }[e] || ""; return '<span class="pd-tg ' + c + '">' + esc(e) + "</span>"; }
+  function pdTagsOrigem(p) { return (p.origens || []).map(function (o) { const x = PD_ORIG[o] || [o, "pd-o3"]; return '<span class="pd-tg ' + x[1] + '">' + esc(x[0]) + "</span>"; }).join(" "); }
+  function pdCorEstado(e) { return { "Nova": "#e0a800", "Em tratativa": "#0f62fe", "Resolvida": "#198038", "Não resolvida": "#da1e28" }[e] || "#8d8d8d"; }
+  function pdQuando(iso) { return iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""; }
+
+  async function atualizarPendencias() {
+    try {
+      const fx = faixaDoPeriodo();
+      const abertas = conferir(await banco.from("pendencias").select("*").in("estado", ["Nova", "Em tratativa"]).order("id").limit(5000));
+      const conc = conferir(await banco.from("pendencias").select("*").in("estado", ["Resolvida", "Não resolvida"]).gte("mes", fx[0].slice(0, 7) + "-01").lte("mes", fx[1]).order("id").limit(5000));
+      estado.pd.itens = await pdAplicarCorte(abertas.concat(conc));
+      let sc = [];
+      try { sc = conferir(await banco.from("pendencias_sites").select("*").limit(5000)); } catch (e) { sc = []; }
+      estado.pd.sitesConcl = {}; sc.forEach(function (s) { estado.pd.sitesConcl[s.site_chave + "|" + String(s.mes).slice(0, 7)] = s; });
+    } catch (e) { $("pdCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar as pendências: ' + esc(e.message) + " (o SQL pendencias_sql.txt já foi rodado?)</div>"; return; }
+    desenharPendencias();
+  }
+  // Corte: tudo cuja visita registrada seja anterior a REGRAS.validacao.inicio fica fora do sistema (continua guardado no banco).
+  async function pdAplicarCorte(lista) {
+    const ini = REGRAS.validacao.inicio;
+    const chaves = []; lista.forEach(function (p) { if (chaves.indexOf(p.site_chave) < 0) chaves.push(p.site_chave); });
+    const visitas = {};
+    for (let i = 0; i < chaves.length; i += 100) {
+      try {
+        const v = conferir(await banco.from("validacoes").select("site_chave,data").in("site_chave", chaves.slice(i, i + 100)).limit(5000));
+        v.forEach(function (x) { (visitas[x.site_chave] = visitas[x.site_chave] || []).push(String(x.data).slice(0, 10)); });
+      } catch (e) { /* sem validações: cai no corte pelo mês */ }
+    }
+    return lista.filter(function (p) {
+      const m = String(p.mes).slice(0, 7), dv = (visitas[p.site_chave] || []).filter(function (d) { return d.slice(0, 7) === m; }).sort();
+      if (dv.length) return dv[dv.length - 1] >= ini;
+      return String(p.mes).slice(0, 10) >= ini.slice(0, 7) + "-01";
+    });
+  }
+  function pdSites() {
+    const g = {};
+    estado.pd.itens.forEach(function (p) { const k = pdChaveSite(p); (g[k] = g[k] || { k: k, site: p.site, chave: p.site_chave, mes: p.mes, itens: [] }).itens.push(p); });
+    return g;
+  }
+  function desenharPendencias() {
+    const P = estado.pd;
+    if (P.sel) { desenharSitePend(); return; }
+    $("pdSiteTela").classList.add("oculto"); $("pdListaTela").classList.remove("oculto");
+    const me = pdEu(), hojeS = hoje(), busca = String(P.busca || "").trim().toUpperCase();
+    const ok = function (p) {
+      if (busca && String(p.site || "").toUpperCase().indexOf(busca) < 0) return false;
+      if (P.origem && (p.origens || []).indexOf(P.origem) < 0) return false;
+      if (P.tipo && p.tipo !== P.tipo) return false;
+      if (P.resp === "__sem") return !p.responsavel;
+      if (P.resp && p.responsavel !== P.resp) return false;
+      return true;
+    };
+    const base = P.itens.filter(ok);
+    const abertas = base.filter(pdAberta), minhas = abertas.filter(function (p) { return p.responsavel === me; });
+    const n = { novas: abertas.filter(function (p) { return !p.responsavel; }).length, trat: abertas.filter(function (p) { return p.estado === "Em tratativa"; }).length, minha: minhas.length,
+      hoje: base.filter(function (p) { return p.concluida_em && String(new Date(p.concluida_em).toLocaleDateString("sv-SE")) === hojeS; }).length,
+      risco: abertas.filter(function (p) { return pdDias(p) >= REGRAS.offline.diasRisco; }).length, conc: base.filter(function (p) { return !pdAberta(p); }).length };
+    const resps = []; P.itens.forEach(function (p) { if (p.responsavel && resps.indexOf(p.responsavel) < 0) resps.push(p.responsavel); }); resps.sort();
+    $("pdCards").innerHTML = '<div class="vl-c' + (n.novas ? " amar" : "") + '"><div class="r">Novas (sem responsável)</div><div class="v">' + n.novas + '</div></div><div class="vl-c"><div class="r">Em tratativa</div><div class="v">' + n.trat + '</div></div><div class="vl-c"><div class="r">Minha fila</div><div class="v">' + n.minha + '</div></div><div class="vl-c"><div class="r">Resolvidas hoje</div><div class="v">' + n.hoje + '</div></div><div class="vl-c' + (n.risco ? " verm" : "") + '"><div class="r">Com risco de recusa (' + REGRAS.offline.diasRisco + '+ dias)</div><div class="v">' + n.risco + "</div></div>";
+    $("pdFiltros").innerHTML = '<div class="vl-chips" id="pdChips">' + [["tratar", "A tratar", abertas.length], ["minha", "Minha fila", n.minha], ["conc", "Concluídas", n.conc]].map(function (c) { return '<button data-pdf="' + c[0] + '"' + (P.filtro === c[0] ? ' class="ativo"' : "") + ">" + c[1] + " · " + c[2] + "</button>"; }).join("") + "</div>" +
+      '<div class="pd-sel"><label>Origem</label><select id="pdOrigem"><option value="">Todas</option>' + Object.keys(PD_ORIG).map(function (o) { return '<option value="' + o + '"' + (P.origem === o ? " selected" : "") + ">" + PD_ORIG[o][0] + "</option>"; }).join("") + "</select></div>" +
+      '<div class="pd-sel"><label>Tipo</label><select id="pdTipo"><option value="">Todos</option>' + PD_TIPOS.map(function (t) { return '<option' + (P.tipo === t ? " selected" : "") + ">" + esc(t) + "</option>"; }).join("") + "</select></div>" +
+      '<div class="pd-sel"><label>Responsável</label><select id="pdResp"><option value="">Todos</option><option value="__sem"' + (P.resp === "__sem" ? " selected" : "") + ">Sem responsável</option>" + resps.map(function (x) { return '<option value="' + esc(x) + '"' + (P.resp === x ? " selected" : "") + ">" + esc(nomeDoEmail(x)) + "</option>"; }).join("") + "</select></div>" +
+      '<div class="pd-sel"><label>Site</label><input id="pdBusca" type="search" placeholder="Pesquisar site" value="' + esc(P.busca || "") + '"></div>' +
+      '<div style="margin-left:auto;display:flex;gap:6px;align-items:flex-end"><button class="bt peq" data-pdx="abrir">Expandir tudo</button><button class="bt peq" data-pdx="fechar">Recolher tudo</button></div>';
+    const g = pdSites(), grupos = [];
+    Object.keys(g).forEach(function (k) {
+      const s = g[k], vis = s.itens.filter(function (p) { return ok(p) && (P.filtro === "tratar" ? pdAberta(p) : P.filtro === "minha" ? (pdAberta(p) && p.responsavel === me) : !pdAberta(p)); });
+      if (!vis.length) return;
+      s.vis = vis; s.abertas = s.itens.filter(pdAberta).length; grupos.push(s);
+    });
+    grupos.sort(function (a, b) { return b.abertas - a.abertas || String(a.site).localeCompare(String(b.site)); });
+    P.chaves = grupos.map(function (s) { return s.k; });
+    let t = "";
+    if (!grupos.length) t = '<div class="vl-vazio">' + (P.itens.length ? "Nada neste filtro." : "Nenhuma pendência ainda. Elas chegam sozinhas quando você grava a análise em Relatórios ou encerra uma validação online.") + "</div>";
+    else {
+      t = '<table><tr><th style="width:28px"></th><th>Origem</th><th>Aba / item</th><th>Pendência</th><th>Responsável</th><th>Há</th><th>Estado</th></tr>';
+      grupos.forEach(function (s) {
+        const aberto = P.abertos[s.k] !== undefined ? P.abertos[s.k] : !!busca;
+        t += '<tr class="pd-grp"><td data-pdg="' + esc(s.k) + '" style="cursor:pointer">' + (aberto ? "▾" : "▸") + '</td><td colspan="6"><b class="pd-site" data-pds="' + esc(s.k) + '">' + esc(s.site) + "</b> · " + esc(mesRel(s.mes)) + " · " + s.vis.length + (s.vis.length === 1 ? " pendência" : " pendências") +
+          ' <a class="rv-lk" data-pdficha="' + esc(s.k) + '" style="margin-left:10px;font-weight:400">Ficha</a></td></tr>';
+        if (aberto) s.vis.forEach(function (p) {
+          t += '<tr class="pd-lin"><td>' + (pdAberta(p) ? '<input type="checkbox" data-pdm="' + p.id + '"' + (P.marcadas[p.id] ? " checked" : "") + ">" : "") + "</td><td>" + pdTagsOrigem(p) + "</td><td>" + esc(p.aba + (p.tag ? " " + p.tag : "")) + "</td><td>" + esc(p.texto) + "</td><td>" +
+            (p.responsavel ? esc(nomeDoEmail(p.responsavel)) : '<span class="vl-mu">—</span>') + "</td><td>" + (pdDias(p) === 0 ? "hoje" : pdDias(p) + " d") + "</td><td>" + pdTagEstado(p.estado) + "</td></tr>";
+        });
+      });
+      t += "</table>";
+    }
+    $("pdTabela").innerHTML = t;
+    const nm = Object.keys(P.marcadas).filter(function (k) { return P.marcadas[k]; }).length;
+    $("pdLote").innerHTML = '<button class="bt" data-pdl="assumir"' + (nm ? "" : " disabled") + '>Assumir selecionadas' + (nm ? " (" + nm + ")" : "") + '</button>' + (ehCoordenacao() ? ' <button class="bt" data-pdl="atribuir"' + (nm ? "" : " disabled") + '>Atribuir a…</button>' : "") + ' <span class="vl-mu" style="margin-left:10px">Clique no nome do site para abrir o painel de tratativa.</span>';
+  }
+
+  // ---- painel do site
+  function pdDoSite() { return estado.pd.itens.filter(function (p) { return pdChaveSite(p) === estado.pd.sel; }).sort(function (a, b) { return (pdAberta(b) ? 1 : 0) - (pdAberta(a) ? 1 : 0) || a.id - b.id; }); }
+  async function pdCarregarEventos(id) {
+    try { estado.pd.ev[id] = conferir(await banco.from("pendencias_eventos").select("*").eq("pendencia_id", id).order("id")); } catch (e) { estado.pd.ev[id] = []; }
+  }
+  async function pdAbrirSite(k, pid) {
+    const P = estado.pd; P.sel = k; P.gaveta = false; P.modalNova = false;
+    const its = pdDoSite(); P.pend = pid || (its.find(pdAberta) || its[0] || {}).id || null;
+    if (P.pend) await pdCarregarEventos(P.pend);
+    pdInfoSite(k);
+    desenharSitePend(); window.scrollTo(0, 0);
+  }
+  async function pdInfoSite(k) {
+    const P = estado.pd; if (P.info[k]) return;
+    P.info[k] = { feito: true };
+    try {
+      const p = k.split("|"), r = conferir(await banco.from("relatorios_tela").select("dados").eq("site_chave", p[0]).eq("mes", p[1] + "-01").limit(1));
+      const nomes = {}; (((r[0] || {}).dados || {}).linhas || []).forEach(function (l) { const x = l.rep && l.rep.realizadaPor; if (x) nomes[x] = (nomes[x] || 0) + 1; });
+      P.info[k].exec = Object.keys(nomes).sort(function (a, b) { return nomes[b] - nomes[a]; })[0] || "";
+    } catch (e) { /* sem tela gravada */ }
+    if (estado.pd.sel === k) desenharSitePend();
+  }
+  function pdLerRascunho() { const ta = $("pdFeito"); if (ta && estado.pd.pend) estado.pd.rasc[estado.pd.pend] = ta.value; }
+  function desenharSitePend() {
+    const P = estado.pd, its = pdDoSite();
+    $("pdListaTela").classList.add("oculto"); $("pdSiteTela").classList.remove("oculto");
+    const p0 = its[0]; if (!p0) { P.sel = null; desenharPendencias(); return; }
+    const info = P.info[P.sel] || {}, me = pdEu(), coord = ehCoordenacao();
+    const feitas = its.filter(function (p) { return !pdAberta(p); }).length, sc = P.sitesConcl[P.sel];
+    const cur = its.find(function (p) { return p.id === P.pend; }) || its[0];
+    const nm = String(P.sel).split("|");
+    let h = '<div class="pd-cab"><h1>' + esc(p0.site) + '</h1><div><div class="k">Mês</div><div class="v">' + esc(mesRel(p0.mes)) + '</div></div><div><div class="k">WO</div><div class="v">' + esc(((its.find(function (p) { return p.evidencia && p.evidencia.wo; }) || {}).evidencia || {}).wo || "—") + '</div></div><div><div class="k">Executado por</div><div class="v">' + esc(info.exec || "—") + '</div></div>' +
+      '<div class="pd-prog"><div class="k">Progresso do site · <b>' + feitas + " de " + its.length + ' concluídas</b></div><div class="pd-bar"><i style="width:' + Math.round(feitas / its.length * 100) + '%"></i></div></div>' +
+      '<div style="text-align:right"><a class="rv-lk" data-pdficha="' + esc(P.sel) + '">Ver ficha do site</a><br>' + (sc ? '<span class="vl-mu" style="font-size:12px">Site concluído por ' + esc(nomeDoEmail(sc.concluido_por)) + " em " + esc(pdQuando(sc.concluido_em).slice(0, 5)) + "</span>" : '<button class="bt" data-pda="concluirsite"' + (feitas === its.length ? "" : " disabled") + ' title="Só libera quando todas as pendências estiverem concluídas">Concluir site</button>') + "</div></div>";
+    // faixa + gaveta
+    h += '<div class="pd-wrap"><div class="pd-rail"><div class="pd-exp" data-pda="gaveta">▶<br>Abrir</div>' + its.map(function (p, i) { return '<div class="pd-rit' + (p.id === cur.id ? " at" : "") + '" data-pdp="' + p.id + '" title="' + esc(p.aba + " · " + p.texto) + '"><span class="pd-n" style="background:' + pdCorEstado(p.estado) + '">' + (i + 1) + "</span></div>"; }).join("") + '<div class="pd-exp" data-pda="nova" title="Registrar pendência nova">＋</div></div>';
+    h += '<div class="pd-det">' + pdDetalhe(cur, its.indexOf(cur), me, coord) + "</div>";
+    if (P.gaveta) {
+      const gl = its.filter(function (p) { return P.gfiltro === "todas" ? true : P.gfiltro === "conc" ? !pdAberta(p) : pdAberta(p); });
+      h += '<div class="pd-veu" data-pda="gaveta"></div><div class="pd-gav"><div class="pd-gh">Pendências · ' + esc(p0.site) + '<a class="rv-lk" data-pda="gaveta" style="font-weight:400">◀ Fechar</a></div><div class="pd-gf">' + [["abertas", "Abertas", its.filter(pdAberta).length], ["todas", "Todas", its.length], ["conc", "Concluídas", feitas]].map(function (c) { return '<span data-pdg2="' + c[0] + '" class="' + (P.gfiltro === c[0] ? "at" : "") + '">' + c[1] + " · " + c[2] + "</span>"; }).join("") + "</div>" +
+        gl.map(function (p) { return '<div class="pd-gi' + (p.id === cur.id ? " at" : "") + (pdAberta(p) ? "" : " ok") + '" data-pdp="' + p.id + '" data-fecha="1"><span class="pd-d" style="background:' + pdCorEstado(p.estado) + '"></span><div><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + "</b><br>" + esc(p.texto) + "<br>" + pdTagsOrigem(p) + " " + pdTagEstado(p.estado) + "</div></div>"; }).join("") +
+        '<div style="padding:12px 14px"><button class="bt" data-pda="nova">+ Registrar pendência nova</button></div></div>';
+    }
+    h += "</div>";
+    if (P.modalNova) h += pdModalNova(p0);
+    setTimeout(function () { const c = estado.pd.sel && pdDoSite().find(function (p) { return p.id === estado.pd.pend; }); if (c) pdCarregarFotos(c); }, 0);
+    $("pdSite").innerHTML = '<div class="tr">Painel / Validação / <a class="rv-lk" data-pda="voltar">Pendências</a> / <span>' + esc(p0.site) + "</span></div>" + h;
+  }
+  function pdDetalhe(p, idx, me, coord) {
+    const P = estado.pd, ev = P.ev[p.id] || [], minha = p.responsavel === me, livre = !p.responsavel, aberta = pdAberta(p);
+    const pode = aberta && (minha || coord);
+    const etapa = !aberta ? 3 : p.estado === "Em tratativa" ? 2 : 1;
+    const ev_ = p.evidencia || {}, rasc = P.rasc[p.id] || "";
+    const roti = { criada: "Pendência criada", assumida: "Assumida", liberada: "Liberada", reatribuida: "Reatribuída", estado: "Estado alterado", concluida: "Concluída", reaberta: "Reaberta", origem: "Origem atualizada", andamento: "Andamento" };
+    let h = '<div class="pd-dh"><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + " · " + esc(p.texto) + "</b><span>" + pdTagsOrigem(p) + " " + pdTagEstado(p.estado) + "</span></div>" +
+      '<div class="pd-steps"><div class="' + (etapa > 1 ? "ok" : "at") + '">' + (etapa > 1 ? "✔ " : "") + '1 Entender</div><div class="' + (etapa > 2 ? "ok" : etapa === 2 ? "at" : "") + '">' + (etapa > 2 ? "✔ " : "") + '2 Tratar</div><div class="' + (etapa === 3 ? "at" : "") + '">3 Concluir</div></div><div class="pd-dois"><div>' +
+      '<div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe) + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
+      (ev_.arquivo ? '<div class="lb" style="margin-top:10px">Evidência</div><div id="pdFotos" class="pd-fotos vl-mu">Carregando fotos…</div><div style="margin-top:6px"><a class="rv-lk" href="relatorios.html?site=' + encodeURIComponent(p.site) + "&mes=" + String(p.mes).slice(0, 7) + '" target="_blank">Abrir análise completa com fotos</a></div>' : "") +
+      (p.tipo === "Alarmes não analisados" && aberta ? '<div style="margin-top:12px"><button class="bt p" data-pda="alarmes">Analisar alarmes</button><div class="vl-mu" style="font-size:12px;margin-top:4px">Abre a análise de alarmes (configuração, histórico e permanência). Depois volte e conclua esta pendência.</div></div>' : "") + "</div><div>" +
+      '<div class="lb">Responsável</div><div class="pd-resp"><b>' + (p.responsavel ? esc(nomeDoEmail(p.responsavel)) : "Sem responsável") + "</b>" +
+      (aberta && livre ? ' <button class="bt p peq" data-pda="assumir">Assumir</button>' : "") + (aberta && minha ? ' <button class="bt peq" data-pda="liberar">Liberar</button>' : "") +
+      (aberta && coord && !livre ? ' <button class="bt peq" data-pda="reatribuir">Reatribuir…</button>' : "") + (aberta && coord && livre ? ' <button class="bt peq" data-pda="reatribuir">Atribuir a…</button>' : "") + "</div>" +
+      (P.reat === p.id ? '<div class="pd-reat"><select id="pdReatSel">' + pdEmails().map(function (e) { return '<option value="' + esc(e) + '">' + esc(nomeDoEmail(e) + " · " + e) + "</option>"; }).join("") + '</select> <button class="bt p peq" data-pda="reatok">Confirmar</button> <button class="bt peq" data-pda="reatno">Cancelar</button></div>' : "") +
+      (aberta && !pode && !livre ? '<div class="pd-av">Esta pendência está com ' + esc(nomeDoEmail(p.responsavel)) + ". Só ela ou a coordenação pode alterá-la.</div>" : "") +
+      (aberta && livre ? '<div class="pd-av">Clique em Assumir para tratar esta pendência. O responsável é sempre quem está logado.</div>' : "") +
+      '<div class="lb" style="margin-top:12px">O que foi feito</div><textarea id="pdFeito" rows="3" placeholder="Escreva a tratativa (ex.: respondido ao cliente, técnico acionado)…"' + (pode ? "" : " disabled") + ">" + esc(rasc) + "</textarea>" +
+      '<div style="margin:8px 0"><button class="bt p" data-pda="andamento"' + (pode ? "" : " disabled") + ">Registrar andamento</button></div>" +
+      '<div class="lb" style="margin-top:12px">Histórico</div><div class="pd-tl">' + (ev.length ? ev.map(function (e) { return "<div><b>" + esc(roti[e.tipo] || e.tipo) + "</b>" + (e.tipo === "andamento" || e.tipo === "concluida" ? "<br>" + esc(String(e.texto || "").replace(/^[^\n]*\n/, e.tipo === "concluida" ? "" : "")) : "") + "<small>" + esc(e.por === "sistema" ? "Sistema" : nomeDoEmail(e.por)) + " · " + esc(pdQuando(e.em)) + "</small></div>"; }).join("") : '<span class="vl-mu">Sem registros.</span>') + "</div>" +
+      (!aberta && (minha || coord) ? '<div style="margin-top:8px"><button class="bt peq" data-pda="reabrir">Reabrir pendência</button></div>' : "") + "</div></div>" +
+      '<div class="pd-rod"><span class="vl-mu">' + (aberta ? "Para concluir, escreva a resposta em “O que foi feito”." : "Concluída" + (p.concluida_por ? " por " + esc(p.concluida_por === "sistema" ? "sistema" : nomeDoEmail(p.concluida_por)) : "") + (p.resposta ? ": " + esc(p.resposta) : "")) + '</span><span style="margin-left:auto"></span>' +
+      '<button class="bt pd-ok" data-pda="resolvida"' + (pode ? "" : " disabled") + '>✔ Resolvida</button><button class="bt pd-no" data-pda="nao"' + (pode ? "" : " disabled") + '>✖ Não resolvida</button><button class="bt" data-pda="proxima">Próxima ›</button></div>';
+    return h;
+  }
+  function pdEmails() {
+    const s = {}; estado.pd.itens.forEach(function (p) { if (p.responsavel) s[p.responsavel] = 1; if (p.criado_por && /@/.test(p.criado_por)) s[p.criado_por] = 1; }); s[pdEu()] = 1;
+    return Object.keys(s).sort();
+  }
+  function pdModalNova(p0) {
+    const abas = PD_ABAS.slice();
+    return '<div class="pd-veu" style="z-index:5"></div><div class="pd-mod"><div class="pd-gh">Registrar pendência nova<a class="rv-lk" data-pda="novano" style="font-weight:400">✕</a></div><div style="padding:16px 18px">' +
+      '<div class="pd-lin2"><div><div class="lb">Site / mês</div><div class="pd-fix">' + esc(p0.site) + " · " + esc(mesRel(p0.mes)) + '</div></div><div><div class="lb">Origem</div><div class="pd-fix">Manual</div></div></div>' +
+      '<div class="pd-lin2"><div><div class="lb">Aba / item *</div><select id="pnAba">' + abas.map(function (a) { return "<option>" + esc(a) + "</option>"; }).join("") + '</select></div><div><div class="lb">Tipo *</div><select id="pnTipo">' + PD_TIPOS.map(function (t) { return "<option>" + esc(t) + "</option>"; }).join("") + "</select></div></div>" +
+      '<div class="lb">O que foi encontrado *</div><textarea id="pnTexto" rows="4" placeholder="Descreva a pendência com clareza (o que está errado e onde)…" style="width:100%"></textarea>' +
+      '<div class="pd-lin2" style="margin-top:10px"><div><div class="lb">Registrada por</div><div class="pd-fix">' + esc(estado.usuarioEmail) + '</div></div><div><div class="lb">Estado inicial</div><div class="pd-fix">Nova (sem responsável)</div></div></div>' +
+      '<div class="vl-mu" style="font-size:12px;margin:8px 0">Quem registra é sempre o login de quem está logado; a data e a hora entram sozinhas.</div>' +
+      '<div style="text-align:right"><button class="bt" data-pda="novano">Cancelar</button> <button class="bt p" data-pda="novaok">Registrar pendência</button></div></div></div>';
+  }
+  async function pdCarregarFotos(p) {
+    const el = $("pdFotos"); if (!el) return;
+    const ev = p.evidencia || {};
+    if (!ev.arquivo || !ev.fotos) { el.textContent = ""; return; }
+    const url = "https://fotos-engemon.performance-telecom.workers.dev";
+    if (!url) { el.textContent = ""; return; }
+    try {
+      const tok = (await banco.auth.getSession()).data.session.access_token, base = p.site_chave + "/" + String(p.mes).slice(0, 7) + "/" + String(ev.arquivo).replace(/[^A-Za-z0-9_.-]/g, "_");
+      const n = Math.min(ev.fotos, 6), imgs = [];
+      for (let i = 1; i <= n; i++) {
+        const r = await fetch(url.replace(/\/+$/, "") + "/" + encodeURI(base + "-" + i + ".jpg"), { headers: { Authorization: "Bearer " + tok } });
+        if (!r.ok) continue;
+        imgs.push(URL.createObjectURL(await r.blob()));
+      }
+      if (estado.pd.pend !== p.id || !$("pdFotos")) return;
+      $("pdFotos").innerHTML = imgs.length ? imgs.map(function (u) { return '<img src="' + u + '" style="height:88px;margin:0 6px 6px 0;cursor:zoom-in" onclick="window.open(this.src)">'; }).join("") : "Sem fotos gravadas para esta análise.";
+    } catch (e) { if ($("pdFotos")) $("pdFotos").textContent = ""; }
+  }
+  async function pdRecarregar(manter) {
+    const P = estado.pd, sel = P.sel, pend = P.pend;
+    await atualizarPendencias();
+    if (manter) { P.sel = sel; P.pend = pend; if (pend) await pdCarregarEventos(pend); desenharPendencias(); }
+  }
+  async function pdAcao(a, el) {
+    const P = estado.pd, me = pdEu(), its = P.sel ? pdDoSite() : [], cur = its.find(function (p) { return p.id === P.pend; });
+    try {
+      if (a === "gaveta") { pdLerRascunho(); P.gaveta = !P.gaveta; desenharSitePend(); return; }
+      if (a === "voltar") { pdLerRascunho(); P.sel = null; P.pend = null; P.gaveta = false; desenharPendencias(); return; }
+      if (a === "nova") { P.modalNova = true; P.gaveta = false; desenharSitePend(); return; }
+      if (a === "novano") { P.modalNova = false; desenharSitePend(); return; }
+      if (a === "novaok") {
+        const texto = ($("pnTexto").value || "").trim(), aba = $("pnAba").value, tipo = $("pnTipo").value;
+        if (!texto) { mostrarAviso("Descreva o que foi encontrado.", "erro"); return; }
+        const dup = its.find(function (p) { return pdAberta(p) && p.aba === aba && p.tipo === tipo; });
+        if (dup && !confirm("Já existe uma pendência aberta de " + tipo + " em " + aba + " neste site. Registrar mesmo assim?")) return;
+        const p0 = its[0];
+        const novo = conferir(await banco.from("pendencias").insert({ chave: p0.site_chave + "|" + String(p0.mes).slice(0, 7) + "|" + pendNorm(aba).replace(/ /g, "") + "|MANUAL|" + Date.now().toString(36), site: p0.site, site_chave: p0.site_chave, mes: p0.mes, origens: ["manual"], aba: aba, tipo: tipo, texto: texto, evidencia: {} }).select());
+        P.modalNova = false; await pdRecarregar(false); P.sel = pdChaveSite(p0); P.pend = novo[0] && novo[0].id; if (P.pend) await pdCarregarEventos(P.pend); desenharPendencias(); mostrarAviso("Pendência registrada."); return;
+      }
+      if (!cur && a !== "concluirsite") return;
+      if (a === "assumir") { const r = conferir(await banco.from("pendencias").update({ responsavel: me, estado: "Em tratativa" }).eq("id", cur.id).is("responsavel", null).select()); if (!r.length) mostrarAviso("Outra pessoa assumiu esta pendência antes de você.", "erro"); await pdRecarregar(true); return; }
+      if (a === "liberar") { conferir(await banco.from("pendencias").update({ responsavel: null, estado: "Nova" }).eq("id", cur.id).eq("responsavel", me).select()); await pdRecarregar(true); return; }
+      if (a === "reatribuir") { P.reat = cur.id; pdLerRascunho(); desenharSitePend(); return; }
+      if (a === "reatno") { P.reat = null; desenharSitePend(); return; }
+      if (a === "reatok") { const e = $("pdReatSel").value; conferir(await banco.from("pendencias").update({ responsavel: e, estado: "Em tratativa" }).eq("id", cur.id).select()); P.reat = null; await pdRecarregar(true); return; }
+      if (a === "andamento") {
+        const tx = ($("pdFeito").value || "").trim(); if (!tx) { mostrarAviso("Escreva o andamento.", "erro"); return; }
+        conferir(await banco.from("pendencias_eventos").insert({ pendencia_id: cur.id, tipo: "andamento", texto: tx }).select());
+        P.rasc[cur.id] = ""; await pdCarregarEventos(cur.id); desenharSitePend(); mostrarAviso("Andamento registrado."); return;
+      }
+      if (a === "resolvida" || a === "nao") {
+        const tx = ($("pdFeito").value || "").trim(); if (!tx) { mostrarAviso("Para concluir, escreva a resposta em “O que foi feito”.", "erro"); return; }
+        conferir(await banco.from("pendencias").update({ estado: a === "resolvida" ? "Resolvida" : "Não resolvida", resposta: tx }).eq("id", cur.id).select());
+        P.rasc[cur.id] = ""; await pdRecarregar(true); mostrarAviso("Pendência concluída."); return;
+      }
+      if (a === "reabrir") { conferir(await banco.from("pendencias").update({ estado: "Em tratativa" }).eq("id", cur.id).select()); await pdRecarregar(true); return; }
+      if (a === "proxima") {
+        pdLerRascunho(); const ab = its.filter(pdAberta), base = ab.length ? ab : its, i = base.findIndex(function (p) { return p.id === cur.id; }), nx = base[(i + 1) % base.length];
+        P.pend = nx.id; await pdCarregarEventos(nx.id); desenharSitePend(); return;
+      }
+      if (a === "concluirsite") { const k = P.sel.split("|"); conferir(await banco.from("pendencias_sites").insert({ site_chave: k[0], mes: k[1] + "-01" }).select()); await pdRecarregar(true); mostrarAviso("Site concluído."); return; }
+      if (a === "alarmes") {
+        const vid = cur.evidencia && cur.evidencia.validacao_id; if (!vid) { mostrarAviso("Esta pendência não tem uma validação ligada.", "erro"); return; }
+        const cs = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", vid).limit(1));
+        if (!cs.length) { mostrarAviso("Não encontrei o caso desta validação.", "erro"); return; }
+        estado.off.sel = String(cs[0].id); estado.off.aberto = true; estado.off.abaRes = "al"; estado.off.volta = "Pendencias"; irParaTela("Offline"); return;
+      }
+    } catch (e) { mostrarAviso(String(e.message || e), "erro"); await pdRecarregar(!!P.sel); }
+  }
+  document.addEventListener("click", function (e) {
+    if (!$("telaPendencias") || $("telaPendencias").classList.contains("oculto")) return;
+    const P = estado.pd;
+    const fi = e.target.closest("[data-pdficha]"); if (fi) { const p = fi.dataset.pdficha.split("|"); abrirFicha(p[0], p[1] + "-01"); return; }
+    const ac = e.target.closest("[data-pda]"); if (ac) { pdAcao(ac.dataset.pda); return; }
+    const pp = e.target.closest("[data-pdp]"); if (pp) { pdLerRascunho(); P.pend = Number(pp.dataset.pdp); if (pp.dataset.fecha) P.gaveta = false; pdCarregarEventos(P.pend).then(desenharSitePend); return; }
+    const g2 = e.target.closest("[data-pdg2]"); if (g2) { P.gfiltro = g2.dataset.pdg2; desenharSitePend(); return; }
+    const sn = e.target.closest("[data-pds]"); if (sn) { pdAbrirSite(sn.dataset.pds); return; }
+    const gr = e.target.closest("[data-pdg]"); if (gr) { const k = gr.dataset.pdg, atual = P.abertos[k] !== undefined ? P.abertos[k] : !!String(P.busca || "").trim(); P.abertos[k] = !atual; desenharPendencias(); return; }
+    const x = e.target.closest("[data-pdx]"); if (x) { P.abertos = {}; (P.chaves || []).forEach(function (k) { P.abertos[k] = x.dataset.pdx === "abrir"; }); desenharPendencias(); return; }
+    const ch = e.target.closest("#pdChips button"); if (ch) { P.filtro = ch.dataset.pdf; desenharPendencias(); return; }
+    const lt = e.target.closest("[data-pdl]"); if (lt) { pdLote(lt.dataset.pdl); return; }
+  });
+  document.addEventListener("change", function (e) {
+    if (!$("telaPendencias") || $("telaPendencias").classList.contains("oculto")) return;
+    const P = estado.pd, t = e.target;
+    if (t.matches && t.matches("[data-pdm]")) { P.marcadas[t.dataset.pdm] = t.checked; desenharPendencias(); return; }
+    if (t.id === "pdOrigem") { P.origem = t.value; desenharPendencias(); } else if (t.id === "pdTipo") { P.tipo = t.value; desenharPendencias(); } else if (t.id === "pdResp") { P.resp = t.value; desenharPendencias(); }
+  });
+  document.addEventListener("input", function (e) {
+    if (e.target && e.target.id === "pdBusca") { estado.pd.busca = e.target.value; desenharPendencias(); const b = $("pdBusca"); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }
+  });
+  async function pdLote(a) {
+    const P = estado.pd, me = pdEu(), ids = Object.keys(P.marcadas).filter(function (k) { return P.marcadas[k]; }).map(Number);
+    if (!ids.length) return;
+    try {
+      if (a === "assumir") {
+        const r = conferir(await banco.from("pendencias").update({ responsavel: me, estado: "Em tratativa" }).in("id", ids).is("responsavel", null).select());
+        mostrarAviso(r.length + (r.length === 1 ? " pendência assumida." : " pendências assumidas.") + (r.length < ids.length ? " As outras já tinham responsável." : ""));
+      } else if (a === "atribuir") {
+        const e = prompt("Atribuir a qual e-mail?\n" + pdEmails().join("\n"), pdEmails()[0] || ""); if (!e) return;
+        const r = conferir(await banco.from("pendencias").update({ responsavel: e.trim().toLowerCase(), estado: "Em tratativa" }).in("id", ids).select());
+        mostrarAviso(r.length + " atribuída(s).");
+      }
+      P.marcadas = {}; await atualizarPendencias();
+    } catch (er) { mostrarAviso(String(er.message || er), "erro"); }
+  }
+
   async function abrirFicha(chave, mes) {
     irParaTela("Ficha");
     $("fiCorpo").innerHTML = '<div class="vl-vazio">Carregando a ficha...</div>';
@@ -5793,8 +6177,7 @@
       if (regAl) { const x = pv[String(regAl.visita_id)]; estado.val.visitaHoras = estado.val.visitaHoras || {}; if (x) estado.val.visitaHoras[regAl.id] = { ent: x.hora_entrada ? new Date(x.hora_entrada).getTime() : null, sai: x.hora_saida ? new Date(x.hora_saida).getTime() : null }; }
     } catch (e) { /* sem visitas */ }
     // tratativas (Validação offline)
-    let casos = [];
-    try { const ids = vd.map(function (v) { return v.id; }); if (ids.length) casos = await seguro(banco.from("casos_offline").select("*").in("validacao_id", ids)); } catch (e) { casos = []; }
+    const pds = await pdAplicarCorte(await seguro(banco.from("pendencias").select("*").eq("site_chave", chave).eq("mes", ini).order("id")));
     // ---- cálculos
     const abas = an.filter(function (r) { return !r.tipo_linha || r.tipo_linha === "relatorio"; });
     const nRef = an.filter(function (r) { return rpTipo(r) === "Refazer"; }).length, nFal = an.filter(function (r) { return r.tipo_linha === "faltando"; }).length, nSem = an.filter(function (r) { return r.tipo_linha === "sem_pdf"; }).length;
@@ -5842,16 +6225,12 @@
     let alh = "";
     try { if (regAl) alh = desenharPermanencia(analisePermanencia(regAl)); } catch (e) { alh = ""; }
     h += '<div class="fi-bl"><h3>Alarmes · Permanência x alarmes<span>consulta</span></h3><div style="padding:6px 8px">' + (alh || '<div class="vl-vazio">Sem histórico de alarmes importado para este site neste mês.</div>') + "</div></div>";
-    // pendências e tratativas
-    const reg = {}; casos.forEach(function (c) { (c.pendencias || []).forEach(function (p) { reg[p.texto] = { p: p, c: c }; }); });
-    const pend = [];
-    an.forEach(function (r) { const nome = r.segmento + (r.tag ? " " + r.tag : ""); (r.achados || []).forEach(function (a) { const x = String(a && a.texto ? a.texto : a), i = x.indexOf(" — "); pend.push({ nome: nome, motivo: i > 0 ? x.slice(0, i) : x, texto: nome + " · " + x }); }); });
-    h += '<div class="fi-bl"><h3>Pendências e tratativas<span>as tratativas são feitas na Validação offline</span></h3>' + (pend.length ? "<table><tr><th>Aba</th><th>Pendência (origem: Relatórios)</th><th>Tratativa</th><th>Situação</th></tr>" + pend.map(function (p) {
-      const g = reg[p.texto];
-      const sit = !g ? fiTag("Aberta", "a") : g.c.concluido_em ? fiTag(g.p.estado || "Concluída", "g") : fiTag(g.p.estado || "Em tratativa", "a");
-      const trat = g ? esc(g.p.resposta || g.p.obs || "Registrada na Validação offline") + (g.c.responsavel ? ' <span class="fi-mu">· ' + esc(g.c.responsavel) + "</span>" : "") : '<span class="fi-mu">Sem tratativa</span>';
-      return "<tr><td>" + esc(p.nome) + "</td><td>" + esc(p.motivo) + "</td><td>" + trat + "</td><td>" + sit + "</td></tr>";
-    }).join("") + "</table>" : '<div class="vl-vazio">Nenhuma pendência apontada pela análise.</div>') + "</div>";
+    // pendências e tratativas (somente consulta; a tratativa é feita em Pendências)
+    const ORI = { validacao_online: "Validação online", relatorios: "Relatórios", manual: "Manual" };
+    h += '<div class="fi-bl"><h3>Pendências e tratativas<span>as tratativas são feitas na tela Pendências</span></h3>' + (pds.length ? "<table><tr><th>Aba</th><th>Pendência</th><th>Origem</th><th>Responsável</th><th>Tratativa</th><th>Situação</th></tr>" + pds.map(function (p) {
+      const sit = fiTag(p.estado, p.estado === "Resolvida" ? "g" : "a");
+      return "<tr><td>" + esc(p.aba + (p.tag ? " " + p.tag : "")) + "</td><td>" + esc(p.texto) + "</td><td>" + esc((p.origens || []).map(function (o) { return ORI[o] || o; }).join(" + ")) + "</td><td>" + (p.responsavel ? esc(nomeDoEmail(p.responsavel)) : '<span class="fi-mu">—</span>') + "</td><td>" + (p.resposta ? esc(p.resposta) : '<span class="fi-mu">Sem tratativa</span>') + "</td><td>" + sit + "</td></tr>";
+    }).join("") + "</table>" : '<div class="vl-vazio">Nenhuma pendência registrada.</div>') + "</div>";
     // visitas
     h += '<div class="fi-bl"><h3>Visitas em campo</h3><table><tr><th>Data</th><th>Entrada</th><th>Saída</th></tr>' + (visitas.map(function (v) { return "<tr><td>" + esc(dataBR(v.data)) + "</td><td>" + hm(v.ent) + "</td><td>" + hm(v.sai) + "</td></tr>"; }).join("") || '<tr><td colspan="3" class="fi-mu">Nenhuma visita registrada neste mês.</td></tr>') + "</table></div>";
     $("fiCorpo").innerHTML = h;
@@ -6135,7 +6514,7 @@
     const c = casoSel(); if (!c) return;
     const a = el.dataset.of, agora = new Date().toISOString(), quem = estado.usuarioEmail;
     try {
-      if (a === "voltar") { estado.off.aberto = false; estado.off.sel = null; estado.off.trat = null; }
+      if (a === "voltar") { estado.off.aberto = false; estado.off.sel = null; estado.off.trat = null; if (estado.off.volta) { const vv = estado.off.volta; estado.off.volta = null; irParaTela(vv); return; } }
       else if (a === "andamento") {
         const tx = ($("ofAnd").value || "").trim();
         if (!tx) { mostrarAviso("Escreva o andamento.", "erro"); return; }
@@ -6319,7 +6698,7 @@
     estado.val.motivo = null; estado.val.resSel = null; estado.val.resSelDe = null;
     mostrarAviso(reg.site + ": " + REGRAS.validacao.resultados[resultado] + ".");
     const volta = estado.val.voltarOffline; estado.val.voltarOffline = false;
-    if (volta) { estado.off.vals = {}; irParaTela("Offline"); } else irParaTela("FilaVal");
+    if (volta) { estado.off.vals = {}; irParaTela("Pendencias"); } else irParaTela("FilaVal");
   }
 
   (async function () {
