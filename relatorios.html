@@ -1134,12 +1134,11 @@
     $("eSemToa").addEventListener("change", function () { $("eChamado").disabled = $("eSemToa").checked; if ($("eSemToa").checked) $("eChamado").value = ""; validar(); });
     validar();
     $("eSalvar").addEventListener("click", async function () {
-      $("eSalvar").disabled = true; $("eMsg").textContent = "Gravando...";
+      const prim = $("eSemToa").checked;
       const row = { chave: E.siteChave + "|" + E.mes + "|zeladoria", site_chave: E.siteChave, mes: E.mes + "-01", motivo: (l.rep.comentario || "").slice(0, 300), chamado: $("eSemToa").checked ? SEM_TOA : $("eChamado").value.trim(), observacao: $("eObs").value.trim() || null, registrado_por: E.usuario, registrado_em: new Date().toISOString() };
-      const g = await banco.from("escalonamentos").upsert(row, { onConflict: "chave" });
-      if (g.error) { $("eMsg").innerHTML = '<span class="erro">Erro ao gravar: ' + esc(g.error.message) + "</span>"; $("eSalvar").disabled = false; return; }
+      row.pendente = true;   // só vai para o banco quando clicar em "Gravar análise"
       E.escal = row;
-      $("eMsg").textContent = row.chamado === SEM_TOA ? "Registrado como sem escalonamento via TOA. Clique em Gravar análise para enviar a pendência à validação offline." : "Chamado registrado.";
+      $("eMsg").textContent = (prim ? "Registrado como sem escalonamento via TOA" : "Chamado registrado") + " na tela. Clique em Gravar análise para gravar no banco.";
       recalcular();
     });
   }
@@ -1179,19 +1178,36 @@
     }).join("");
     return '<div class="msec"><h4>Fotos obrigatórias</h4><ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7">' + itens + "</ul></div>";
   }
+  // data mais comum entre as fotos do relatório (empate: a mais antiga); fotos com outra data ficam marcadas para a validadora conferir
+  function dataBase(fotos) {
+    const n = {};
+    fotos.forEach(function (f) { if (f.carimbo && f.carimbo.data) n[f.carimbo.data] = (n[f.carimbo.data] || 0) + 1; });
+    const ds = Object.keys(n);
+    if (ds.length < 2) return null;
+    ds.sort(function (a, b) { return n[b] - n[a] || (a < b ? -1 : 1); });
+    return ds[0];
+  }
   function fotosHtml(l) {
     const r = l.rep;
     if (!r) return "";
     if (!r.fotos || !r.fotos.length) return obrigHtml(l, []);
     const bi = l.segKey === "ALARMES" ? r.fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); }) : -1;
+    const base = dataBase(r.fotos);
     const cards = r.fotos.map(function (f, i) {
       const sel = [];
+      let extra = "";
       const ig = igualA(r.fotos, i);
       if (ig) sel.push('<span class="refazer">Igual à foto ' + ig + "</span>");
-      if (f.carimbo && f.carimbo.data) sel.push(dataBr(f.carimbo.data) + (f.carimbo.hora ? " " + esc(f.carimbo.hora) : "") + (f.carimbo.manual ? " (informada)" : ""));
+      if (f.carimbo && f.carimbo.data) {
+        const c = f.carimbo, dif = base && c.data !== base;
+        sel.push((dif && !c.manual && !c.mantida ? "⚠ " : "") + dataBr(c.data) + (c.hora ? " " + esc(c.hora) : "") + (c.manual ? " (corrigida)" : c.mantida ? " (mantida)" : ""));
+        if (c.manual && c.auto) extra = '<div class="g" style="background:#ecfdf5;border:1px solid #34d399;border-radius:6px;padding:5px 7px;margin-top:4px;color:#065f46">Data ajustada pela validadora. Leitura automática: ' + dataBr(c.auto) + ' <button type="button" class="dtd" data-i="' + i + '" style="margin-left:4px;font-size:12px">Desfazer</button></div>';
+        else if (dif && !c.manual && !c.mantida) extra = '<div class="g" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;padding:5px 7px;margin-top:4px;color:#92400e"><b>Data diferente das demais fotos</b> (' + dataBr(base) + '). A leitura automática pode ter errado: confira o carimbo na foto.<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input type="date" class="campo dtc" data-i="' + i + '" value="' + c.data + '" style="padding:4px 6px;font-size:12px"><button type="button" class="dta" data-i="' + i + '" style="font-size:12px">Aplicar correção</button><button type="button" class="dtk" data-i="' + i + '" style="font-size:12px">Manter ' + dataBr(c.data).slice(0, 5) + '</button></div></div>';
+        else if (dif && c.mantida) extra = '<div class="g" style="margin-top:4px">Data confirmada pela validadora como diferente das demais.</div>';
+      }
       else if (r.ocrFeito || E.snapModo) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
       if (f.invalida) sel.unshift('<span class="refazer">Marcada como inadequada</span>');
-      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + '</div><label class="g" style="display:block;margin-top:2px"><input type="checkbox" class="inad" data-i="' + i + '"' + (f.invalida ? " checked" : "") + '> Foto inadequada</label></div>';
+      return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + '</div>' + extra + '<label class="g" style="display:block;margin-top:2px"><input type="checkbox" class="inad" data-i="' + i + '"' + (f.invalida ? " checked" : "") + '> Foto inadequada</label></div>';
     }).join("");
     return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + obrigHtml(l, r.fotos) + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
@@ -1260,23 +1276,14 @@
     $("bCom").addEventListener("input", validar);
     validar();
     $("bSalvar").addEventListener("click", async function () {
-      $("bSalvar").disabled = true; $("bMsg").textContent = "Gravando...";
+      $("bSalvar").disabled = true;
       b.resultado = $("bRes").value; b.comentario = $("bCom").value.trim();
-      const chave = [E.siteChave, E.mes, r.arquivo].join("|");
       let erro = null;
-      try {
-        const blob = await new Promise(function (ok) { cv.toBlob(ok, "image/jpeg", 0.85); });
-        const caminho = E.siteChave + "/" + E.mes + "/" + r.arquivo + ".jpg";
-        const up = await banco.storage.from("bornes").upload(caminho, blob, { upsert: true, contentType: "image/jpeg" });
-        if (up.error) erro = up.error.message;
-        else {
-          const g = await banco.from("bornes_conferencia").upsert({ chave: chave, site_chave: E.siteChave, mes: E.mes + "-01", arquivo: r.arquivo, resultado: b.resultado, comentario: b.comentario, circulos: b.circulos, imagem_path: caminho, conferido_por: E.usuario, conferido_em: new Date().toISOString() }, { onConflict: "chave" });
-          if (g.error) erro = g.error.message;
-        }
-      } catch (e) { erro = String(e.message || e); }
-      if (erro) { $("bMsg").innerHTML = '<span class="erro">Erro ao gravar: ' + esc(erro) + "</span>"; $("bSalvar").disabled = false; return; }
+      try { b.blob = await new Promise(function (ok) { cv.toBlob(ok, "image/jpeg", 0.85); }); } catch (e) { erro = String(e.message || e); }
+      if (erro) { $("bMsg").innerHTML = '<span class="erro">Erro: ' + esc(erro) + "</span>"; $("bSalvar").disabled = false; return; }
+      b.arquivo = r.arquivo; b.pendente = true;   // só vai para o banco quando clicar em "Gravar análise"
       b.gravado = true; b.por = E.usuario;
-      $("bMsg").textContent = "Conferência registrada.";
+      $("bMsg").textContent = "Conferência registrada na tela. Clique em Gravar análise para gravar no banco.";
       recalcular();
       $("modal").classList.add("oculto");
     });
@@ -1306,7 +1313,7 @@
     $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.seg) + (l.tag ? " – " + esc(l.tag) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
       '<div class="mkv">' + kv("WO", l.wo ? l.tipoWo + " · " + l.wo : "Fora do Cronograma") + kv("Ticket", r && r.ticket) + kv("Resultado no relatório", r && r.situacaoFinal) +
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
-      kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Não consta no Cronograma" : "")) +
+      kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Aba prevista pela regra do segmento (não tem equipamento próprio no Cronograma)" : "")) +
       kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
       comentarioHtml(r) + escalHtml(l) + medicoesHtml(r) + fotosHtml(l) +
       '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
@@ -1324,6 +1331,21 @@
         const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0];
         if (l2) abrirDetalhe(l2);
       });
+    });
+    function reabrir() { recalcular(); const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0]; if (l2) abrirDetalhe(l2); }
+    Array.prototype.forEach.call(document.querySelectorAll(".dta"), function (b) {
+      b.addEventListener("click", function () {
+        const i = Number(b.dataset.i), inp = document.querySelector('.dtc[data-i="' + i + '"]'), f = l.rep.fotos[i];
+        if (!inp || !inp.value) return;
+        f.carimbo = { data: inp.value, hora: f.carimbo.hora || null, manual: true, auto: f.carimbo.auto || f.carimbo.data };
+        reabrir();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".dtk"), function (b) {
+      b.addEventListener("click", function () { const f = l.rep.fotos[Number(b.dataset.i)]; f.carimbo.mantida = true; reabrir(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".dtd"), function (b) {
+      b.addEventListener("click", function () { const f = l.rep.fotos[Number(b.dataset.i)]; f.carimbo = { data: f.carimbo.auto, hora: f.carimbo.hora || null }; reabrir(); });
     });
     Array.prototype.forEach.call(document.querySelectorAll(".dtm"), function (inp) {
       inp.addEventListener("change", function () {
@@ -1379,6 +1401,29 @@
       (sg.data || []).forEach(function (x) { if (x && x.path && x.signedUrl) urls[x.path] = x.signedUrl; });
     }
     return urls;
+  }
+  // Escalonamento e conferência de bornes só vão para o banco aqui, junto com "Gravar análise".
+  async function gravarPendentesConferencia() {
+    try {
+      if (E.escal && E.escal.pendente) {
+        const row = Object.assign({}, E.escal); delete row.pendente;
+        const g = await banco.from("escalonamentos").upsert(row, { onConflict: "chave" });
+        if (g.error) return "escalonamento: " + g.error.message;
+        E.escal.pendente = false;
+      }
+      const ks = Object.keys(E.bornes || {});
+      for (let k = 0; k < ks.length; k++) {
+        const b = E.bornes[ks[k]];
+        if (!b || !b.pendente) continue;
+        const caminho = E.siteChave + "/" + E.mes + "/" + b.arquivo + ".jpg";
+        const up = await banco.storage.from("bornes").upload(caminho, b.blob, { upsert: true, contentType: "image/jpeg" });
+        if (up.error) return "bornes: " + up.error.message;
+        const g = await banco.from("bornes_conferencia").upsert({ chave: [E.siteChave, E.mes, b.arquivo].join("|"), site_chave: E.siteChave, mes: E.mes + "-01", arquivo: b.arquivo, resultado: b.resultado, comentario: b.comentario, circulos: b.circulos, imagem_path: caminho, conferido_por: E.usuario, conferido_em: new Date().toISOString() }, { onConflict: "chave" });
+        if (g.error) return "bornes: " + g.error.message;
+        b.pendente = false;
+      }
+    } catch (e) { return String((e && e.message) || e); }
+    return null;
   }
   async function gravarTela() {
     const linhas = E.linhas.map(function (l) {
@@ -1470,6 +1515,7 @@
     if (del.error) erro = del.error;
     const todos = lote.concat(pend);
     if (!erro && todos.length) { const up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" }); if (up.error) erro = up.error; }
+    if (!erro) { const pe = await gravarPendentesConferencia(); if (pe) erro = { message: pe }; }
     let tela = null;
     if (!erro) {
       try { tela = await gravarTela(); } catch (e) { erro = { message: "a análise foi gravada, mas não consegui gravar a tela (" + String((e && e.message) || e) + "). Rode o arquivo relatorios_tela_sql.txt no Supabase" }; }
