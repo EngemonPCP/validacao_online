@@ -452,10 +452,37 @@
   });
 
   // ==== CONSULTA DO SITE ===================================================
+  // Aceita a sigla completa (SMTBS23) ou só parte dela (TBS23): procura nas WOs do mês e no cadastro de equipamentos.
+  async function resolverSite(txt, mes) {
+    const achados = {};
+    const guardar = function (lista, campo) { (lista || []).forEach(function (r) { const v = String(r[campo] || "").trim(); if (v) achados[chaveSite(v)] = v.toUpperCase(); }); };
+    const pad = "%" + txt.replace(/[%_,]/g, "") + "%";
+    let r = await banco.from("base_preventiva").select("programado_infratel").eq("mes", mes).ilike("programado_infratel", pad).limit(200);
+    if (!r.error) guardar(r.data, "programado_infratel");
+    if (!Object.keys(achados).length) { r = await banco.from("base_preventiva").select("clr_sdr_site_helix").eq("mes", mes).ilike("clr_sdr_site_helix", pad).limit(200); if (!r.error) guardar(r.data, "clr_sdr_site_helix"); }
+    if (!Object.keys(achados).length) { r = await banco.from("equipamentos_base").select("site").ilike("site", pad).limit(200); if (!r.error) guardar(r.data, "site"); }
+    const chaves = Object.keys(achados);
+    if (!chaves.length) return { site: txt, varios: [] };
+    const exato = chaves.filter(function (k) { return k === chaveSite(txt); })[0];
+    if (exato) return { site: achados[exato], varios: [] };
+    if (chaves.length === 1) return { site: achados[chaves[0]], varios: [] };
+    return { site: null, varios: chaves.map(function (k) { return achados[k]; }).sort() };
+  }
+  $("msg").addEventListener("click", function (e) {
+    const b = e.target.closest && e.target.closest("button[data-site]");
+    if (b) { $("site").value = b.dataset.site; consultar(); }
+  });
   async function consultar() {
-    const txt = $("site").value.trim();
+    let txt = $("site").value.trim();
     const mes = $("mes").value;
     if (!txt || !mes) { $("msg").innerHTML = '<span class="erro">Informe o site e o mês.</span>'; return; }
+    $("msg").textContent = "Procurando o site...";
+    const rs = await resolverSite(txt, mes);
+    if (!rs.site) {
+      $("msg").innerHTML = 'Mais de um site encontrado, escolha: ' + rs.varios.slice(0, 12).map(function (v) { return '<button class="btn2" style="margin:0 6px 6px 0" data-site="' + esc(v) + '">' + esc(v) + "</button>"; }).join("");
+      return;
+    }
+    txt = rs.site; $("site").value = txt;
     E.siteTxt = txt; E.siteChave = chaveSite(txt); E.mes = mes; E.pdfs = []; E.ignorados = []; E.linhas = [];
     $("msg").textContent = "Consultando...";
     $("faixa").innerHTML = ""; $("blocos").innerHTML = ""; $("ignorados").innerHTML = ""; $("barra").classList.add("oculto"); $("areaPdf").classList.add("oculto");
