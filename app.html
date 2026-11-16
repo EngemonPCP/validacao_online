@@ -307,13 +307,24 @@
     #telaResumoDia .rd-outra b { margin-right:8px; }
     /* ---- REGISTRAR (estilo IBM: cantos retos, campos com linha inferior) ---- */
     #telaRegistrar { font-size:12px; color:#161616; max-width:none; }
-    #telaRegistrar .rg-cols { display:flex; gap:32px; align-items:flex-start; margin-top:12px; }
-    #telaRegistrar .rg-esq { order:2; flex:0 0 520px; width:520px; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
-    #telaRegistrar .rg-dir { order:1; flex:1 1 0; min-width:0; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
-    #telaRegistrar .rg-esq > .ib-secao:first-child, #telaRegistrar .rg-dir > .ib-secao:first-child { margin-top:12px; }
-    #telaRegistrar .rg-esq .ib-grade { grid-template-columns:1fr; }
+    #telaRegistrar .rg-cols { display:flex; flex-direction:column; gap:18px; margin-top:12px; }
+    #telaRegistrar .rg-esq { order:1; width:auto; background:#fff; padding:6px 18px 18px; box-sizing:border-box; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:12px 18px; align-items:start; }
+    #telaRegistrar .rg-dir { order:2; min-width:0; background:#fff; padding:6px 18px 18px; box-sizing:border-box; }
+    #telaRegistrar .rg-dir > .ib-secao:first-child { margin-top:12px; }
+    #telaRegistrar .rg-esq .ib-grade, #telaRegistrar .rg-esq #blocoCampo, #telaRegistrar .rg-esq #blocoPeriodo { display:contents; }
+    #telaRegistrar .rg-esq > .ib-secao, #telaRegistrar .rg-esq #blocoCampo > .ib-secao, #telaRegistrar .rg-esq #blocoWOs > .ib-secao { display:none; }
+    #telaRegistrar .rg-esq #blocoPeriodo > .ib-secao { grid-column:1 / -1; order:10; }
+    #telaRegistrar .rg-esq #blocoPeriodo .ib-campo { order:11; grid-column:span 2; }
+    #telaRegistrar .rg-esq #notaAlarme { display:none; }
     #telaRegistrar .rg-esq select, #telaRegistrar .rg-esq input[type=text], #telaRegistrar .rg-esq input[type=time], #telaRegistrar .rg-esq textarea { background:#f4f4f4; }
-    @media (max-width:1100px) { #telaRegistrar .rg-cols { flex-direction:column; } #telaRegistrar .rg-esq { flex:none; order:1; width:100%; } #telaRegistrar .rg-dir { width:100%; flex:none; order:2; } }
+    @media (max-width:1100px) { #telaRegistrar .rg-esq { grid-template-columns:1fr 1fr; } #telaRegistrar .rg-esq [style*="grid-column"] { grid-column:1 / -1 !important; } #telaRegistrar .rg-esq #blocoPeriodo .ib-campo { grid-column:auto; } }
+    .ra-tabs { display:flex; border-bottom:1px solid #c6c6c6; margin:10px 0 12px; }
+    .ra-tabs button { background:none; border:0; border-bottom:3px solid transparent; padding:10px 22px; font-size:14px; color:#525252; cursor:pointer; margin-bottom:-1px; }
+    .ra-tabs button.ativo { color:#161616; font-weight:600; border-bottom-color:#0f62fe; }
+    .ra-dias { display:inline-flex; margin-right:10px; vertical-align:middle; }
+    .ra-dias button { white-space:nowrap; background:#fff; border:1px solid #8d8d8d; margin-left:-1px; padding:6px 13px; font-size:13px; cursor:pointer; color:#161616; }
+    .ra-dias button.ativo { background:#161616; color:#fff; border-color:#161616; }
+    .ra-aviso { background:#fff8e1; border-left:4px solid #f1c21b; padding:8px 14px; margin-bottom:12px; font-size:13px; }
     #telaRegistrar .ib-trilha { color:#0f62fe; font-size:11px; margin-bottom:2px; }
     #telaRegistrar .ib-trilha span { color:#161616; }
     #telaRegistrar .ib-titulo { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:8px; margin:0 0 2px; }
@@ -831,15 +842,10 @@
         <button data-tela="Divergencias" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
       <div class="nav-titulo">Operação</div>
-      <button class="grupo" data-sub="Registrar" aria-expanded="false">Registrar <span class="seta">▾</span></button>
+      <button class="grupo" data-sub="Registrar" aria-expanded="false">Registro/Acompanhamento <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuRegistrar">
         <button data-tela="Registrar" data-grupo="" data-setor="MÓVEL">Móvel</button>
         <button data-tela="Registrar" data-grupo="" data-setor="VOLANTE">Volante</button>
-      </div>
-      <button class="grupo" data-sub="Campo" aria-expanded="false">Equipes em campo <span class="seta">▾</span></button>
-      <div class="submenu oculto" id="submenuCampo">
-        <button data-tela="Campo" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Campo" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
       <button class="grupo" data-sub="EPS" aria-expanded="false">EPS <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuEPS">
@@ -972,26 +978,28 @@
     </section>
 
     <section id="telaRegistrar" class="tela oculto">
-      <div class="ib-trilha">Painel / <span>Registrar</span></div>
+      <div class="ib-trilha">Painel / <span>Registro/Acompanhamento</span></div>
       <div class="ib-titulo">
-        <h1>Registrar</h1>
+        <h1>Registro/Acompanhamento</h1>
         <div class="ib-dia"><label for="campoData">Dia</label><input id="campoData" type="date"></div>
       </div>
+      <div class="ra-tabs"><button type="button" data-ra="Registrar">Registrar</button><button type="button" data-ra="Campo">Equipes em campo</button></div>
+      <div id="avisoRetro" class="ra-aviso oculto"></div>
       <div class="rg-cols">
       <div class="rg-esq">
 
       <div class="ib-secao"><span>Equipe e atividade</span></div>
       <div class="ib-grade">
-        <div class="ib-campo">
+        <div class="ib-campo" style="order:1;grid-column:span 3">
           <label for="campoEquipe">Equipe <span class="req">*</span></label>
           <select id="campoEquipe"></select>
           <button type="button" class="ib-link" id="rdNovaAbrir">+ Nova equipe ou dupla</button>
         </div>
-        <div class="ib-campo">
+        <div class="ib-campo" style="order:2;grid-column:span 2">
           <label for="campoAtividade">Atividade <span class="req">*</span></label>
           <select id="campoAtividade"></select>
         </div>
-        <div class="ib-campo">
+        <div class="ib-campo" style="order:3;grid-column:span 3">
           <label for="campoSite" id="rotuloSite">Site <span class="req">*</span></label>
           <input id="campoSite" type="text" autocomplete="off" placeholder="ex.: moo27 (pode digitar sem o SM)">
           <div id="resultadoSite" class="msg"></div>
@@ -999,7 +1007,7 @@
         </div>
       </div>
 
-      <div id="rdNova" class="ib-painel oculto">
+      <div id="rdNova" class="ib-painel oculto" style="order:4;grid-column:1 / -1">
         <b>Nova equipe ou dupla</b>
         <div class="pequeno" style="color:#525252">Digite os técnicos (escolha da lista ou escreva um nome novo). Se a equipe já existir, ela é reaproveitada e já fica escolhida acima.</div>
         <div class="ib-grade">
@@ -1016,26 +1024,34 @@
       <div id="blocoCampo">
         <div class="ib-secao" id="secaoDeslocamento"><span>Deslocamento</span></div>
         <div class="ib-grade">
-          <div class="ib-campo" id="campoSitIni">
+          <div class="ib-campo" id="campoSitIni" style="order:5;grid-column:span 2">
             <label for="campoSituacaoInicial">Situação da equipe agora</label>
             <select id="campoSituacaoInicial">
               <option value="desloc">Em deslocamento</option>
               <option value="site">Já está no site</option>
             </select>
           </div>
-          <div class="ib-campo" id="campoAvisoBloco">
+          <div class="ib-campo" id="campoAvisoBloco" style="order:6;grid-column:span 2">
             <label for="campoHoraAviso">Horário do aviso no grupo (vazio = agora)</label>
             <input id="campoHoraAviso" type="time">
           </div>
-          <div class="ib-campo oculto" id="blocoChegada">
+          <div class="ib-campo oculto" id="blocoChegada" style="order:7;grid-column:span 2">
             <label for="campoHoraChegada">Horário de chegada ao site (vazio = agora)</label>
             <input id="campoHoraChegada" type="time">
           </div>
-          <div class="ib-campo" id="campoAlarmeBloco">
+          <div class="ib-campo oculto" id="campoRetroChegada" style="order:5;grid-column:span 2">
+            <label for="campoRetroCheg">Chegada ao site</label>
+            <input id="campoRetroCheg" type="time">
+          </div>
+          <div class="ib-campo oculto" id="campoRetroSaida" style="order:6;grid-column:span 2">
+            <label for="campoRetroSai">Saída do site</label>
+            <input id="campoRetroSai" type="time">
+          </div>
+          <div class="ib-campo" id="campoAlarmeBloco" style="order:8;grid-column:span 2">
             <label for="campoAlarme">Alarme de porta aberta</label>
             <select id="campoAlarme"></select>
           </div>
-          <div class="ib-campo oculto" id="blocoDetalhe">
+          <div class="ib-campo oculto" id="blocoDetalhe" style="order:9;grid-column:span 3">
             <label for="campoDetalhe">Detalhe da atividade (ex.: nº do chamado)</label>
             <input id="campoDetalhe" type="text">
           </div>
@@ -1043,7 +1059,7 @@
         <div class="pequeno" id="notaAlarme" style="color:#525252;margin-top:2px">Se o site não tem alarme configurado, escolha “Site sem alarme”: assim fica registrado que a falta do alarme não é falha da equipe.</div>
       </div>
 
-      <div id="blocoPeriodo" class="oculto">
+      <div id="blocoPeriodo" class="oculto" style="order:10">
         <div class="ib-secao"><span>Período da atividade</span><span class="ib-aux">deixe em branco se foi o dia todo</span></div>
         <div class="ib-grade">
           <div class="ib-campo"><label for="campoAtivInicio">Início</label><input id="campoAtivInicio" type="time"></div>
@@ -1052,21 +1068,21 @@
       </div>
 
       <div class="ib-secao"><span>Observações</span></div>
-      <div class="ib-campo larg">
+      <div class="ib-campo larg" style="order:21;grid-column:span 5">
         <label for="campoObservacao" id="rotuloObs">Observações (opcional)</label>
         <textarea id="campoObservacao" rows="2"></textarea>
       </div>
 
-      <div id="blocoWOs" class="oculto">
+      <div id="blocoWOs" class="oculto" style="order:20;grid-column:span 7">
         <div class="ib-secao"><span id="tituloWOs"></span></div>
         <div id="avisoEndereco"></div>
         <div id="listaWOs" class="lista-wo"></div>
         <label class="check"><input id="campoConferi" type="checkbox"> Conferi as WOs com o técnico</label>
       </div>
 
-      <div class="linha-botoes"><button id="botaoRegistrar" class="principal">Registrar deslocamento</button></div>
-      <div id="msgRegistrar" class="msg"></div>
-      <div id="resumoRegistro" class="resumo oculto"></div>
+      <div class="linha-botoes" style="order:30;grid-column:1 / -1"><button id="botaoRegistrar" class="principal">Registrar deslocamento</button><span class="pequeno oculto" id="notaPermRetro" style="margin-left:14px;color:#525252"></span></div>
+      <div id="msgRegistrar" class="msg" style="order:31;grid-column:1 / -1"></div>
+      <div id="resumoRegistro" class="resumo oculto" style="order:32;grid-column:1 / -1"></div>
       </div>
 
       <div class="rg-dir">
@@ -1153,8 +1169,9 @@
 
     <!-- EQUIPES EM CAMPO -->
     <section id="telaCampo" class="tela oculto">
-      <div class="ib-trilha">Painel / <span>Equipes em campo</span></div>
-      <div class="ib-titulo"><h1>Equipes em campo</h1><span class="ib-sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</span></div>
+      <div class="ib-trilha">Painel / <span>Registro/Acompanhamento</span></div>
+      <div class="ib-titulo"><h1>Registro/Acompanhamento</h1><span class="ib-sub" id="subCampo">Atualiza sozinha a cada 30 segundos.</span></div>
+      <div class="ra-tabs"><button type="button" data-ra="Registrar">Registrar</button><button type="button" data-ra="Campo">Equipes em campo</button></div>
       <div class="ib-campos" id="azulejos"></div>
 
       <div class="ib-secao ac" data-sec="campo"><span><i class="seta"></i>Em campo agora <b class="cont" id="contCampo"></b></span><span class="aux">Clique numa linha para ver as WOs e o alarme</span></div>
@@ -1866,16 +1883,17 @@
     estado.grupoAtual = grupo;
     estado.setor = setor;
     document.querySelectorAll("nav button[data-tela]").forEach(function (b) {
-      b.classList.toggle("ativo", b.dataset.tela === (nome === "SiteVal" ? "FilaVal" : nome === "Ficha" ? "Relatorios" : nome === "Offline" ? "Pendencias" : nome) && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
+      b.classList.toggle("ativo", b.dataset.tela === (nome === "SiteVal" ? "FilaVal" : nome === "Campo" ? "Registrar" : nome === "Ficha" ? "Relatorios" : nome === "Offline" ? "Pendencias" : nome) && (b.dataset.grupo || "") === grupo && (b.dataset.setor || "") === setor);
     });
-    const subDe = { Registrar: "Registrar", Campo: "Campo", Conferencia: "EPS", EPS: "EPS", Divergencias: "Divergencias" }[nome];
+    const subDe = { Registrar: "Registrar", Campo: "Registrar", Conferencia: "EPS", EPS: "EPS", Divergencias: "Divergencias" }[nome];
     if (subDe) definirSubmenu(subDe, true);
-    const rotulo = { Registrar: "Registrar", Campo: "Equipes em campo", Divergencias: "Divergências: Base Atualização Preventiva x visitas", EPS: "Preventiva EPS: relatórios das terceiras" }[nome];
+    const rotulo = { Registrar: "Registro/Acompanhamento", Campo: "Registro/Acompanhamento", Divergencias: "Divergências: Base Atualização Preventiva x visitas", EPS: "Preventiva EPS: relatórios das terceiras" }[nome];
     const h1 = document.querySelector("#tela" + nome + " h1");
     if (rotulo && h1) h1.textContent = rotulo + " · " + (NOME_SETOR[setor] || "");
     document.querySelectorAll(".tela").forEach(function (t) { t.classList.add("oculto"); });
     $("tela" + nome).classList.remove("oculto");
     estado.telaAtual = nome;
+    document.querySelectorAll(".ra-tabs button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.ra === nome); });
     if (nome !== "SiteVal" && estado.val) estado.val.voltarOffline = false;
     atualizarFaixaPeriodo();
     try { document.querySelector("#barraTopo .per").classList.toggle("oculto", nome === "Relatorios" || nome === "Ficha"); } catch (e) { /* sem seletor */ }
@@ -2911,6 +2929,19 @@
     $("blocoChegada").classList.toggle("oculto", $("campoSituacaoInicial").value !== "site");
   });
 
+  function atualizarPermRetro() {
+    const el = $("notaPermRetro"); if (!el) return;
+    const a = $("campoRetroCheg").value, b = $("campoRetroSai").value, mostra = diaRetroativo() && atividadeExigeSite($("campoAtividade").value);
+    if (!mostra) { el.classList.add("oculto"); return; }
+    el.classList.remove("oculto");
+    if (a && b) {
+      const m = (Number(b.slice(0, 2)) * 60 + Number(b.slice(3))) - (Number(a.slice(0, 2)) * 60 + Number(a.slice(3)));
+      el.innerHTML = m > 0 ? "Permanência: <b>" + formatarDuracao(m) + "</b>" : '<span class="erro">A saída precisa ser depois da chegada.</span>';
+    } else el.textContent = "Horários em branco = visita sem permanência.";
+  }
+  $("campoRetroCheg").addEventListener("input", atualizarPermRetro);
+  $("campoRetroSai").addEventListener("input", atualizarPermRetro);
+  document.querySelectorAll(".ra-tabs button").forEach(function (b) { b.addEventListener("click", function () { irParaTela(b.dataset.ra); }); });
   function diaRetroativo() { return ($("campoData").value || hoje()) < hoje(); }
   function atualizarBlocos() {
     const atividade = $("campoAtividade").value;
@@ -2926,6 +2957,12 @@
     $("blocoDetalhe").classList.toggle("oculto", !exige || atividade === REGRAS.atividades[0]);
     $("rotuloObs").textContent = exige ? "Observações (opcional)" : "Observações (ex.: curso na base, oficina)";
     const retro = diaRetroativo();
+    const dsel = $("campoData").value || hoje();
+    $("avisoRetro").classList.toggle("oculto", !retro);
+    if (retro) $("avisoRetro").innerHTML = "<b>Registro de dia anterior (" + dsel.split("-").reverse().join("/") + ").</b> " + (exige ? "Informe a chegada e a saída reais da equipe; se não souber, deixe em branco." : "");
+    $("campoRetroChegada").classList.toggle("oculto", !(retro && exige));
+    $("campoRetroSaida").classList.toggle("oculto", !(retro && exige));
+    atualizarPermRetro();
     ["secaoDeslocamento", "campoSitIni", "campoAvisoBloco", "campoAlarmeBloco", "notaAlarme"].forEach(function (id) { $(id).classList.toggle("retro-oculto", retro); });
     if (retro) $("blocoChegada").classList.add("retro-oculto"); else $("blocoChegada").classList.remove("retro-oculto");
     $("botaoRegistrar").textContent = exige ? (retro ? "Registrar visita" : "Registrar deslocamento") : "Salvar atividade do dia";
@@ -2986,8 +3023,16 @@
     if (dataExecucao > hoje()) return erro("Escolha o dia de hoje ou um dia que já passou.");
     if (dataExecucao < hoje()) {          // visita de dia passado: entra já encerrada, sem horário
       const zero = new Date(dataExecucao + "T00:00:00");
+      let chR = zero, saR = zero, comHorario = false;
+      const tc = $("campoRetroCheg").value, ts = $("campoRetroSai").value;
+      if (tc || ts) {
+        if (!tc || !ts) return erro("Informe a chegada e a saída, ou deixe os dois horários em branco.");
+        chR = new Date(dataExecucao + "T" + tc + ":00"); saR = new Date(dataExecucao + "T" + ts + ":00");
+        if (saR.getTime() <= chR.getTime()) return erro("A saída precisa ser depois da chegada.");
+        comHorario = true;
+      }
       return { equipe: equipe, atividade: atividade, comPreventiva: comPreventiva, siteTexto: siteTexto, wos: wos,
-               dataExecucao: dataExecucao, jaNoSite: true, retro: true, aviso: zero, chegada: zero, saida: zero,
+               dataExecucao: dataExecucao, jaNoSite: true, retro: true, comHorario: comHorario, tChegada: tc, tSaida: ts, aviso: chR, chegada: chR, saida: saR,
                detalhe: $("campoDetalhe").value.trim(), alarme: $("campoAlarme").value, observacao: $("campoObservacao").value.trim() };
     }
     const jaNoSite = $("campoSituacaoInicial").value === "site";
@@ -3111,11 +3156,11 @@
       try { await marcarEscalaPelaVisita(r); }
       catch (e2) { mostrarAviso("Visita gravada, mas não consegui marcar a equipe no dia: " + e2.message, "erro"); }
       ocultarResumo();
-      msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + (r.retro ? ". Visita de " + r.dataExecucao.split("-").reverse().join("/") + " registrada sem horário." : ". Acompanhe em “Equipes em campo”.") + esc(notaVal) + "</span>";
-      mostrarAviso(r.retro ? "Visita registrada sem horário: " + r.siteTexto + " · " + r.equipe.nome : (r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome + notaVal);
+      msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + (r.retro ? ". Visita de " + r.dataExecucao.split("-").reverse().join("/") + (r.comHorario ? " registrada: chegada " + r.tChegada + ", saída " + r.tSaida + "." : " registrada sem horário.") : ". Acompanhe em “Equipes em campo”.") + esc(notaVal) + "</span>";
+      mostrarAviso(r.retro ? (r.comHorario ? "Visita registrada (" + r.tChegada + " – " + r.tSaida + "): " : "Visita registrada sem horário: ") + r.siteTexto + " · " + r.equipe.nome : (r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome + notaVal);
       $("campoSite").value = ""; $("campoDetalhe").value = ""; $("campoConferi").checked = false; $("campoObservacao").value = "";
       $("campoEquipe").value = ""; $("campoAtividade").selectedIndex = 0; $("campoAlarme").selectedIndex = 0;
-      $("campoSituacaoInicial").value = "desloc"; $("campoHoraAviso").value = ""; $("campoHoraChegada").value = "";
+      $("campoSituacaoInicial").value = "desloc"; $("campoHoraAviso").value = ""; $("campoHoraChegada").value = ""; $("campoRetroCheg").value = ""; $("campoRetroSai").value = "";
       $("blocoChegada").classList.add("oculto");
       limparSiteEscolhido();
       atualizarBlocos();
