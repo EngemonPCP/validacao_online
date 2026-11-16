@@ -72,7 +72,7 @@
   .leg { margin-top:12px; font-size:12px; color:var(--suave); }
   .leg div { margin-bottom:4px; }
   .leg b { color:var(--texto); font-weight:600; }
-  .bcv canvas { width:100%; max-width:560px; cursor:crosshair; display:block; touch-action:none; background:#161616; }
+  .bcv canvas { width:100%; max-width:840px; cursor:crosshair; display:block; touch-action:none; background:#161616; }
   .laranja { color:var(--laranja); }
   .x { background:none; border:0; font-size:22px; color:#525252; cursor:pointer; padding:0 4px; }
     .login-tela { position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; background:#fff; font-family:Calibri,"Segoe UI",Arial,sans-serif; }
@@ -1182,7 +1182,7 @@
     const b = E.bornes[l.rep.arquivo] || {};
     return '<div class="msec" id="secBornes"><h4>Conferência dos bornes (QIT)</h4>' +
       '<div class="bcv"><canvas id="cvBornes"></canvas></div>' +
-      '<div class="linha" style="margin-top:12px"><button class="btn2" id="bDesfazer">Desfazer círculo</button><button class="btn2" id="bLimpar">Limpar</button></div>' +
+      '<div class="linha" style="margin-top:12px"><button class="btn2" id="bMenos">Reduzir</button><button class="btn2" id="bMais">Ampliar</button><button class="btn2" id="bDesfazer">Desfazer círculo</button><button class="btn2" id="bLimpar">Limpar</button></div>' +
       '<div class="linha"><div><div class="lab">Resultado <span class="laranja">*</span></div><select class="campo" id="bRes"><option value=""></option>' + RESULT_BORNES.map(function (x) { return '<option' + (b.resultado === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
       '<div style="flex:1;min-width:260px"><div class="lab">Comentário <span class="laranja">*</span></div><input class="campo" id="bCom" style="width:100%" value="' + esc(b.comentario || "") + '"></div>' +
       '<button class="btn" id="bSalvar" disabled>Registrar conferência</button></div><div class="leg">' + RESULT_BORNES.map(function (x) { return "<div><b>" + x + "</b> · " + DESC_BORNES[x] + "</div>"; }).join("") + '</div><div class="g" id="bMsg" style="margin-top:8px">' + (b.gravado ? "Conferida por " + esc(b.por || "") : "") + "</div></div>";
@@ -1210,6 +1210,11 @@
       cv.addEventListener("pointermove", function (e) { if (!arr) return; const p = pos(e); arr.x1 = p.x; arr.y1 = p.y; pintar(arr); });
       cv.addEventListener("pointerup", function () { if (arr && Math.abs(arr.x1 - arr.x0) > 8 && Math.abs(arr.y1 - arr.y0) > 8) b.circulos.push(arr); arr = null; pintar(); });
     });
+    const TAM = [480, 640, 840, 1100, 1400]; let ti = 2;
+    function tamanho() { cv.style.maxWidth = TAM[ti] + "px"; $("bMenos").disabled = ti === 0; $("bMais").disabled = ti === TAM.length - 1; }
+    $("bMais").addEventListener("click", function () { if (ti < TAM.length - 1) { ti++; tamanho(); } });
+    $("bMenos").addEventListener("click", function () { if (ti > 0) { ti--; tamanho(); } });
+    tamanho();
     $("bDesfazer").addEventListener("click", function () { b.circulos.pop(); if (img) pintar(); });
     $("bLimpar").addEventListener("click", function () { b.circulos = []; if (img) pintar(); });
     $("bRes").addEventListener("change", validar);
