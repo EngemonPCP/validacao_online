@@ -6101,7 +6101,7 @@
       '<div class="pd-steps"><div class="' + (etapa > 1 ? "ok" : "at") + '">' + (etapa > 1 ? "✔ " : "") + '1 Entender</div><div class="' + (etapa > 2 ? "ok" : etapa === 2 ? "at" : "") + '">' + (etapa > 2 ? "✔ " : "") + '2 Tratar</div><div class="' + (etapa === 3 ? "at" : "") + '">3 Concluir</div></div><div class="pd-dois"><div>' +
       '<div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe).replace(/\n/g, "<br>") + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
       (ev_.arquivo ? '<div class="lb" style="margin-top:10px">Evidência</div><div id="pdFotos" class="pd-fotos vl-mu">Carregando fotos…</div><div style="margin-top:6px"><a class="rv-lk" href="relatorios.html?site=' + encodeURIComponent(p.site) + "&mes=" + String(p.mes).slice(0, 7) + '" target="_blank">Abrir análise completa com fotos</a></div>' : "") +
-      (p.tipo === "Alarmes não analisados" && aberta ? '<div style="margin-top:12px"><button class="bt p" data-pda="alarmes">Analisar alarmes</button><div class="vl-mu" style="font-size:12px;margin-top:4px">Abre a análise de alarmes (configuração, histórico e permanência). Depois volte e conclua esta pendência.</div></div>' : "") + "</div><div>" +
+      (p.tipo === "Alarmes não analisados" && aberta ? '<div style="margin-top:12px"><button class="bt p" data-pda="alarmes">Registrar alarmes nos Relatórios</button><div class="vl-mu" style="font-size:12px;margin-top:4px">Abre a tela de Relatórios deste site. Cole a configuração e o histórico de alarmes e grave: a pendência fica resolvida sozinha.</div></div>' : "") + "</div><div>" +
       '<div class="lb">Responsável</div><div class="pd-resp"><b>' + (p.responsavel ? esc(nomeDoEmail(p.responsavel)) : "Sem responsável") + "</b>" +
       (aberta && livre ? ' <button class="bt p peq" data-pda="assumir">Assumir</button>' : "") + (aberta && minha ? ' <button class="bt peq" data-pda="liberar">Liberar</button>' : "") +
       (aberta && coord && !livre ? ' <button class="bt peq" data-pda="reatribuir">Reatribuir…</button>' : "") + (aberta && coord && livre ? ' <button class="bt peq" data-pda="reatribuir">Atribuir a…</button>' : "") + "</div>" +
@@ -6195,18 +6195,8 @@
         P.pend = nx.id; await pdCarregarEventos(nx.id); desenharSitePend(); return;
       }
       if (a === "concluirsite") { const k = P.sel.split("|"); conferir(await banco.from("pendencias_sites").insert({ site_chave: k[0], mes: k[1] + "-01" }).select()); await pdRecarregar(true); mostrarAviso("Site concluído."); return; }
-      if (a === "alarmes") {
-        const vid = cur.evidencia && cur.evidencia.validacao_id; if (!vid) { mostrarAviso("Esta pendência não tem uma validação ligada.", "erro"); return; }
-        const cs = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", vid).limit(1));
-        if (!cs.length) {   // validação antiga, sem caso offline: cria o caso para poder registrar os alarmes
-          const vs = conferir(await banco.from("validacoes").select("*").eq("id", vid).limit(1));
-          if (!vs.length) { mostrarAviso("Não encontrei a validação ligada a esta pendência.", "erro"); return; }
-          if (vs[0].situacao !== "encerrada") { mostrarAviso("Esta validação ainda não foi encerrada. Os alarmes podem ser conferidos na própria validação online.", "erro"); return; }
-          await sincronizarCasoOfflineBase(vs[0], "validada", [], null, undefined, undefined, null);
-          cs.push.apply(cs, conferir(await banco.from("casos_offline").select("*").eq("validacao_id", vid).limit(1)));
-          if (!cs.length) { mostrarAviso("Não consegui criar o caso desta validação.", "erro"); return; }
-        }
-        estado.off.sel = String(cs[0].id); estado.off.aberto = true; estado.off.abaRes = "al"; estado.off.volta = "Pendencias"; irParaTela("Offline"); return;
+      if (a === "alarmes") {   // os alarmes que a validação online deixou passar são registrados na tela de Relatórios
+        window.open("relatorios.html?site=" + encodeURIComponent(cur.site) + "&mes=" + String(cur.mes).slice(0, 7), "_blank"); return;
       }
     } catch (e) { mostrarAviso(String(e.message || e), "erro"); await pdRecarregar(!!P.sel); }
   }
