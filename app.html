@@ -117,6 +117,9 @@
     .faixa { background:var(--azul-fundo); border-left:3px solid var(--azul); border-radius:4px; padding:10px 14px; margin-bottom:14px; font-size:14px; }
     .faixa.alerta { background:var(--laranja-fundo); color:var(--laranja); border-left-color:#c58a1b; }
 
+    .aviso-wo { margin-top:10px; padding:9px 12px; background:#fff8e1; border-left:3px solid #f1c21b; font-size:13px; }
+    .pend-ligar .it { display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid #e0e0e0; margin-bottom:6px; font-size:13px; background:#fff; }
+    .pend-ligar .it small { display:block; color:#6f6f6f; font-size:12px; margin-top:2px; }
     .lista-wo { margin:8px 0 0; }
     .lista-wo .item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #e8ecf0; flex-wrap:wrap; }
     .lista-wo .item:last-child { border-bottom:0; }
@@ -1089,6 +1092,11 @@
       <div class="ib-campo larg" style="order:21;grid-column:span 5">
         <label for="campoObservacao" id="rotuloObs">Observações (opcional)</label>
         <textarea id="campoObservacao" rows="2"></textarea>
+      </div>
+
+      <div id="blocoPendLigar" class="pend-ligar oculto" style="order:21;grid-column:span 7">
+        <div class="ib-secao"><span>Qual pendência?</span> <span class="vl-mu" style="font-size:12px">(opcional · pode marcar mais de uma)</span></div>
+        <div id="listaPendLigar"></div>
       </div>
 
       <div id="blocoWOs" class="oculto" style="order:20;grid-column:span 7">
@@ -2961,6 +2969,51 @@
   $("campoRetroSai").addEventListener("input", atualizarPermRetro);
   document.querySelectorAll(".ra-tabs button").forEach(function (b) { b.addEventListener("click", function () { irParaTela(b.dataset.ra); }); });
   function diaRetroativo() { return ($("campoData").value || hoje()) < hoje(); }
+  // WOs deste site que já foram registradas em alguma visita (não cancelada): ficam bloqueadas na lista.
+  estado.wosReg = {};          // wo -> { equipe, dia, ent, sai }
+  estado.wosRegConsultado = {};
+  async function consultarWosRegistradas(wos, busca) {
+    if (estado.wosRegConsultado[busca] || !wos.length) return;
+    estado.wosRegConsultado[busca] = true;
+    try {
+      const r = conferir(await banco.from("wos_visita").select("wo, visitas(equipe,data_execucao,hora_entrada,hora_saida,situacao)").in("wo", wos.map(function (l) { return l.wo; })));
+      r.forEach(function (x) {
+        const v = x.visitas; if (!v || v.situacao === REGRAS.situacaoCancelado) return;
+        const antigo = estado.wosReg[x.wo];
+        if (!antigo || String(v.hora_entrada || v.data_execucao) < String(antigo.ent || antigo.dia)) estado.wosReg[x.wo] = { equipe: v.equipe, dia: v.data_execucao, ent: v.hora_entrada, sai: v.hora_saida };
+      });
+    } catch (e) { estado.wosRegConsultado[busca] = false; return; }
+    atualizarBlocos();
+  }
+  function textoWoRegistrada(r) {
+    const hm = function (iso) { return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""; };
+    return "Já registrada: " + esc(r.equipe) + " · " + String(r.dia || "").split("-").reverse().join("/").slice(0, 5) + (r.ent ? " · " + hm(r.ent) + (r.sai ? "–" + hm(r.sai) : "") : "");
+  }
+  // Pendência: lista opcional das pendências abertas do site, para a volta ao site entrar no histórico delas.
+  estado.pdLigar = { chave: "", itens: null, sel: [] };
+  async function desenharPendLigar(mostrar) {
+    $("blocoPendLigar").classList.toggle("oculto", !mostrar);
+    if (!mostrar) { estado.pdLigar.sel = []; return; }
+    const chave = limparSite(estado.siteEscolhido.site), L = estado.pdLigar;
+    if (L.chave !== chave) { L.chave = chave; L.itens = null; L.sel = []; }
+    if (L.itens === null) {
+      $("listaPendLigar").innerHTML = '<span class="vl-mu">Procurando as pendências abertas do site...</span>';
+      try {
+        const r = conferir(await banco.from("pendencias").select("id,aba,tag,texto,estado,responsavel,mes").eq("site_chave", chave).in("estado", ["Nova", "Em tratativa"]).order("id"));
+        if (L.chave !== chave) return;
+        L.itens = await pdAplicarCorte(r);
+      } catch (e) { L.itens = []; }
+    }
+    $("listaPendLigar").innerHTML = L.itens.length ? L.itens.map(function (p) {
+      return '<label class="it"><input type="checkbox" data-pl="' + p.id + '"' + (L.sel.indexOf(p.id) >= 0 ? " checked" : "") + "><span>" + esc((p.aba || "") + " · " + (p.tag ? p.tag + " · " : "") + p.texto) +
+        "<small>" + esc(p.estado + (p.responsavel ? " · " + nomeDoEmail(p.responsavel) : "")) + "</small></span></label>";
+    }).join("") : '<span class="vl-mu">Este site não tem pendências abertas. A visita fica registrada só como Pendência.</span>';
+  }
+  $("listaPendLigar").addEventListener("change", function (e) {
+    const c = e.target.closest("input[data-pl]"); if (!c) return;
+    const id = Number(c.dataset.pl), L = estado.pdLigar, i = L.sel.indexOf(id);
+    if (c.checked && i < 0) L.sel.push(id); if (!c.checked && i >= 0) L.sel.splice(i, 1);
+  });
   function atualizarBlocos() {
     const atividade = $("campoAtividade").value;
     const exige = atividadeExigeSite(atividade);
@@ -2985,6 +3038,7 @@
     if (retro) $("blocoChegada").classList.add("retro-oculto"); else $("blocoChegada").classList.remove("retro-oculto");
     $("botaoRegistrar").textContent = exige ? (retro ? "Registrar visita" : "Registrar deslocamento") : "Salvar atividade do dia";
 
+    desenharPendLigar(atividade === "Pendência" && !!estado.siteEscolhido);
     const wos = estado.siteEscolhido
       ? estado.base.filter(function (l) { return l.chaveSite === estado.siteEscolhido.busca; }) : [];
     const mostrar = comPreventiva && estado.siteEscolhido;
@@ -2992,6 +3046,7 @@
     $("avisoEndereco").innerHTML = mostrar ? htmlOutrasSiglas(estado.siteEscolhido.busca) : "";
     if (!mostrar) return;
 
+    consultarWosRegistradas(wos, estado.siteEscolhido.busca);
     $("tituloWOs").textContent = wos.length + (wos.length === 1 ? " WO neste site" : " WOs neste site");
     // MOP já vem marcada; EPS só se a equipe também vai fazer.
     $("listaWOs").innerHTML = ["MOP", "EPS"].map(function (g) {
@@ -2999,11 +3054,16 @@
       if (doGrupo.length === 0) return "";
       return '<div class="grupo-titulo">' + g + (g === "EPS" ? " (marque só se a equipe também vai fazer)" : "") + "</div>" +
         doGrupo.map(function (l) {
-          const st = descreverStatusBase(l);
+          const st = descreverStatusBase(l), jaReg = estado.wosReg[l.wo];
+          if (jaReg) return '<div class="item" style="opacity:.75"><input type="checkbox" disabled data-wo="' + esc(l.wo) + '" data-tipo="' + esc(l.tipo) + '">' +
+            '<span class="wo">' + esc(l.wo) + '</span><span class="tipo">' + esc(l.tipo) + '</span><span class="vl-mu" style="font-size:12px">' + textoWoRegistrada(jaReg) + "</span></div>";
           return '<div class="item"><input type="checkbox" ' + (g === "MOP" ? "checked " : "") + 'data-wo="' + esc(l.wo) + '" data-tipo="' + esc(l.tipo) + '">' +
             '<span class="wo">' + esc(l.wo) + '</span><span class="tipo">' + esc(l.tipo) + "</span>" + pill(st.texto, st.classe) + "</div>";
         }).join("");
-    }).join("");
+    }).join("") + (wos.length && wos.every(function (l) { return estado.wosReg[l.wo]; })
+      ? '<div class="aviso-wo"><b>As WOs deste site já foram registradas.</b> Para voltar ao site, registre como <b>Pendência</b>.<br><button type="button" class="bt" id="botaoMudarPendencia" style="margin-top:8px;border:1px solid #0f62fe;background:#fff;color:#0f62fe;padding:6px 14px;cursor:pointer">Mudar para Pendência</button></div>' : "");
+    const bmp = $("botaoMudarPendencia");
+    if (bmp) bmp.addEventListener("click", function () { $("campoAtividade").value = "Pendência"; atualizarBlocos(); });
   }
 
   // O botão "Registrar deslocamento" só monta o resumo para conferência.
@@ -3032,7 +3092,9 @@
       document.querySelectorAll("#listaWOs input[type=checkbox]:checked").forEach(function (c) {
         wos.push({ wo: c.dataset.wo, tipo: c.dataset.tipo });
       });
-      if (wos.length === 0) return erro("Marque ao menos uma WO.");
+      if (wos.length === 0) return erro("Marque ao menos uma WO. Se as WOs deste site já foram registradas, registre a volta como Pendência.");
+      const repetida = wos.find(function (w) { return estado.wosReg[w.wo]; });
+      if (repetida) return erro("A WO " + repetida.wo + " já foi registrada (" + textoWoRegistrada(estado.wosReg[repetida.wo]).replace("Já registrada: ", "") + "). A preventiva só pode ser registrada uma vez.");
       if (!$("campoConferi").checked) return erro("Confirme que conferiu as WOs com o técnico.");
     }
 
@@ -3165,6 +3227,8 @@
         alarme_porta: r.alarme,
         observacao: r.observacao || null
       };
+      const ligadas = r.atividade === "Pendência" ? estado.pdLigar.sel.slice() : [];
+      if (ligadas.length) visita.pendencias_ids = ligadas;
       if (r.jaNoSite) visita.hora_entrada = r.chegada.toISOString();
       if (r.retro) visita.hora_saida = r.saida.toISOString();
       const visitaCriada = await criarVisita(visita, r.wos);
@@ -3173,6 +3237,7 @@
       catch (e3) { mostrarAviso("Visita gravada, mas não consegui enviá-la para a Validação: " + e3.message, "erro"); }
       try { await marcarEscalaPelaVisita(r); }
       catch (e2) { mostrarAviso("Visita gravada, mas não consegui marcar a equipe no dia: " + e2.message, "erro"); }
+      estado.wosRegConsultado = {}; estado.wosReg = {}; estado.pdLigar = { chave: "", itens: null, sel: [] };
       ocultarResumo();
       msg.innerHTML = '<span class="ok">Registrado: ' + esc(r.siteTexto) + " · " + esc(r.equipe.nome) + (r.retro ? ". Visita de " + r.dataExecucao.split("-").reverse().join("/") + (r.comHorario ? " registrada: chegada " + r.tChegada + ", saída " + r.tSaida + "." : " registrada sem horário.") : ". Acompanhe em “Equipes em campo”.") + esc(notaVal) + "</span>";
       mostrarAviso(r.retro ? (r.comHorario ? "Visita registrada (" + r.tChegada + " – " + r.tSaida + "): " : "Visita registrada sem horário: ") + r.siteTexto + " · " + r.equipe.nome : (r.jaNoSite ? "Registrado como já no site: " : "Deslocamento registrado: ") + r.siteTexto + " · " + r.equipe.nome + notaVal);
@@ -3650,6 +3715,18 @@
     return g ? g.nome : REGRAS.resumoDia.nomeOutros;
   }
 
+  // A preventiva só é executada uma vez: se a mesma WO aparece em duas visitas do dia, vale a primeira.
+  // A visita que só tinha WOs repetidas (registro em duplicidade) sai da lista. Visita de Pendência não tem WO e fica.
+  function tirarWosRepetidas(lista) {
+    const vistas = {};
+    return lista.map(function (v) {
+      const ws = v.wos_visita || [];
+      if (!ws.length) return v;
+      const novas = ws.filter(function (w) { if (vistas[w.wo]) return false; vistas[w.wo] = true; return true; });
+      return novas.length ? (novas.length === ws.length ? v : Object.assign({}, v, { wos_visita: novas })) : null;
+    }).filter(Boolean);
+  }
+
   // Visitas do dia: as que ENTRARAM no dia (ou, se ainda não chegaram, foram avisadas no dia).
   async function carregarVisitasDoDia(aaaammdd) {
     const ini = new Date(aaaammdd + "T00:00:00"); const fim = new Date(ini.getTime() + 86400000);
@@ -3660,8 +3737,8 @@
     ]);
     const mapa = {};
     r.forEach(function (x) { conferir(x).forEach(function (v) { mapa[v.id] = v; }); });
-    return Object.keys(mapa).map(function (k) { return mapa[k]; })
-      .sort(function (x, y) { return String(x.hora_entrada || x.hora_aviso).localeCompare(String(y.hora_entrada || y.hora_aviso)); });
+    return tirarWosRepetidas(Object.keys(mapa).map(function (k) { return mapa[k]; })
+      .sort(function (x, y) { return String(x.hora_entrada || x.hora_aviso).localeCompare(String(y.hora_entrada || y.hora_aviso)); }));
   }
 
   // Expurgos: WOs que a equipe não pôde executar por causa do site. Sem a tabela criada, fica vazio.
@@ -6035,6 +6112,14 @@
   function pdNb(p, i, cur) { return '<span class="pd-nb' + (p.id === cur ? " at" : "") + (pdAberta(p) ? "" : " ok") + '">' + (pdAberta(p) ? i + 1 : "✔") + "</span>"; }
   async function pdCarregarEventos(id) {
     try { estado.pd.ev[id] = conferir(await banco.from("pendencias_eventos").select("*").eq("pendencia_id", id).order("id")); } catch (e) { estado.pd.ev[id] = []; }
+    try {   // visitas de tratativa ligadas a esta pendência
+      const vs = conferir(await banco.from("visitas").select("id,equipe,data_execucao,hora_entrada,hora_saida,situacao,origem").contains("pendencias_ids", [id]));
+      const hm = function (iso) { return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""; };
+      vs.filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; }).forEach(function (v) {
+        estado.pd.ev[id].push({ id: "v" + v.id, tipo: "visita", texto: String(v.data_execucao || "").split("-").reverse().join("/") + (v.hora_entrada ? " · " + hm(v.hora_entrada) + (v.hora_saida ? "–" + hm(v.hora_saida) : "") : ""), por: v.equipe || "Equipe", em: v.hora_entrada || v.data_execucao });
+      });
+      estado.pd.ev[id].sort(function (a, b) { return String(a.em).localeCompare(String(b.em)); });
+    } catch (e) { /* coluna ainda não criada */ }
   }
   async function pdAbrirSite(k, pid) {
     const P = estado.pd; P.sel = k; P.gaveta = false; P.modalNova = false;
@@ -6096,7 +6181,7 @@
     const pode = aberta && (minha || coord);
     const etapa = !aberta ? 3 : p.estado === "Em tratativa" ? 2 : 1;
     const ev_ = p.evidencia || {}, rasc = P.rasc[p.id] || "";
-    const roti = { criada: "Pendência criada", assumida: "Assumida", liberada: "Liberada", reatribuida: "Reatribuída", estado: "Estado alterado", concluida: "Concluída", reaberta: "Reaberta", origem: "Origem atualizada", andamento: "Andamento" };
+    const roti = { criada: "Pendência criada", assumida: "Assumida", liberada: "Liberada", reatribuida: "Reatribuída", estado: "Estado alterado", concluida: "Concluída", reaberta: "Reaberta", origem: "Origem atualizada", andamento: "Andamento", visita: "Visita de tratativa" };
     let h = '<div class="pd-dh"><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + " · " + esc(p.texto) + "</b><span>" + pdTagsOrigem(p) + " " + pdTagEstado(p.estado) + "</span></div>" +
       '<div class="pd-steps"><div class="' + (etapa > 1 ? "ok" : "at") + '">' + (etapa > 1 ? "✔ " : "") + '1 Entender</div><div class="' + (etapa > 2 ? "ok" : etapa === 2 ? "at" : "") + '">' + (etapa > 2 ? "✔ " : "") + '2 Tratar</div><div class="' + (etapa === 3 ? "at" : "") + '">3 Concluir</div></div><div class="pd-dois"><div>' +
       '<div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe).replace(/\n/g, "<br>") + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
@@ -6110,7 +6195,7 @@
       (aberta && livre ? '<div class="pd-av">Clique em Assumir para tratar esta pendência. O responsável é sempre quem está logado.</div>' : "") +
       '<div class="lb" style="margin-top:12px">O que foi feito</div><textarea id="pdFeito" rows="3" placeholder="Escreva a tratativa (ex.: respondido ao cliente, técnico acionado)…"' + (pode ? "" : " disabled") + ">" + esc(rasc) + "</textarea>" +
       '<div style="margin:8px 0"><button class="bt p" data-pda="andamento"' + (pode ? "" : " disabled") + ">Registrar andamento</button></div>" +
-      '<div class="lb" style="margin-top:12px">Histórico</div><div class="pd-tl">' + (ev.length ? ev.map(function (e) { return "<div><b>" + esc(roti[e.tipo] || e.tipo) + "</b>" + (e.tipo === "andamento" || e.tipo === "concluida" ? "<br>" + esc(String(e.texto || "").replace(/^[^\n]*\n/, e.tipo === "concluida" ? "" : "")) : "") + "<small>" + esc(e.por === "sistema" ? "Sistema" : nomeDoEmail(e.por)) + " · " + esc(pdQuando(e.em)) + "</small></div>"; }).join("") : '<span class="vl-mu">Sem registros.</span>') + "</div>" +
+      '<div class="lb" style="margin-top:12px">Histórico</div><div class="pd-tl">' + (ev.length ? ev.map(function (e) { return "<div><b>" + esc(roti[e.tipo] || e.tipo) + "</b>" + (e.tipo === "andamento" || e.tipo === "concluida" || e.tipo === "visita" ? "<br>" + esc(String(e.texto || "").replace(/^[^\n]*\n/, e.tipo === "concluida" ? "" : "")) : "") + "<small>" + esc(e.por === "sistema" ? "Sistema" : nomeDoEmail(e.por)) + " · " + esc(pdQuando(e.em)) + "</small></div>"; }).join("") : '<span class="vl-mu">Sem registros.</span>') + "</div>" +
       (!aberta && (minha || coord) ? '<div style="margin-top:8px"><button class="bt peq" data-pda="reabrir">Reabrir pendência</button></div>' : "") + "</div></div>" +
       '<div class="pd-rod"><span class="vl-mu">' + (aberta ? "Para concluir, escreva a resposta em “O que foi feito”." : "Concluída" + (p.concluida_por ? " por " + esc(p.concluida_por === "sistema" ? "sistema" : nomeDoEmail(p.concluida_por)) : "") + (p.resposta ? ": " + esc(p.resposta) : "")) + '</span><span style="margin-left:auto"></span>' +
       '<button class="bt pd-ok" data-pda="resolvida"' + (pode ? "" : " disabled") + '>✔ Resolvida</button><button class="bt pd-no" data-pda="nao"' + (pode ? "" : " disabled") + '>✖ Não resolvida</button><button class="bt" data-pda="anterior">‹ Anterior</button><button class="bt" data-pda="proxima">Próxima ›</button></div>';
@@ -6268,6 +6353,12 @@
     } catch (e) { /* sem visitas */ }
     // tratativas (Validação offline)
     const pds = await pdAplicarCorte(await seguro(banco.from("pendencias").select("*").eq("site_chave", chave).eq("mes", ini).order("id")));
+    // visitas do mês (todas as equipes): o registro do que foi feito no site
+    let vmes = [];
+    try {
+      vmes = await seguro(banco.from("visitas").select("id,equipe,atividade,data_execucao,hora_entrada,hora_saida,situacao,pendencias_ids,motivo_nao_execucao,wos_visita(wo,tipo)").ilike("site", site).gte("data_execucao", ini).lte("data_execucao", fim).order("hora_entrada"));
+      vmes = tirarWosRepetidas(vmes.filter(function (v) { return v.situacao !== REGRAS.situacaoCancelado; }));
+    } catch (e) { vmes = []; }
     // ---- cálculos
     const abas = an.filter(function (r) { return !r.tipo_linha || r.tipo_linha === "relatorio"; });
     const nRef = an.filter(function (r) { return rpTipo(r) === "Refazer"; }).length, nFal = an.filter(function (r) { return r.tipo_linha === "faltando"; }).length, nSem = an.filter(function (r) { return r.tipo_linha === "sem_pdf"; }).length;
@@ -6286,6 +6377,18 @@
       '<div><div class="k">Visita em campo</div><div class="v">' + (v0 ? esc(dataBR(v0.data)) + " · " + hm(v0.ent) + " – " + hm(v0.sai) : "—") + '</div></div>' +
       '<div><div class="k">Análise gravada por</div><div class="v">' + esc(String((an[0] && an[0].analisado_por) || "—").split("@")[0]) + '</div></div></div>';
     h += '<div class="fi-bl"><div class="fi-kv"><div><div class="n">' + abas.length + '</div><div class="l">Abas lidas</div></div><div><div class="n"' + (nRef ? ' style="color:#ff832b"' : "") + '>' + nRef + '</div><div class="l">Para refazer</div></div><div><div class="n">' + nFal + '</div><div class="l">Faltando</div></div><div><div class="n">' + nSem + '</div><div class="l">Sem PDF</div></div><div><div class="n">' + fotosTot + '</div><div class="l">Fotos</div></div></div></div>';
+    // visitas do mês
+    {
+      const hmv = function (iso) { return iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"; };
+      const pdPorId = {}; pds.forEach(function (p) { pdPorId[p.id] = p; });
+      h += '<div class="fi-bl"><h3>Visitas do mês<span>' + vmes.length + (vmes.length === 1 ? " visita" : " visitas") + '</span></h3>' + (vmes.length ?
+        '<table><tr><th>Dia</th><th>Equipe</th><th>Horário</th><th>Atividade</th><th>Detalhe</th></tr>' + vmes.map(function (v) {
+          const ehPend = v.atividade === "Pendência", ws = v.wos_visita || [];
+          const det = ehPend ? ((v.pendencias_ids || []).map(function (id) { const p = pdPorId[id]; return p ? esc((p.aba || "") + " · " + (p.tag ? p.tag + " · " : "") + p.texto) : ""; }).filter(Boolean).join("<br>") || '<span class="fi-mu">Sem pendência ligada</span>')
+            : (ws.length ? ws.length + (ws.length === 1 ? " WO · " : " WOs · ") + esc(ws.map(function (w) { return w.tipo || w.wo; }).join(", ")) : '<span class="fi-mu">Sem WO</span>') + (v.motivo_nao_execucao ? " · não executada: " + esc(v.motivo_nao_execucao) : "");
+          return "<tr><td>" + esc(dataBR(v.data_execucao).slice(0, 5)) + "</td><td>" + esc(v.equipe || "—") + "</td><td>" + hmv(v.hora_entrada) + " – " + hmv(v.hora_saida) + "</td><td>" + fiTag(v.atividade || "Preventiva", ehPend ? "a" : "g") + "</td><td>" + det + "</td></tr>";
+        }).join("") + "</table>" : '<div class="fi-mu">Nenhuma visita registrada neste mês.</div>') + "</div>";
+    }
     // alertas
     const comAch = an.filter(function (r) { return (r.achados || []).length; });
     h += '<div class="fi-bl"><h3>Alertas (' + comAch.length + ')<span>achados da análise dos PDFs</span></h3>' + (comAch.length ? comAch.map(function (r) {
