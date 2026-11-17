@@ -1334,9 +1334,33 @@
     return a;
   }
 
+  // Regra entre abas: o técnico relatou problema de alarme numa aba que não é a de ALARMES (ex.: Trocador de calor, fechada como OK C/RESTRIÇÃO),
+  // e a aba ALARMES foi fechada como OK, sem apontar a pendência onde ela deveria estar.
+  function alarmeEmOutraAba(todas) {
+    const fatoDe = function (l) { return semAcento(String((l.val && l.val.fato) || (l.rep && l.rep.situacaoFinal) || "")).toUpperCase().trim(); };
+    const alarmesOk = todas.filter(function (l) { return l.rep && l.segKey === "ALARMES" && fatoDe(l) === "OK"; });
+    if (!alarmesOk.length) return;
+    const origens = [];
+    todas.forEach(function (l) {
+      if (!l.rep || l.segKey === "ALARMES" || !/RESTRI|NAO OK/.test(fatoDe(l))) return;
+      const txt = ((l.rep.comentario || "") + " " + (l.rep.justificativa || "")).trim();
+      if (!/alarm/i.test(txt)) return;
+      const nome = (l.segTrocado || l.seg) + (l.tag || l.rep.tag ? " – " + (l.tag || l.rep.tag) : "");
+      const resumo = txt.length > 160 ? txt.slice(0, 160) + "..." : txt;
+      l.achados.push("Alarme apontado na aba errada (" + nome + ")||O técnico relatou problema de alarmes nesta aba (\"" + resumo + "\") e fechou como " + (l.val && l.val.fato || l.rep.situacaoFinal) + ", mas este equipamento não tem pendência própria. O alarme deve ser apontado na aba ALARMES; a aba precisa ser refeita.");
+      origens.push(nome);
+    });
+    if (!origens.length) return;
+    alarmesOk.forEach(function (a) {
+      a.achados.push("Pendência de alarme não apontada na aba Alarmes||O técnico relatou problema de alarmes em outra aba (" + origens.join("; ") + "), mas a aba ALARMES foi fechada como OK, sem apontar a pendência. A aba ALARMES precisa ser refeita com a pendência.");
+    });
+    todas.forEach(function (l) { l.refazer = (l.achados || []).some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+  }
+
   function recalcular() {
     if (E.snapModo) {   // mostrando a análise gravada: reavalia as abas gravadas, sem PDFs
       E.linhas.forEach(function (l) { l.achados = analisarLinha(l); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+      alarmeEmOutraAba(E.linhas);
       desenhar();
       return;
     }
@@ -1382,6 +1406,7 @@
     const todas = esp.concat(extras);
     todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
     E.linhas = todas;
+    alarmeEmOutraAba(E.linhas);
     desenhar();
   }
 
