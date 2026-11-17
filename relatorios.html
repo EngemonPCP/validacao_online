@@ -2038,9 +2038,11 @@
       const desdeVal = dDesde.getFullYear() + "-" + String(dDesde.getMonth() + 1).padStart(2, "0") + "-" + String(dDesde.getDate()).padStart(2, "0");
       const vals = await paginarTudo(function () { return banco.from("validacoes").select("id,visita_id,situacao,wos,site_chave,data").gte("data", desdeVal).order("id"); });
       const valDaWO = {};
-      vals.filter(function (v) { return v.situacao !== "cancelada"; }).forEach(function (v) { wosDaValidacao(v).forEach(function (w) { const a = valDaWO[w]; if (!a || v.id > a.id) valDaWO[w] = v; }); });
+      // Validação "SV-..." é a que o sistema cria sozinho para WO executada na base sem visita: o site nunca passou pela validação online, então não conta.
+      const valReal = vals.filter(function (v) { return v.situacao !== "cancelada" && String(v.visita_id || "").indexOf("SV-") !== 0; });
+      valReal.forEach(function (v) { wosDaValidacao(v).forEach(function (w) { const a = valDaWO[w]; if (!a || v.id > a.id) valDaWO[w] = v; }); });
       const valDaVisita = {};
-      vals.filter(function (v) { return v.situacao !== "cancelada"; }).forEach(function (v) { valDaVisita[String(v.visita_id)] = v; });
+      valReal.forEach(function (v) { valDaVisita[String(v.visita_id)] = v; });
       const confer = {}, hoje = hojeLocal(); let conferHoje = 0;
       const ana = await paginarTudo(function () { return banco.from("relatorios_analise").select("chave,site_chave,mes,wo,analisado_em").eq("tipo_linha", "relatorio").in("mes", meses.map(function (m) { return m + "-01"; })).order("chave"); });
       const contadas = {};
