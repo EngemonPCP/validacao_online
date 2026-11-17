@@ -1990,8 +1990,26 @@
         if (r.error) throw new Error(r.error.message);
         (r.data || []).forEach(guardar);
       }
-      // 3) validação online (Análise) e conferências já gravadas
-      const vals = await paginarTudo(function () { return banco.from("validacoes").select("id,visita_id,situacao,wos,site_chave,data").gte("data", desde).order("id"); });
+      // WOs executadas que não têm visita dentro do período: confere se a visita foi ANTES da data de corte (aí a WO não entra, e não é "sem visita")
+      const semVis = exec.filter(function (l) { return !visitaDaWO[l.wo]; }).map(function (l) { return l.wo; });
+      const visitaAntiga = {}, ligas = [];
+      for (let i = 0; i < semVis.length; i += 150) {
+        const r = await banco.from("wos_visita").select("wo,visita_id").in("wo", semVis.slice(i, i + 150));
+        if (r.error) throw new Error(r.error.message);
+        (r.data || []).forEach(function (x) { ligas.push(x); });
+      }
+      const idsAnt = ligas.map(function (x) { return x.visita_id; }).filter(function (x, j, a) { return x != null && a.indexOf(x) === j; });
+      const visAnt = {};
+      for (let i = 0; i < idsAnt.length; i += 150) {
+        const r = await banco.from("visitas").select("id,atividade,situacao,data_execucao").in("id", idsAnt.slice(i, i + 150)).eq("situacao", "Saiu do Site").ilike("atividade", "Preventiva%");
+        if (r.error) throw new Error(r.error.message);
+        (r.data || []).forEach(function (v) { visAnt[v.id] = v; });
+      }
+      ligas.forEach(function (x) { if (visAnt[x.visita_id]) visitaAntiga[x.wo] = visAnt[x.visita_id]; });
+      // 3) validação online (Análise) e conferências já gravadas (um pouco antes da data de corte, porque a validação pode ser do dia da visita)
+      const dDesde = new Date(desde + "T12:00:00"); dDesde.setDate(dDesde.getDate() - 10);
+      const desdeVal = dDesde.getFullYear() + "-" + String(dDesde.getMonth() + 1).padStart(2, "0") + "-" + String(dDesde.getDate()).padStart(2, "0");
+      const vals = await paginarTudo(function () { return banco.from("validacoes").select("id,visita_id,situacao,wos,site_chave,data").gte("data", desdeVal).order("id"); });
       const valDaWO = {};
       vals.filter(function (v) { return v.situacao !== "cancelada"; }).forEach(function (v) { wosDaValidacao(v).forEach(function (w) { const a = valDaWO[w]; if (!a || v.id > a.id) valDaWO[w] = v; }); });
       const valDaVisita = {};
@@ -2012,6 +2030,7 @@
         const l = base[k], v = visitaDaWO[l.wo] || null, sb = statusBaseDe(l.status_final);
         if (!ehMOP(l.tipo)) return;                                 // só MOP (Energia e Climatização); EPS (Gerador, Zeladoria, UPS...) não entra
         if (!v && !sb.ok) return;                                   // sem visita só entra se a base mostra Executada
+        if (!v && visitaAntiga[l.wo]) return;                       // a visita foi antes da data de corte: não é "sem visita"
         const dataRef = v ? v.data_execucao : String(l.data_fim || "").slice(0, 10);
         if (!dataRef || dataRef < desde) return;
         const siteTxt = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim().toUpperCase();
