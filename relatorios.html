@@ -176,7 +176,7 @@
 
 <div class="wrap oculto" id="telaFila">
   <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">
-    <div><h1 style="margin-bottom:4px">Fila de validação</h1><div class="g" id="filaSub">Um site por linha, com todas as WOs · visita concluída ou executada na base · conferência (2ª validação) · mais antigos primeiro</div></div>
+    <div><h1 style="margin-bottom:4px">Fila de validação</h1><div class="g" id="filaSub">Só MOP (Energia e Climatização) · um site por linha · visita concluída ou executada na base · conferência (2ª validação) · mais antigos primeiro</div></div>
     <div style="display:flex;gap:12px;align-items:flex-end">
       <div><div class="lab">Desde</div><input class="campo" id="filaDesde" type="date" value="2026-11-11" style="padding:8px 12px"></div>
       <button class="btn2" id="filaAtualizar">Atualizar</button>
@@ -1935,6 +1935,7 @@
     }
     return todas;
   }
+  function ehMOP(tipo) { const t = semAcento(tipo).toLowerCase(); return t.indexOf("energia") >= 0 || t.indexOf("climatiza") >= 0; }
   function diaCurto(iso) { const m = String(iso || "").match(/\d{4}-(\d{2})-(\d{2})/); return m ? m[2] + "/" + m[1] : "—"; }
   function hojeLocal() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function statusBaseDe(s) {
@@ -2009,6 +2010,7 @@
       const linhas = [];
       Object.keys(base).forEach(function (k) {
         const l = base[k], v = visitaDaWO[l.wo] || null, sb = statusBaseDe(l.status_final);
+        if (!ehMOP(l.tipo)) return;                                 // só MOP (Energia e Climatização); EPS (Gerador, Zeladoria, UPS...) não entra
         if (!v && !sb.ok) return;                                   // sem visita só entra se a base mostra Executada
         const dataRef = v ? v.data_execucao : String(l.data_fim || "").slice(0, 10);
         if (!dataRef || dataRef < desde) return;
