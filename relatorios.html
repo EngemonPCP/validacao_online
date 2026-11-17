@@ -176,7 +176,7 @@
 
 <div class="wrap oculto" id="telaFila">
   <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px">
-    <div><h1 style="margin-bottom:4px">Fila de validação</h1><div class="g" id="filaSub">Todas as WOs com visita concluída ou executada na base · conferência (2ª validação) · mais antigas primeiro</div></div>
+    <div><h1 style="margin-bottom:4px">Fila de validação</h1><div class="g" id="filaSub">Um site por linha, com todas as WOs · visita concluída ou executada na base · conferência (2ª validação) · mais antigos primeiro</div></div>
     <div style="display:flex;gap:12px;align-items:flex-end">
       <div><div class="lab">Desde</div><input class="campo" id="filaDesde" type="date" value="2026-11-11" style="padding:8px 12px"></div>
       <button class="btn2" id="filaAtualizar">Atualizar</button>
@@ -2020,7 +2020,22 @@
           sb: sb, an: analiseDe(va), aguardando: !sb.ok, conferida: !!confer[sc + "|" + mes + "|" + l.wo] });
       });
       linhas.sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : a.siteTxt < b.siteTxt ? -1 : a.siteTxt > b.siteTxt ? 1 : a.tipo < b.tipo ? -1 : 1; });
-      FILA.linhas = linhas; FILA.conferHoje = conferHoje; FILA.carregada = true;
+      // uma linha por site + mês: a análise do relatório já pega todas as WOs do site de uma vez
+      const grupos = {}, ordem = [];
+      linhas.forEach(function (r) {
+        const k = r.siteChave + "|" + r.mes;
+        if (!grupos[k]) { grupos[k] = { siteTxt: r.siteTxt, siteChave: r.siteChave, mes: r.mes, wos: [], data: r.data }; ordem.push(grupos[k]); }
+        grupos[k].wos.push(r);
+        if (r.data < grupos[k].data) grupos[k].data = r.data;
+      });
+      ordem.forEach(function (g) {
+        g.wos.sort(function (a, b) { return a.tipo < b.tipo ? -1 : a.tipo > b.tipo ? 1 : 0; });
+        g.aguardando = g.wos.every(function (w) { return w.aguardando; });       // só espera quando nenhuma WO foi executada
+        g.conferida = g.wos.some(function (w) { return w.conferida; });         // a análise do site pega todas as WOs de uma vez
+        g.semVisita = g.wos.some(function (w) { return !w.visita; });
+      });
+      ordem.sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : a.siteTxt < b.siteTxt ? -1 : 1; });
+      FILA.linhas = ordem; FILA.conferHoje = conferHoje; FILA.carregada = true;
     } catch (e) {
       $("filaMsg").innerHTML = '<span class="erro">Não consegui carregar a fila: ' + esc(e.message || e) + "</span>";
       FILA.linhas = [];
@@ -2035,7 +2050,7 @@
       const f = FILA.filtro;
       if (f === "conferir") return !r.aguardando && !r.conferida;
       if (f === "aguardando") return r.aguardando && !r.conferida;
-      if (f === "semvisita") return !r.visita;
+      if (f === "semvisita") return r.semVisita;
       if (f === "conferidas") return r.conferida;
       return true;
     });
@@ -2044,18 +2059,20 @@
     const L = FILA.linhas;
     const nConf = L.filter(function (r) { return !r.aguardando && !r.conferida; }).length;
     const nAg = L.filter(function (r) { return r.aguardando && !r.conferida; }).length;
-    const nSv = L.filter(function (r) { return !r.visita; }).length;
+    const nSv = L.filter(function (r) { return r.semVisita; }).length;
     const nOk = L.filter(function (r) { return r.conferida; }).length;
-    $("filaKv").innerHTML = [[nConf + nAg, "WOs na fila"], [nConf, "Prontas para conferir"], [nAg, "Aguardando encerramento"], [FILA.conferHoje || 0, "Conferidas hoje"]].map(function (x) { return '<div><div class="n">' + x[0] + '</div><div class="l">' + x[1] + "</div></div>"; }).join("");
+    $("filaKv").innerHTML = [[nConf + nAg, "Sites na fila"], [nConf, "Prontos para conferir"], [nAg, "Aguardando encerramento"], [FILA.conferHoje || 0, "WOs conferidas hoje"]].map(function (x) { return '<div><div class="n">' + x[0] + '</div><div class="l">' + x[1] + "</div></div>"; }).join("");
     const chips = [["todas", "Todas", L.length], ["conferir", "Para conferir", nConf], ["aguardando", "Aguardando encerramento", nAg], ["semvisita", "Sem visita", nSv], ["conferidas", "Conferidas", nOk]];
     $("filaChips").innerHTML = chips.map(function (c) { return '<button type="button" class="fl-chip' + (FILA.filtro === c[0] ? " on" : "") + '" data-f="' + c[0] + '">' + c[1] + " · " + c[2] + "</button>"; }).join("");
     const vis = filaVisiveis(), mostrar = vis.slice(0, FILA.limite);
     if (!vis.length) { $("filaCorpo").innerHTML = '<div class="g" style="padding:16px">Nada por aqui' + (FILA.carregada ? "." : " ainda.") + "</div>"; return; }
+    const pilha = function (r, f) { return r.wos.map(f).join("<br>"); };
     const linha = function (r, i) {
-      const visTxt = r.visita ? esc(diaCurto(r.data)) : '<span class="fl-nv">Sem visita</span> <span class="g">relatório ' + esc(diaCurto(r.data)) + "</span>";
+      const visTxt = pilha(r, function (w) { return w.visita ? esc(diaCurto(w.data)) : '<span class="fl-nv">Sem visita</span> <span class="g">relatório ' + esc(diaCurto(w.data)) + "</span>"; });
+      const equipes = r.wos.map(function (w) { return w.visita ? w.visita.equipe || "—" : null; }).filter(function (x, j, a) { return x && a.indexOf(x) === j; });
       const botao = r.conferida ? '<button class="btn2" data-i="' + i + '">Rever</button>' : r.aguardando ? '<span class="fl-off">Aguardando</span>' : '<button class="btn2" data-i="' + i + '">Conferir</button>';
-      return '<tr' + (r.aguardando && !r.conferida ? ' class="fl-mut"' : "") + "><td><b>" + esc(r.siteTxt) + "</b></td><td>" + esc(r.tipo || "—") + "</td><td>" + visTxt + "</td><td>" + esc(r.visita ? r.visita.equipe || "—" : "—") +
-        '</td><td><span class="fl-dot fl-' + r.sb.c + '"></span>' + esc(r.sb.t) + '</td><td><span class="fl-dot fl-' + r.an.c + '"></span>' + esc(r.an.t) + "</td><td>" + botao + "</td></tr>";
+      return '<tr' + (r.aguardando && !r.conferida ? ' class="fl-mut"' : "") + "><td><b>" + esc(r.siteTxt) + "</b></td><td>" + pilha(r, function (w) { return esc(w.tipo || "—"); }) + "</td><td>" + visTxt + "</td><td>" + (equipes.length ? equipes.map(esc).join("<br>") : "—") +
+        "</td><td>" + pilha(r, function (w) { return '<span class="fl-dot fl-' + w.sb.c + '"></span>' + esc(w.sb.t); }) + "</td><td>" + pilha(r, function (w) { return '<span class="fl-dot fl-' + w.an.c + '"></span>' + esc(w.an.t); }) + "</td><td>" + botao + "</td></tr>";
     };
     $("filaCorpo").innerHTML = '<table><thead><tr><th>Site</th><th>Preventiva</th><th>Visita / relatório</th><th>Equipe</th><th>Status base</th><th>Análise</th><th></th></tr></thead><tbody>' +
       mostrar.map(function (r) { return linha(r, FILA.linhas.indexOf(r)); }).join("") + "</tbody></table>" +
@@ -2105,7 +2122,7 @@
   });
   $("filaComecar").addEventListener("click", function () {
     const r = FILA.linhas.find(function (x) { return !x.aguardando && !x.conferida; });
-    if (!r) { $("filaMsg").innerHTML = '<span class="g">Não há WO pronta para conferir.</span>'; return; }
+    if (!r) { $("filaMsg").innerHTML = '<span class="g">Não há site pronto para conferir.</span>'; return; }
     FILA.filtro = "conferir"; abrirDaFila(r);
   });
   $("filaAnt").addEventListener("click", function () { irParaFluxo(FILA.pos - 1); });
