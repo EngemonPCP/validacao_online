@@ -1965,7 +1965,13 @@
       const desde = $("filaDesde").value || "2026-11-11";
       const meses = mesesDesde(desde);
       // 1) visitas de preventiva concluídas
-      const vis = await paginarTudo(function () { return banco.from("visitas").select("id,site,equipe,atividade,situacao,data_execucao,motivo_nao_execucao,wos_visita(wo,tipo)").eq("situacao", "Saiu do Site").ilike("atividade", "Preventiva%").gte("data_execucao", desde).order("id"); });
+      const consVis = function (cols) { return function () { return banco.from("visitas").select(cols).eq("situacao", "Saiu do Site").ilike("atividade", "Preventiva%").gte("data_execucao", desde).order("id"); }; };
+      let vis;
+      try { vis = await paginarTudo(consVis("id,site,equipe,atividade,situacao,data_execucao,motivo_nao_execucao,wos_visita(wo,tipo)")); }
+      catch (e) {   // o arquivo nao_execucao_sql.txt ainda não foi rodado: a coluna não existe, segue sem ela
+        if (!/motivo_nao_execucao/.test(String((e && e.message) || e))) throw e;
+        vis = await paginarTudo(consVis("id,site,equipe,atividade,situacao,data_execucao,wos_visita(wo,tipo)"));
+      }
       const visitaDaWO = {};
       vis.forEach(function (v) {
         if (v.motivo_nao_execucao) return;
