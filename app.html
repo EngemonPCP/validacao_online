@@ -5688,7 +5688,7 @@
       itens.push({ chave: pendChave(aba, "", t[1] === "FOTO" || t[1] === "OUTRO" ? texto : t[0]), aba: aba, tag: null, tipo: t[0], texto: texto || t[0], setor: reg.setor || null, evidencia: { validacao_id: reg.id, obs: p.obs || null, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
     });
     const al = reg.alarmes || {};
-    if (!al.hist && !al.semConfig) itens.push({ chave: pendChave("Alarmes", "", "Alarmes não analisados"), aba: "Alarmes", tag: null, tipo: "Alarmes não analisados", texto: "Alarmes não analisados na validação online", setor: reg.setor || null, evidencia: { validacao_id: reg.id, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
+    if (!al.hist && !al.semConfig && String(reg.setor || "").toUpperCase() !== "VOLANTE") itens.push({ chave: pendChave("Alarmes", "", "Alarmes não analisados"), aba: "Alarmes", tag: null, tipo: "Alarmes não analisados", texto: "Alarmes não analisados na validação online", setor: reg.setor || null, evidencia: { validacao_id: reg.id, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
     if (!itens.length) return;
     const g = await banco.rpc("pendencias_sincronizar", { p_site_chave: reg.site_chave, p_site: String(reg.site || "").toUpperCase(), p_mes: String(reg.data).slice(0, 7) + "-01", p_origem: "validacao_online", p_itens: itens, p_resolver: false });
     if (g.error) throw new Error(g.error.message);
@@ -6198,7 +6198,14 @@
       if (a === "alarmes") {
         const vid = cur.evidencia && cur.evidencia.validacao_id; if (!vid) { mostrarAviso("Esta pendência não tem uma validação ligada.", "erro"); return; }
         const cs = conferir(await banco.from("casos_offline").select("*").eq("validacao_id", vid).limit(1));
-        if (!cs.length) { mostrarAviso("Não encontrei o caso desta validação.", "erro"); return; }
+        if (!cs.length) {   // validação antiga, sem caso offline: cria o caso para poder registrar os alarmes
+          const vs = conferir(await banco.from("validacoes").select("*").eq("id", vid).limit(1));
+          if (!vs.length) { mostrarAviso("Não encontrei a validação ligada a esta pendência.", "erro"); return; }
+          if (vs[0].situacao !== "encerrada") { mostrarAviso("Esta validação ainda não foi encerrada. Os alarmes podem ser conferidos na própria validação online.", "erro"); return; }
+          await sincronizarCasoOfflineBase(vs[0], "validada", [], null, undefined, undefined, null);
+          cs.push.apply(cs, conferir(await banco.from("casos_offline").select("*").eq("validacao_id", vid).limit(1)));
+          if (!cs.length) { mostrarAviso("Não consegui criar o caso desta validação.", "erro"); return; }
+        }
         estado.off.sel = String(cs[0].id); estado.off.aberto = true; estado.off.abaRes = "al"; estado.off.volta = "Pendencias"; irParaTela("Offline"); return;
       }
     } catch (e) { mostrarAviso(String(e.message || e), "erro"); await pdRecarregar(!!P.sel); }
