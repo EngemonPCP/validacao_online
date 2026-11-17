@@ -535,6 +535,26 @@
     #telaExpurgos .ex-l button.des:hover { text-decoration:underline; }
     #telaExpurgos .ex-vazio { padding:16px 8px; color:#525252; }
     #telaExpurgos .pill { border-radius:0; }
+    #telaExpurgos .ex-ov { position:fixed; inset:0; background:rgba(22,22,22,.6); z-index:30; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:40px 16px; }
+    #telaExpurgos .ex-md { background:#fff; width:840px; max-width:100%; border-top:3px solid #0f62fe; padding:18px 22px; font-size:12px; }
+    #telaExpurgos .ex-mh { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    #telaExpurgos .ex-mh h2 { font-size:18px; font-weight:400; margin:0; }
+    #telaExpurgos .ex-x { background:none; border:0; font-size:16px; cursor:pointer; color:#525252; padding:4px 8px; }
+    #telaExpurgos .ex-mlin { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin-bottom:10px; }
+    #telaExpurgos .ex-lb { color:#525252; font-size:11px; margin-bottom:4px; }
+    #telaExpurgos .ex-md input[type=month], #telaExpurgos .ex-md input[type=date] { font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:7px 8px; width:auto; margin:0; color:#161616; }
+    #telaExpurgos .ex-md textarea { font:inherit; font-size:13px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:8px 10px; resize:vertical; min-height:110px; color:#161616; }
+    #telaExpurgos .ex-msg { color:#525252; font-size:12px; margin:4px 0; }
+    #telaExpurgos .ex-msg.erro { color:#a2191f; }
+    #telaExpurgos .ex-ck { display:flex; align-items:center; gap:8px; margin:12px 0 4px; font-size:13px; cursor:pointer; }
+    #telaExpurgos .ex-ck input { width:auto; margin:0; }
+    #telaExpurgos .ex-mrod { display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:12px; flex-wrap:wrap; }
+    #telaExpurgos button.prim:disabled { background:#c6c6c6; border-color:#c6c6c6; color:#8d8d8d; cursor:not-allowed; }
+    #telaExpurgos .ex-mw { border:1px solid #e0e0e0; max-height:220px; overflow:auto; }
+    #telaExpurgos .ex-mw label { display:grid; grid-template-columns:28px 160px 1fr 110px 190px; align-items:center; border-bottom:1px solid #e0e0e0; padding:6px 8px; cursor:pointer; }
+    #telaExpurgos .ex-mw label.ja { color:#8d8d8d; cursor:default; }
+    #telaExpurgos .ex-mw label:last-child { border-bottom:0; }
+    #telaExpurgos .ex-mw input { width:auto; margin:0; }
     @media print { #telaExpurgos { display:none; } }
     /* ---- PREVENTIVA EPS (estilo IBM) ---- */
     main:has(#telaEPS:not(.oculto)) { max-width:none; }
@@ -1178,7 +1198,6 @@
     <section id="telaExpurgos" class="tela oculto">
       <div class="ib-trilha">Painel / <span>Expurgos</span></div>
       <h1>Expurgos</h1>
-      <p class="ib-sub">WOs que a equipe não pôde executar por causa do site (acesso, desativado, mato alto, sem equipamento ou vandalizado). Elas saem das realizadas e das divergências.</p>
       <div class="ib-campos" id="exCampos"></div>
       <div class="ib-barra">
         <div class="ib-chips" id="exChips"></div>
@@ -1186,11 +1205,33 @@
           <select id="exMes" title="Mês"></select>
           <input type="text" class="busca" id="exBusca" placeholder="Buscar site, WO ou equipe">
           <button class="sec" id="exAtualizar">Atualizar</button>
-          <button class="prim" id="exExcel">Baixar Excel</button>
+          <button class="sec" id="exExcel">Baixar Excel</button>
+          <button class="prim" id="exNovo">＋ Novo expurgo</button>
         </div>
       </div>
       <div class="ex-rolagem"><div id="exTabela"></div></div>
       <p class="ib-sub" id="exNota" style="margin-top:10px"></p>
+      <div class="ex-ov oculto" id="exModal">
+        <div class="ex-md">
+          <div class="ex-mh"><h2>Novo expurgo</h2><button type="button" class="ex-x" id="exMFechar" title="Fechar">✕</button></div>
+          <div class="ex-mlin">
+            <div><div class="ex-lb">Site</div><input type="text" id="exMSite" style="width:210px" autocomplete="off"></div>
+            <div><div class="ex-lb">Mês da base</div><input type="month" id="exMMes"></div>
+            <button type="button" class="sec" id="exMBuscar">Buscar WOs</button>
+          </div>
+          <div id="exMMsg" class="ex-msg"></div>
+          <div id="exMWos"></div>
+          <div class="ex-mlin" style="margin-top:14px">
+            <div><div class="ex-lb">Motivo *</div><select id="exMMotivo"></select></div>
+            <div><div class="ex-lb">Data *</div><input type="date" id="exMData"></div>
+            <div><div class="ex-lb">Equipe (opcional)</div><select id="exMEquipe"></select></div>
+          </div>
+          <div class="ex-lb">Relato *</div>
+          <textarea id="exMRelato" rows="5" style="width:100%"></textarea>
+          <label class="ex-ck"><input type="checkbox" id="exMEmail"> Evidenciado via e-mail *</label>
+          <div class="ex-mrod"><span id="exMResumo" class="ex-msg"></span><span><button type="button" class="sec" id="exMCancelar">Cancelar</button> <button type="button" class="prim" id="exMOk" disabled>Registrar expurgo</button></span></div>
+        </div>
+      </div>
     </section>
 
     <!-- EQUIPES EM CAMPO -->
@@ -3662,7 +3703,7 @@
       return !q || semAcento([x.site, x.wo, x.equipe, x.tipo, x.observacao].join(" ")).toLowerCase().indexOf(q) >= 0;
     });
     estado.ex.visiveis = vis;
-    const cab = '<div class="ex-l ex-cab"><div>Site</div><div>WO</div><div>Tipo de preventiva</div><div>Motivo</div><div>Data</div><div>Equipe</div><div>Observação</div><div>Registrado por</div><div></div></div>';
+    const cab = '<div class="ex-l ex-cab"><div>Site</div><div>WO</div><div>Tipo de preventiva</div><div>Motivo</div><div>Data</div><div>Equipe</div><div>Relato</div><div>Registrado por</div><div></div></div>';
     $("exTabela").innerHTML = vis.length ? cab + vis.map(function (x) {
       return '<div class="ex-l"><div><b>' + esc(x.site) + "</b></div><div>" + esc(x.wo) + "</div><div>" + esc(x.tipo) + "</div><div>" +
         pill(x.motivo, REGRAS.expurgo.cores[x.motivo] || "p-cinza") + "</div><div>" + dataBRdoExpurgo(x) + "</div><div>" + esc(x.equipe) + "</div><div>" +
@@ -3693,7 +3734,7 @@
     if (linhas.length === 0) { mostrarAviso("Não há expurgos neste filtro para baixar.", "erro"); return; }
     const dados = linhas.map(function (x) {
       return { "Site": x.site, "WO": x.wo, "Tipo de preventiva": x.tipo, "Motivo": x.motivo, "Data da visita": dataBRdoExpurgo(x),
-               "Equipe": x.equipe, "Observação": x.observacao || "", "Registrado por": x.registrado_por || "" };
+               "Equipe": x.equipe, "Relato": x.observacao || "", "Registrado por": x.registrado_por || "" };
     });
     const ws = XLSX.utils.json_to_sheet(dados);
     ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 32 }, { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 50 }, { wch: 28 }];
@@ -3701,6 +3742,85 @@
     XLSX.utils.book_append_sheet(wb, ws, "Expurgos");
     XLSX.writeFile(wb, "expurgos_" + (estado.ex.mes || "todos") + ".xlsx");
   });
+
+  // ---- Novo expurgo (pop-up): registra WOs que não puderam ser executadas, sem passar pelo Registrar das equipes ----
+  estado.exNovo = { wos: [], site: "" };
+  function exMMsg(t, erro) { $("exMMsg").textContent = t || ""; $("exMMsg").className = "ex-msg" + (erro ? " erro" : ""); }
+  function exMConferir() {
+    const marcadas = $("exMWos").querySelectorAll("input[type=checkbox]:checked").length;
+    const relato = $("exMRelato").value.trim(), email = $("exMEmail").checked;
+    $("exMOk").disabled = !(marcadas > 0 && relato && email && $("exMMotivo").value && $("exMData").value);
+    $("exMResumo").textContent = marcadas ? marcadas + " WO(s) marcada(s)" + (relato && email ? "" : " · falta " + (!relato ? "o relato" : "marcar a evidência por e-mail")) : "Marque ao menos uma WO";
+  }
+  function exMAbrir() {
+    estado.exNovo = { wos: [], site: "" };
+    $("exMSite").value = ""; $("exMMes").value = paraAAAAMMDD(new Date()).slice(0, 7); $("exMData").value = paraAAAAMMDD(new Date());
+    $("exMMotivo").innerHTML = REGRAS.expurgo.motivos.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
+    $("exMEquipe").innerHTML = '<option value="">— nenhuma —</option>' + (estado.equipes || []).map(function (e) { return "<option>" + esc(e.nome) + "</option>"; }).join("");
+    $("exMRelato").value = ""; $("exMEmail").checked = false; $("exMWos").innerHTML = ""; exMMsg("");
+    $("exModal").classList.remove("oculto"); exMConferir(); $("exMSite").focus();
+  }
+  function exMFechar() { $("exModal").classList.add("oculto"); }
+  async function exMBuscar(siteEscolhido) {
+    const txt = (siteEscolhido || $("exMSite").value).trim(), mes = $("exMMes").value;
+    if (txt.length < 2 || !mes) { exMMsg("Informe o site e o mês.", true); return; }
+    exMMsg("Procurando…"); $("exMWos").innerHTML = "";
+    try {
+      const pad = siteEscolhido ? txt : "%" + txt.replace(/[%_,]/g, "") + "%";
+      const cols = "wo,tipo,status_final,programado_infratel,clr_sdr_site_helix";
+      let r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("programado_infratel", pad).limit(300));
+      if (!r.length) r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("clr_sdr_site_helix", pad).limit(300));
+      r = r.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
+      const nomes = {}; r.forEach(function (l) { const n = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim().toUpperCase(); if (n) nomes[n] = true; });
+      const lista = Object.keys(nomes);
+      if (!r.length) { exMMsg("Nenhuma WO de MOP (Energia ou Climatização) encontrada para esse site neste mês.", true); exMConferir(); return; }
+      if (lista.length > 1 && !siteEscolhido) {
+        exMMsg("");
+        $("exMWos").innerHTML = '<div class="ex-msg">Mais de um site encontrado, escolha:</div>' + lista.slice(0, 12).map(function (n) { return '<button type="button" class="sec" style="margin:0 6px 6px 0" data-exsite="' + esc(n) + '">' + esc(n) + "</button>"; }).join("");
+        exMConferir(); return;
+      }
+      const site = lista[0]; estado.exNovo.site = site; estado.exNovo.wos = r;
+      exMMsg("");
+      $("exMWos").innerHTML = '<div class="ex-msg"><b>' + esc(site) + "</b> · " + r.length + " WO(s) de MOP</div><div class=\"ex-mw\">" + r.map(function (l, i) {
+        const ja = estado.expurgadas[l.wo], st = String(l.status_final || "").trim() || "Sem status";
+        return '<label class="' + (ja ? "ja" : "") + '"><input type="checkbox" data-i="' + i + '"' + (ja ? " disabled" : "") + "><span>" + esc(l.wo) + "</span><span>" + esc(l.tipo || "") + "</span><span>" + esc(st) + "</span><span>" + (ja ? pill("Já expurgada · " + ja.motivo, "p-cinza") : "") + "</span></label>";
+      }).join("") + "</div>";
+      exMConferir();
+    } catch (e) { exMMsg("Não consegui consultar: " + e.message, true); }
+  }
+  async function exMRegistrar() {
+    const marcadas = Array.prototype.slice.call($("exMWos").querySelectorAll("input[type=checkbox]:checked")).map(function (c) { return estado.exNovo.wos[Number(c.dataset.i)]; });
+    const relato = $("exMRelato").value.trim();
+    if (!marcadas.length || !relato || !$("exMEmail").checked) { exMConferir(); return; }
+    const motivo = $("exMMotivo").value;
+    if (!window.confirm("Expurgar " + marcadas.length + " WO(s) de " + estado.exNovo.site + " (" + motivo + ")?\n\nElas saem das realizadas e das divergências.")) return;
+    const agora = new Date().toISOString();
+    const linhas = marcadas.map(function (l) {
+      return { wo: l.wo, site: estado.exNovo.site, tipo: l.tipo || "", motivo: motivo, data_visita: $("exMData").value, equipe: $("exMEquipe").value || null,
+               visita_id: null, observacao: "[Evidenciado via e-mail] " + relato, registrado_por: estado.usuarioEmail, registrado_em: agora };
+    });
+    $("exMOk").disabled = true;
+    try {
+      conferir(await banco.from("expurgos").upsert(linhas, { onConflict: "wo" }));
+      exMFechar(); mostrarAviso("Expurgo registrado.");
+      atualizarExpurgos();
+    } catch (err) {
+      $("exMOk").disabled = false;
+      exMMsg("Erro ao gravar: " + err.message, true);
+    }
+  }
+  $("exNovo").addEventListener("click", exMAbrir);
+  $("exMFechar").addEventListener("click", exMFechar);
+  $("exMCancelar").addEventListener("click", exMFechar);
+  $("exMBuscar").addEventListener("click", function () { exMBuscar(); });
+  $("exMSite").addEventListener("keydown", function (e) { if (e.key === "Enter") exMBuscar(); });
+  $("exMWos").addEventListener("click", function (e) { const b = e.target.closest("[data-exsite]"); if (b) exMBuscar(b.dataset.exsite); });
+  $("exMWos").addEventListener("change", exMConferir);
+  $("exMRelato").addEventListener("input", exMConferir);
+  $("exMEmail").addEventListener("change", exMConferir);
+  $("exMMotivo").addEventListener("change", exMConferir);
+  $("exMData").addEventListener("input", exMConferir);
+  $("exMOk").addEventListener("click", exMRegistrar);
 
   // ---- tela RESUMO DIA ------------------------------------------------------
   function paraAAAAMMDD(d) {
