@@ -1976,6 +1976,9 @@
     if (!v) return { t: "Não passou", c: "r" };
     const s = String(v.situacao || "");
     if (s === "encerrada") return { t: "Encerrada", c: "v" };
+    // Validação que ficou aberta e não foi encerrada no dia da visita: perdeu o prazo da validação online.
+    const dh = new Date(), hojeL = dh.getFullYear() + "-" + String(dh.getMonth() + 1).padStart(2, "0") + "-" + String(dh.getDate()).padStart(2, "0");
+    if ((s === "em_analise" || s === "aba_pedida" || s === "em_campo") && v.data && String(v.data).slice(0, 10) < hojeL) return { t: "Não validada", c: "r" };
     if (s === "em_analise") return { t: "Em análise", c: "a" };
     if (s === "aba_pedida") return { t: "Aba pedida", c: "a" };
     if (s === "em_campo") return { t: "Em campo", c: "a" };

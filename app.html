@@ -4609,10 +4609,14 @@
     if (abertas.some(function (v) { return (v.wos || []).some(function (w) { return r.wos.some(function (x) { return x.wo === w.wo; }); }); })) {
       return "duplicada";
     }
-    conferir(await banco.from("validacoes").upsert({
+    // Visita registrada depois que a equipe já saiu (retroativa): o prazo da validação online já passou.
+    // Não cria validação; o site segue direto para a Fila de validação dos Relatórios como "Não passou".
+    if (r.retro) return;
+    const reg = {
       visita_id: String(visita.id), data: r.dataExecucao, site: r.siteTexto, site_chave: limparSite(r.siteTexto), equipe: r.equipe.nome,
       setor: setor, wos: r.wos, situacao: "em_campo", atualizado_por: estado.usuarioEmail, atualizado_em: new Date().toISOString()
-    }, { onConflict: "visita_id" }));
+    };
+    conferir(await banco.from("validacoes").upsert(reg, { onConflict: "visita_id" }));
   }
   async function cancelarValidacaoDaVisita(visitaId) {
     try { await banco.from("validacoes").update({ situacao: "cancelada", atualizado_em: new Date().toISOString() }).eq("visita_id", String(visitaId)); }
@@ -4884,8 +4888,9 @@
     desenharFila();
   }
   function desenharFila() {
-    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && String(v.visita_id).indexOf("SV-") !== 0 && doSetorVal(v); });
     const h = hoje();
+    // Validação aberta de dia anterior perdeu o prazo: sai daqui e segue para a Fila dos Relatórios como "Não validada".
+    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && String(v.visita_id).indexOf("SV-") !== 0 && doSetorVal(v) && (v.situacao === "encerrada" || String(v.data || "").slice(0, 10) >= h); });
     const n = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
     lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
     const encHoje = lista.filter(function (v) { return v.situacao === "encerrada" && v.encerrada_em && dataLocalDe(v.encerrada_em) === h; }).length;
