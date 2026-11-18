@@ -1339,7 +1339,10 @@
       }
     }
     // análise técnica
-    if (rep.medicoes) analisarMedicoes(rep.medicoes).forEach(function (t) { a.push(t); });
+    // Equipamento desativado/substituído/removido: as medições zeradas são esperadas, então não se cobra tensão nem corrente.
+    const txtEq = semAcento((rep.comentario || "") + " " + (rep.justificativa || "")).toLowerCase();
+    l.equipDesativado = /(?<![a-z])(desativad|desativa[cç]|substituid|desinstalad|retirad|removid|inativ|fora de operacao|excluir aba|excluir a aba)/.test(txtEq);
+    if (rep.medicoes && !l.equipDesativado) analisarMedicoes(rep.medicoes).forEach(function (t) { a.push(t); });
     if (rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura + "||Números em sequência, repetidos ou curtos demais sugerem leitura digitada sem olhar o medidor; compare com a foto do medidor.");
     (rep.alarmes || []).forEach(function (it) { if (it.fim === "NÃO OK" || it.fim === "NAO OK") a.push("Alarme " + it.n + " - " + it.nome + ": final NÃO OK||O item terminou com NÃO OK no checklist de alarmes, ou seja, ficou alarme sem normalizar."); });
     return a;
