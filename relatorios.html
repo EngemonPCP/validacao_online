@@ -2058,8 +2058,12 @@
       conferHoje = Object.keys(contadas).length;
       // 4) monta as linhas
       const linhas = [];
+      // WOs expurgadas não têm relatório para conferir: ficam fora da fila
+      const expurgadas = {};
+      try { (await paginarTudo(function () { return banco.from("expurgos").select("wo").order("wo"); })).forEach(function (x) { expurgadas[x.wo] = true; }); } catch (e) { /* tabela ainda não existe: segue sem expurgos */ }
       Object.keys(base).forEach(function (k) {
         const l = base[k], v = visitaDaWO[l.wo] || null, sb = statusBaseDe(l.status_final);
+        if (expurgadas[l.wo]) return;
         if (!ehMOP(l.tipo)) return;                                 // só MOP (Energia e Climatização); EPS (Gerador, Zeladoria, UPS...) não entra
         if (!v && !sb.ok) return;                                   // sem visita só entra se a base mostra Executada
         if (!v && visitaAntiga[l.wo]) return;                       // a visita foi antes da data de corte: não é "sem visita"

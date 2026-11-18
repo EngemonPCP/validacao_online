@@ -4885,12 +4885,15 @@
   async function atualizarFila() {
     try { estado.val.lista = await carregarValidacoes(); }
     catch (e) { $("flCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar a fila: ' + esc(e.message) + "</div>"; return; }
+    try { await carregarExpurgos(); } catch (e) { /* sem expurgos: segue */ }
     desenharFila();
   }
+  // Validação cujas WOs foram todas expurgadas: não há o que validar, sai da fila.
+  function todaExpurgada(v) { const w = v.wos || []; return w.length > 0 && w.every(function (x) { return (estado.expurgadas || {})[x.wo]; }); }
   function desenharFila() {
     const h = hoje();
     // Validação aberta de dia anterior perdeu o prazo: sai daqui e segue para a Fila dos Relatórios como "Não validada".
-    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && String(v.visita_id).indexOf("SV-") !== 0 && doSetorVal(v) && (v.situacao === "encerrada" || String(v.data || "").slice(0, 10) >= h); });
+    const lista = estado.val.lista.filter(function (v) { return v.situacao !== "cancelada" && String(v.visita_id).indexOf("SV-") !== 0 && doSetorVal(v) && !todaExpurgada(v) && (v.situacao === "encerrada" || String(v.data || "").slice(0, 10) >= h); });
     const n = { em_campo: 0, aba_pedida: 0, em_analise: 0, encerrada: 0 };
     lista.forEach(function (v) { if (n[v.situacao] !== undefined) n[v.situacao]++; });
     const encHoje = lista.filter(function (v) { return v.situacao === "encerrada" && v.encerrada_em && dataLocalDe(v.encerrada_em) === h; }).length;
