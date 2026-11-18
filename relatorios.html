@@ -1239,7 +1239,7 @@
       l.semPdf = l.obrig === "Sim" && !l.faltando && !!noMes.length;
       return a;
     }
-    if (l.dups && l.dups.length && noMes.length !== 1) a.push("Mais de um PDF para a mesma aba (" + [rep.arquivo].concat(l.dups.map(function (d) { return d.arquivo; })).join(" e ") + ")||O sistema do cliente conta uma ficha só por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
+    if (l.dups && l.dups.length && noMes.length === 0) a.push("Mais de um PDF para a mesma aba (" + [rep.arquivo].concat(l.dups.map(function (d) { return d.arquivo; })).join(" e ") + ")||O sistema do cliente conta uma ficha só por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
     // ticket
     const tk = String(rep.ticket || "");
     if (!tk) a.push("Relatório sem ticket");
@@ -1262,7 +1262,7 @@
     else if (!val) a.push("Sem registro na validação do cliente||Esta aba não aparece na planilha de Validação carregada: o técnico não a finalizou ou a planilha está desatualizada.");
     else {
       if (!noMes.length) a.push("Aba iniciada em " + nomeMes(String(val.inicio).slice(0, 7)) + ": não conta para " + nomeMes(E.mes) + "||O cliente conta a aba pelo mês em que ela foi iniciada. Iniciada em outro mês e finalizada neste, ela vale para o mês de início e precisa ser refeita.");
-      if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente||O cliente só conta uma ficha por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
+      if (noMes.length > 1) a.push("Aba preenchida mais de uma vez (" + noMes.length + "): invalidar a incorreta no sistema do cliente" + (l.dups && l.dups.length ? " — PDFs: " + [rep.arquivo].concat(l.dups.map(function (d) { return d.arquivo; })).join(" e ") : "") + "||O cliente só conta uma ficha por aba. Se o técnico preencheu duas vezes ou o sistema duplicou, o cliente precisa invalidar a errada.");
       if (normFato(val.status) === "EM ANDAMENTO") a.push("Aba em andamento no sistema do cliente");
       if (rep.situacaoFinal && val.fato && normFato(rep.situacaoFinal) !== normFato(val.fato)) a.push("Fato na validação (" + val.fato + ") difere da Situação Final do relatório (" + rep.situacaoFinal + ")||O resultado marcado no sistema do cliente é diferente do que consta no relatório. Se o técnico apontou pendência e finalizou como OK, o cliente pode recusar.");
     }
