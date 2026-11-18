@@ -1227,9 +1227,13 @@
   function analisarLinha(l) {
     const a = [];
     const rep = l.rep;
+    // Equipamento desativado/substituído/removido: medições zeradas e fotos de limpeza etc. não são cobradas.
+    const txtEq = semAcento(((rep && rep.comentario) || "") + " " + ((rep && rep.justificativa) || "")).toLowerCase();
+    l.equipDesativado = !!rep && /(?<![a-z])(desativad|desativa[cç]|substituid|desinstalad|retirad|removid|inativ|fora de operacao|excluir aba|excluir a aba)/.test(txtEq);
     let candsTodas = acharValidacao(l.segKey, l.tag || (rep && rep.tag), rep);
     // O técnico informou outro segmento (ex.: previsto CLIMA, relatório de TROCADOR DE CALOR): a planilha do cliente usa o segmento do relatório
-    if (!candsTodas.length && rep && rep.segmento && rep.segmento !== l.segKey) candsTodas = acharValidacao(rep.segmento, rep.tag || l.tag, rep);
+    // (a ficha certa é a do segmento e da tag do relatório; usar a do segmento previsto pegaria a ficha de outro equipamento)
+    if (rep && rep.segmento && rep.segmento !== l.segKey) { const alt = acharValidacao(rep.segmento, rep.tag || l.tag, rep); if (alt.length) candsTodas = alt; }
     const cands = candsTodas.filter(function (v) { return String(v.validacao || "").toUpperCase().trim() !== "INV"; });   // INV = ficha já invalidada pelo cliente
     const noMes = cands.filter(function (v) { return String(v.mes_inicio || v.inicio || "").slice(0, 7) === E.mes; });
     const val = (noMes.length ? noMes : cands).slice().sort(function (x, y) { return String(y.inicio).localeCompare(String(x.inicio)) || (y.ocorrencia || 1) - (x.ocorrencia || 1); })[0] || null;
@@ -1284,7 +1288,7 @@
     const reps = fotos.map(function (f, i) { const ig = igualA(fotos, i); return ig ? "foto " + (i + 1) + " igual à " + ig : null; }).filter(Boolean);
     if (reps.length) a.push("Fotos repetidas no relatório (" + reps.join("; ") + ")||Duas fotos iguais no mesmo relatório indicam imagem reaproveitada; cada foto deve mostrar o equipamento naquele momento.");
     const ob = FOTOS_OBRIG[segFoto(l)];
-    if (ob) {
+    if (ob && !l.equipDesativado) {
       const estado = function (o) { return estadoObrig(o, fotos); };
       const faltam = ob.filter(function (o) { return estado(o) === "Ausente"; }).map(function (o) { return o[0]; });
       const inad = [], repe = [], dInad = [], dRepe = [];
@@ -1339,9 +1343,6 @@
       }
     }
     // análise técnica
-    // Equipamento desativado/substituído/removido: as medições zeradas são esperadas, então não se cobra tensão nem corrente.
-    const txtEq = semAcento((rep.comentario || "") + " " + (rep.justificativa || "")).toLowerCase();
-    l.equipDesativado = /(?<![a-z])(desativad|desativa[cç]|substituid|desinstalad|retirad|removid|inativ|fora de operacao|excluir aba|excluir a aba)/.test(txtEq);
     if (rep.medicoes && !l.equipDesativado) analisarMedicoes(rep.medicoes).forEach(function (t) { a.push(t); });
     if (rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura + "||Números em sequência, repetidos ou curtos demais sugerem leitura digitada sem olhar o medidor; compare com a foto do medidor.");
     (rep.alarmes || []).forEach(function (it) { if (it.fim === "NÃO OK" || it.fim === "NAO OK") a.push("Alarme " + it.n + " - " + it.nome + ": final NÃO OK||O item terminou com NÃO OK no checklist de alarmes, ou seja, ficou alarme sem normalizar."); });
