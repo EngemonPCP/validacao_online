@@ -185,7 +185,7 @@
   </div>
   <div id="filaMsg"></div>
   <div class="kv" id="filaKv" style="grid-template-columns:repeat(4,1fr)"></div>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span id="filaChips" style="display:flex;gap:8px;flex-wrap:wrap"></span><input class="campo" id="filaBusca" placeholder="Buscar site…" style="margin-left:auto;width:220px;padding:8px 12px" autocomplete="off"></div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span id="filaChips" style="display:flex;gap:8px;flex-wrap:wrap"></span><select class="campo" id="filaSetor" style="margin-left:auto;width:auto;padding:8px 12px"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option><option value="OUTROS">Outros</option></select><input class="campo" id="filaBusca" placeholder="Buscar site…" style="width:220px;padding:8px 12px" autocomplete="off"></div>
   <div class="bl" id="filaCorpo"></div>
 </div>
 
@@ -1936,7 +1936,7 @@
   // ==== FILA DE VALIDAÇÃO ==================================================
   // Lista as WOs com visita de preventiva concluída (Saiu do Site) e as executadas na base sem visita, a partir de uma data.
   // A conferência aqui é uma 2ª validação: pega o que a validação online deixou passar.
-  const FILA = { linhas: [], filtro: "todas", busca: "", limite: 50, carregada: false, sujo: false, fluxo: [], pos: -1, carregando: false };
+  const FILA = { linhas: [], filtro: "todas", busca: "", setor: "", limite: 50, carregada: false, sujo: false, fluxo: [], pos: -1, carregando: false };
   function aba(n) {
     const fila = n === "fila";
     $("telaFila").classList.toggle("oculto", !fila);
@@ -2009,7 +2009,7 @@
         (v.wos_visita || []).forEach(function (w) { const a = visitaDaWO[w.wo]; if (!a || String(v.data_execucao) < String(a.data_execucao)) visitaDaWO[w.wo] = v; });
       });
       // 2) base: WOs das visitas + executadas desde a data
-      const COLS = "wo,tipo,mes,programado_infratel,clr_sdr_site_helix,status_final,data_fim";
+      const COLS = "wo,tipo,mes,programado_infratel,clr_sdr_site_helix,status_final,data_fim,equipe_engemon";
       const base = {};
       const guardar = function (l) { base[l.mes + "|" + l.wo] = l; };
       const exec = await paginarTudo(function () { return banco.from("base_preventiva").select(COLS).in("mes", meses).ilike("status_final", "executada").gte("data_fim", desde).order("wo"); });
@@ -2069,7 +2069,7 @@
         if (!siteTxt) return;
         const sc = chaveSite(siteTxt), mes = String(l.mes).slice(0, 7);
         const va = valDaWO[l.wo] || (v ? valDaVisita[String(v.id)] : null) || null;
-        linhas.push({ wo: l.wo, siteTxt: siteTxt, siteChave: sc, mes: mes, tipo: String(l.tipo || "").replace(/\s+/g, " ").trim(), visita: v, data: dataRef, dataFim: l.data_fim ? String(l.data_fim).slice(0, 10) : null,
+        linhas.push({ setor: String(l.equipe_engemon || "").trim().toUpperCase(), wo: l.wo, siteTxt: siteTxt, siteChave: sc, mes: mes, tipo: String(l.tipo || "").replace(/\s+/g, " ").trim(), visita: v, data: dataRef, dataFim: l.data_fim ? String(l.data_fim).slice(0, 10) : null,
           sb: sb, an: analiseDe(va), aguardando: !sb.ok, conferida: !!confer[sc + "|" + mes + "|" + l.wo] });
       });
       linhas.sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : a.siteTxt < b.siteTxt ? -1 : a.siteTxt > b.siteTxt ? 1 : a.tipo < b.tipo ? -1 : 1; });
@@ -2077,7 +2077,7 @@
       const grupos = {}, ordem = [];
       linhas.forEach(function (r) {
         const k = r.siteChave + "|" + r.mes;
-        if (!grupos[k]) { grupos[k] = { siteTxt: r.siteTxt, siteChave: r.siteChave, mes: r.mes, wos: [], data: r.data }; ordem.push(grupos[k]); }
+        if (!grupos[k]) { grupos[k] = { setor: r.setor, siteTxt: r.siteTxt, siteChave: r.siteChave, mes: r.mes, wos: [], data: r.data }; ordem.push(grupos[k]); }
         grupos[k].wos.push(r);
         if (r.data < grupos[k].data) grupos[k].data = r.data;
       });
@@ -2099,6 +2099,7 @@
   function filaVisiveis() {
     const q = chaveSite(FILA.busca || "");
     return FILA.linhas.filter(function (r) {
+      if (!setorOk(r)) return false;
       if (q && r.siteChave.indexOf(q) < 0) return false;
       const f = FILA.filtro;
       if (f === "conferir") return !r.aguardando && !r.conferida;
@@ -2108,8 +2109,9 @@
       return true;
     });
   }
+  function setorOk(r) { return !FILA.setor || (FILA.setor === "OUTROS" ? (r.setor !== "MÓVEL" && r.setor !== "VOLANTE") : r.setor === FILA.setor); }
   function desenharFila() {
-    const L = FILA.linhas;
+    const L = FILA.linhas.filter(setorOk);
     const nConf = L.filter(function (r) { return !r.aguardando && !r.conferida; }).length;
     const nAg = L.filter(function (r) { return r.aguardando && !r.conferida; }).length;
     const nSv = L.filter(function (r) { return r.semVisita; }).length;
@@ -2166,6 +2168,7 @@
   $("filaVoltar").addEventListener("click", function () { aba("fila"); });
   $("filaAtualizar").addEventListener("click", carregarFila);
   $("filaDesde").addEventListener("change", carregarFila);
+  $("filaSetor").addEventListener("change", function () { FILA.setor = this.value; FILA.limite = 50; desenharFila(); });
   $("filaBusca").addEventListener("input", function () { FILA.busca = this.value; FILA.limite = 50; desenharFila(); });
   $("filaChips").addEventListener("click", function (e) { const b = e.target.closest("[data-f]"); if (!b) return; FILA.filtro = b.dataset.f; FILA.limite = 50; desenharFila(); });
   $("filaCorpo").addEventListener("click", function (e) {
@@ -2174,7 +2177,7 @@
     const r = FILA.linhas[Number(b.dataset.i)]; if (r) abrirDaFila(r);
   });
   $("filaComecar").addEventListener("click", function () {
-    const r = FILA.linhas.find(function (x) { return !x.aguardando && !x.conferida; });
+    const r = FILA.linhas.find(function (x) { return setorOk(x) && !x.aguardando && !x.conferida; });
     if (!r) { $("filaMsg").innerHTML = '<span class="g">Não há site pronto para conferir.</span>'; return; }
     FILA.filtro = "conferir"; abrirDaFila(r);
   });
