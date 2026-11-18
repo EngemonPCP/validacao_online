@@ -79,6 +79,13 @@
   .msec { padding:16px 24px; }
   .msec h4 { font-size:14px; font-weight:600; margin-bottom:10px; }
   .ach { border-left:3px solid var(--laranja); background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
+  .alinfo { border-left:3px solid #0f62fe; background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
+  .etq { display:inline-block; font-size:11px; font-weight:400; background:#d0e2ff; color:#0043ce; padding:1px 8px; border-radius:10px; margin-left:8px; }
+  .etq.cz { background:#e0e0e0; color:#393939; }
+  .vcom { width:100%; min-height:78px; border:0; border-bottom:1px solid #8d8d8d; background:var(--cinza1); padding:10px 12px; font:inherit; resize:vertical; }
+  .ltleg { display:flex; flex-wrap:wrap; gap:6px 22px; font-size:12px; margin-top:8px; }
+  .ltleg b { display:inline-block; width:18px; height:18px; border-radius:50%; background:#198038; color:#fff; text-align:center; line-height:18px; font-size:11px; margin-right:6px; }
+  .ltleg .f b { background:#da1e28; }
   .fotos { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; }
   .fto img { width:100%; height:200px; cursor:zoom-in; object-fit:cover; background:var(--cinza2); display:block; margin-bottom:4px; }
   .fto { font-size:12px; }
@@ -548,7 +555,7 @@
   }
 
   // ==== ESTADO =============================================================
-  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {}, escal: null };
+  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {}, escal: null, lt: null, comentarios: {} };
 
   // ==== LOGIN ==============================================================
   async function iniciar() {
@@ -641,6 +648,8 @@
       '<div><div class="k">Validação do cliente</div><div class="v">' + E.vals.filter(function (v) { return String(v.mes_inicio || "").slice(0, 7) === E.mes; }).length + " linhas no mês</div></div></div>";
     $("areaPdf").classList.remove("oculto");
     carregarAlarmeSite();
+    carregarLinhaTempo();
+    carregarComentarios();
     E.snapModo = false;
     try { await restaurarTela(); } catch (e) { E.snapModo = false; }
     if (!E.snapModo) recalcular();
@@ -1684,6 +1693,98 @@
     pintar();
     document.body.appendChild(z);
   }
+  // ==== LINHA DO TEMPO DOS ALARMES (a mesma análise da validação online) + ALERTA INFORMATIVO + COMENTÁRIO ====
+  function chaveRel(l) { return l.rep ? [E.siteChave, E.mes, l.segKey, chaveTag(l.rep.tag), l.rep.arquivo].join("|") : ""; }
+  function hmsDe(ms) { return new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+  function hmDeMs(ms) { return new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
+  async function carregarLinhaTempo() {
+    E.lt = null;
+    const consulta = E.siteChave + E.mes;
+    try {
+      const ini = E.mes + "-01", fim = new Date(Number(E.mes.slice(0, 4)), Number(E.mes.slice(5, 7)), 1);
+      const fimIso = fim.getFullYear() + "-" + String(fim.getMonth() + 1).padStart(2, "0") + "-01";
+      const v = await banco.from("validacoes").select("id,visita_id,alarmes,situacao,data").eq("site_chave", E.siteChave).gte("data", ini).lt("data", fimIso).order("data", { ascending: false }).order("id", { ascending: false });
+      if (v.error || consulta !== E.siteChave + E.mes) return;
+      const reg = (v.data || []).filter(function (x) { return x.situacao !== "cancelada" && String(x.visita_id || "").indexOf("SV-") !== 0 && x.alarmes && x.alarmes.hist && !x.alarmes.hist.vazio && x.alarmes.hist.texto; })[0];
+      if (!reg) return;
+      const ev = lerHistoricoAlarmes(reg.alarmes.hist.texto).eventos.filter(function (e) { return e.eqp != null; }).sort(function (a, b) { return a.eqp - b.eqp; });
+      let ent = null, sai = null;
+      const vid = Number(reg.visita_id);
+      if (vid) {
+        const vi = await banco.from("visitas").select("hora_entrada,hora_saida").eq("id", vid).limit(1);
+        const x = !vi.error && (vi.data || [])[0];
+        if (x) { ent = x.hora_entrada ? Date.parse(x.hora_entrada) : null; sai = x.hora_saida ? Date.parse(x.hora_saida) : null; }
+      }
+      if (consulta !== E.siteChave + E.mes) return;
+      E.lt = { eventos: ev, ent: ent, sai: sai };
+    } catch (e) { E.lt = null; }
+  }
+  // Alarmes que externaram praticamente juntos (grupos de 3 ou mais com menos de 1 minuto entre um e outro).
+  function gruposDeAlarmes() {
+    const ev = (E.lt && E.lt.eventos) || [], grupos = [];
+    let atual = [];
+    ev.forEach(function (e, i) {
+      if (atual.length && e.eqp - atual[atual.length - 1].eqp <= 60000) atual.push(e);
+      else { if (atual.length >= 3) grupos.push(atual); atual = [e]; }
+    });
+    if (atual.length >= 3) grupos.push(atual);
+    return grupos;
+  }
+  function linhaTempoHtml(l) {
+    if (l.segKey !== "ALARMES" || !E.lt || !E.lt.eventos.length) return "";
+    const ev = E.lt.eventos, ent = E.lt.ent, sai = E.lt.sai, tol = 15 * 60000;
+    let ini = ent != null ? ent : ev[0].eqp, fim = sai != null ? sai : ev[ev.length - 1].eqp;
+    ev.forEach(function (e) { if (e.eqp < ini) ini = e.eqp; if (e.eqp > fim) fim = e.eqp; });
+    ini -= 5 * 60000; fim += 5 * 60000;
+    const W = 920, X0 = 20, pc = function (ms) { return X0 + (ms - ini) / (fim - ini) * W; };
+    let svg = '<svg viewBox="0 0 960 170" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:960px">';
+    svg += '<rect x="' + X0 + '" y="108" width="' + W + '" height="30" fill="#edf5ff"/>';
+    if (ent != null && sai != null) {
+      svg += '<rect x="' + pc(ent) + '" y="108" width="' + Math.max(1, pc(sai) - pc(ent)) + '" height="30" fill="#d0e2ff"/>';
+      svg += '<line x1="' + pc(ent) + '" y1="26" x2="' + pc(ent) + '" y2="138" stroke="#0f62fe" stroke-dasharray="4 3"/><line x1="' + pc(sai) + '" y1="26" x2="' + pc(sai) + '" y2="138" stroke="#0f62fe" stroke-dasharray="4 3"/>';
+      svg += '<text x="' + pc(ent) + '" y="18" fill="#0f62fe" font-size="12" font-weight="600">Entrada · ' + hmDeMs(ent) + '</text><text x="' + pc(sai) + '" y="18" fill="#0f62fe" font-size="12" font-weight="600" text-anchor="end">Saída · ' + hmDeMs(sai) + "</text>";
+    }
+    const nivel = [-99, -99, -99];
+    let leg = "";
+    ev.forEach(function (e, i) {
+      const x = pc(e.eqp); let nv = 0;
+      while (nv < 2 && x - nivel[nv] < 22) nv++;
+      nivel[nv] = x;
+      const fora = ent != null && sai != null && (e.eqp < ent - tol || e.eqp > sai + tol);
+      const y = 44 + nv * 22;
+      svg += '<line x1="' + x + '" y1="' + (y + 9) + '" x2="' + x + '" y2="108" stroke="' + (fora ? "#da1e28" : "#198038") + '"/><circle cx="' + x + '" cy="' + y + '" r="10" fill="' + (fora ? "#da1e28" : "#198038") + '"/><text x="' + x + '" y="' + (y + 4) + '" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">' + (i + 1) + "</text>";
+      leg += '<span class="' + (fora ? "f" : "") + '"><b>' + (i + 1) + "</b>" + hmsDe(e.eqp) + " " + esc(e.texto) + "</span>";
+    });
+    for (let m = Math.ceil(ini / 1800000) * 1800000; m <= fim; m += 1800000) { if (new Date(m).getMinutes() === 0) svg += '<text x="' + pc(m) + '" y="158" font-size="11" fill="#525252" text-anchor="middle">' + hmDeMs(m) + "</text>"; }
+    svg += "</svg>";
+    return '<div class="msec"><h4>Análise da validação online</h4><div class="g" style="margin-bottom:6px">Mesma linha do tempo da Validação online: entrada, saída e horário de cada alarme' + (ent == null || sai == null ? " (a visita não tem entrada e saída registradas)" : " (vermelho = fora da permanência, tolerância de 15 min)") + '.</div>' + svg + '<div class="ltleg">' + leg + "</div></div>";
+  }
+  function alertasHtml(l) {
+    if (l.segKey !== "ALARMES") return "";
+    const g = gruposDeAlarmes(); if (!g.length) return "";
+    const txt = g.map(function (x, i) { return (i ? "outros " : "") + x.length + " alarmes às " + hmsDe(x[0].eqp); }).join(" e ");
+    return '<div class="msec"><h4>Alertas (1) <span class="etq">Alerta Informativo</span></h4><div class="alinfo"><div>Muitos alarmes externaram no mesmo horário</div><div class="g" style="margin-top:4px">' + esc(txt) + ". Confira com o comentário do técnico e com a análise acima.</div></div></div>";
+  }
+  function comentarioValHtml(l) {
+    if (!l.rep || !l.refazer) return "";
+    const k = chaveRel(l);
+    return '<div class="msec"><h4>Comentário da validadora <span class="etq cz">opcional</span></h4><div class="g" style="margin-bottom:6px">Fica gravado junto da análise quando você clicar em Gravar análise.</div>' +
+      '<textarea class="vcom" id="vcom" placeholder="Ex.: pedir ao técnico nova foto e confirmar se os alarmes foram simulados.">' + esc(E.comentarios[k] || "") + "</textarea></div>";
+  }
+  function ligarComentarioVal(l) {
+    const ta = $("vcom"); if (!ta) return;
+    const k = chaveRel(l);
+    ta.addEventListener("input", function () { E.comentarios[k] = ta.value; });
+  }
+  async function carregarComentarios() {
+    E.comentarios = {};
+    try {
+      const r = await banco.from("relatorios_analise").select("chave,comentario_validadora").eq("site_chave", E.siteChave).eq("mes", E.mes + "-01").eq("tipo_linha", "relatorio");
+      if (r.error) return;
+      (r.data || []).forEach(function (x) { if (x.comentario_validadora) E.comentarios[x.chave] = x.comentario_validadora; });
+    } catch (e) { /* coluna ainda não existe: segue sem comentários */ }
+  }
+
   function abrirDetalhe(l) {
     const r = l.rep, v = l.val;
     function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
@@ -1692,13 +1793,14 @@
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
       kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Aba prevista pela regra do segmento (não tem equipamento próprio no Cronograma)" : "")) +
       kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
-      comentarioHtml(r) + escalHtml(l) + medicoesHtml(r) + fotosHtml(l) +
+      linhaTempoHtml(l) + comentarioHtml(r) + escalHtml(l) + medicoesHtml(r) + fotosHtml(l) + alertasHtml(l) +
       '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
-      (l.faltando ? '<div class="ach"><div>Aba obrigatória sem preenchimento no sistema do cliente</div><div class="g" style="margin-top:4px">O Cronograma pede esta aba para a WO, mas ela não consta na Validação do mês. Confira em "No Cronograma" se o equipamento realmente se aplica.</div></div>' : (l.achados || []).length ? l.achados.map(achHtml).join("") : '<div class="g">Nenhum achado.</div>') + "</div>";
+      (l.faltando ? '<div class="ach"><div>Aba obrigatória sem preenchimento no sistema do cliente</div><div class="g" style="margin-top:4px">O Cronograma pede esta aba para a WO, mas ela não consta na Validação do mês. Confira em "No Cronograma" se o equipamento realmente se aplica.</div></div>' : (l.achados || []).length ? l.achados.map(achHtml).join("") : '<div class="g">Nenhum achado.</div>') + "</div>" + comentarioValHtml(l);
     $("modal").classList.remove("oculto");
     $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
     ligarBornes(l);
     ligarEscal(l);
+    ligarComentarioVal(l);
     const imgs = Array.prototype.slice.call(document.querySelectorAll(".fto img"));
     imgs.forEach(function (im, k) { im.addEventListener("click", function () { ampliar(imgs, k); }); });
     Array.prototype.forEach.call(document.querySelectorAll(".inad"), function (cb) {
@@ -1894,11 +1996,11 @@
 
   // ==== EXPORTAR E GRAVAR ==================================================
   $("botaoExcel").addEventListener("click", function () {
-    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico"];
+    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico", "Comentário da validadora"];
     const linhas = E.linhas.map(function (l) {
       const r = l.rep, v = l.val;
       return [l.bloco, l.segTrocado || l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
-        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — "), r ? ((r.comentario || "") + (r.justificativa ? " | Justificativa: " + r.justificativa : "")) : ""];
+        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — "), r ? ((r.comentario || "") + (r.justificativa ? " | Justificativa: " + r.justificativa : "")) : "", (l.rep && E.comentarios[chaveRel(l)]) || ""];
     });
     const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas));
     const wb = XLSX.utils.book_new();
@@ -1918,7 +2020,8 @@
         wo: l.wo || null, ticket: r.ticket || null, situacao_final: r.situacaoFinal || null,
         data_relatorio: iso ? iso + "T" + (r.horaInicio || "00:00:00") + "-03:00" : null,
         fotos_qtd: (r.fotos || []).length, achados: (l.achados || []).map(function (t) { return { texto: String(t).replace("||", " — ") }; }), refazer: !!l.refazer,
-        tipo_linha: "relatorio", analisado_por: E.usuario, analisado_em: agora
+        tipo_linha: "relatorio", analisado_por: E.usuario, analisado_em: agora,
+        comentario_validadora: (l.refazer && E.comentarios[[E.siteChave, E.mes, l.segKey, chaveTag(r.tag), r.arquivo].join("|")]) || null
       };
     });
     // Pendências sem PDF: aba obrigatória que não foi preenchida ou cujo PDF não foi enviado.
@@ -1939,7 +2042,15 @@
     const del = await banco.from("relatorios_analise").delete().eq("site_chave", E.siteChave).eq("mes", E.mes + "-01").neq("tipo_linha", "relatorio");
     if (del.error) erro = del.error;
     const todos = lote.concat(pend);
-    if (!erro && todos.length) { const up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" }); if (up.error) erro = up.error; }
+    let semColunaCom = false;
+    if (!erro && todos.length) {
+      let up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" });
+      if (up.error && /comentario_validadora/.test(String(up.error.message))) {   // coluna ainda não criada: grava sem o comentário
+        semColunaCom = true;
+        up = await banco.from("relatorios_analise").upsert(todos.map(function (x) { const y = Object.assign({}, x); delete y.comentario_validadora; return y; }), { onConflict: "chave" });
+      }
+      if (up.error) erro = up.error;
+    }
     if (!erro) { const pe = await gravarPendentesConferencia(); if (pe) erro = { message: pe }; }
     let sincro = null;
     if (!erro) {
@@ -1952,7 +2063,7 @@
     $("botaoGravar").disabled = false;
     if (!erro) FILA.sujo = true;
     $("msg").innerHTML = erro ? '<span class="erro">Erro ao gravar: ' + esc(erro.message) + (/tipo_linha/.test(erro.message) ? " (rode o arquivo relatorios_pendencias_sql.txt no Supabase)" : "") + "</span>"
-      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF." + (sincro ? " Pendências enviadas: " + sincro.novas + " novas" + (sincro.juntas ? ", " + sincro.juntas + " juntadas a outras" : "") + (sincro.resolvidas ? ", " + sincro.resolvidas + " resolvidas por correção" : "") + "." : "") + (tela ? " Tela gravada com " + tela.fotos + " fotos" + (tela.falhas ? " (" + tela.falhas + " não gravadas: " + esc(E.erroTela || "") + ")" : "") + "." : "");
+      : "Análise gravada: " + lote.length + " relatórios e " + pend.length + " pendências sem PDF." + (semColunaCom && Object.keys(E.comentarios).some(function (k) { return E.comentarios[k]; }) ? " Os comentários da validadora não foram gravados: rode o arquivo comentario_validadora_sql.txt no Supabase." : "") + (sincro ? " Pendências enviadas: " + sincro.novas + " novas" + (sincro.juntas ? ", " + sincro.juntas + " juntadas a outras" : "") + (sincro.resolvidas ? ", " + sincro.resolvidas + " resolvidas por correção" : "") + "." : "") + (tela ? " Tela gravada com " + tela.fotos + " fotos" + (tela.falhas ? " (" + tela.falhas + " não gravadas: " + esc(E.erroTela || "") + ")" : "") + "." : "");
   });
 
   // ==== FILA DE VALIDAÇÃO ==================================================
