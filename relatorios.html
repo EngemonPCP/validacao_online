@@ -463,7 +463,10 @@
       const v = (c[2] || []).slice(0, nFases || 3).filter(function (x) { return x != null && !isNaN(x); });
       if (!v.length) return;
       const pos = v.filter(function (x) { return x > 0; });
-      if (nFases && v.length === nFases && pos.length && pos.length < v.length) a.push(c[1] + " zerada em uma das fases: " + lista(c[2]) + " A||Uma fase com 0 A enquanto as outras têm carga indica fase desligada, disjuntor aberto ou valor digitado errado.");
+      // Tem tensão mas a corrente está zerada em todas as fases: equipamento energizado sem carga é raro, costuma ser medição não feita.
+      const temTensao = c[0] === "acCorrente" ? positivos(m.acTensao).length > 0 : fn.length > 0;
+      if (temTensao && !pos.length) a.push(c[1] + " zerada nas fases com tensão presente: " + lista(c[2]) + " A||Há tensão medida neste equipamento, mas a corrente está em 0 A em todas as fases. Equipamento energizado e sem nenhuma carga é raro: confira se a corrente foi realmente medida (pode ter sido deixada em zero).");
+      else if (nFases && v.length === nFases && pos.length && pos.length < v.length) a.push(c[1] + " zerada em uma das fases: " + lista(c[2]) + " A||Uma fase com 0 A enquanto as outras têm carga indica fase desligada, disjuntor aberto ou valor digitado errado.");
       else if (pos.length >= 2 && desq(pos) > LIM.desqCorrente) a.push(c[1] + " desequilibrada (" + fmt(desq(pos)) + "%): " + lista(c[2]) + " A||A diferença entre a maior e a menor fase é de " + fmt(desq(pos)) + "% da média; o limite é " + LIM.desqCorrente + "%.");
       if (nFases === 3 && v.length === 3 && v[0] === v[1] && v[1] === v[2] && v[0] !== 0) a.push(c[1] + " igual nas 3 fases: " + fmt(v[0]) + " A||Três medições idênticas sugerem que o valor foi copiado em vez de medido.");
     });
@@ -1047,7 +1050,7 @@
     if (!blob) return null;
     let rs;
     try { rs = await fetch(FOTOS_URL.replace(/\/+$/, "") + "/ler-carimbo", { method: "POST", headers: { Authorization: "Bearer " + (await tokenSessao()), "Content-Type": "image/jpeg" }, body: blob }); } catch (e) { return null; }
-    if (!rs.ok) { if (rs.status === 429 || rs.status === 401 || rs.status === 404 || rs.status === 500 || rs.status === 503) iaOff = true; return null; }
+    if (!rs.ok) { if (!iaOff) { try { console.warn("ERRO-IA-CARIMBO", rs.status, (await rs.text()).slice(0, 400)); } catch (e) { /* sem texto */ } } if (rs.status === 429 || rs.status === 401 || rs.status === 404 || rs.status === 500 || rs.status === 503) iaOff = true; return null; }
     const j = await rs.json().catch(function () { return null; });
     const texto = j && j.texto ? String(j.texto) : "";
     if (iaTexto.length < 5) iaTexto.push(texto);
