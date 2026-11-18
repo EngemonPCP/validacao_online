@@ -1216,7 +1216,7 @@
     const doSeg = E.vals.filter(function (v) { return chaveSeg(v.segmento) === segKey; });
     if (!doSeg.length) return [];
     let c = doSeg;
-    if (tag) { const t = chaveTag(tag); const porTag = doSeg.filter(function (v) { return chaveTag(v.tag) === t; }); if (porTag.length) c = porTag; }
+    if (tag) { const porTag = doSeg.filter(function (v) { return tagCasa(v.tag, tag); }); if (porTag.length) c = porTag; }
     if (rep && rep.dataInicio && c.length > 1) { const di = dataIso(rep.dataInicio); const porData = c.filter(function (v) { return v.inicio === di; }); if (porData.length) c = porData; }
     return c;
   }
@@ -1226,7 +1226,7 @@
     const rep = l.rep;
     let candsTodas = acharValidacao(l.segKey, l.tag || (rep && rep.tag), rep);
     // O técnico informou outro segmento (ex.: previsto CLIMA, relatório de TROCADOR DE CALOR): a planilha do cliente usa o segmento do relatório
-    if (!candsTodas.length && rep && rep.segmento && rep.segmento !== l.segKey) candsTodas = acharValidacao(rep.segmento, l.tag || rep.tag, rep);
+    if (!candsTodas.length && rep && rep.segmento && rep.segmento !== l.segKey) candsTodas = acharValidacao(rep.segmento, rep.tag || l.tag, rep);
     const cands = candsTodas.filter(function (v) { return String(v.validacao || "").toUpperCase().trim() !== "INV"; });   // INV = ficha já invalidada pelo cliente
     const noMes = cands.filter(function (v) { return String(v.mes_inicio || v.inicio || "").slice(0, 7) === E.mes; });
     const val = (noMes.length ? noMes : cands).slice().sort(function (x, y) { return String(y.inicio).localeCompare(String(x.inicio)) || (y.ocorrencia || 1) - (x.ocorrencia || 1); })[0] || null;
