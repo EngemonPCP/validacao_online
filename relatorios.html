@@ -531,6 +531,9 @@
   }
   // Palavras que indicam pendência no comentário (ajuste aqui conforme a operação).
   const RE_PENDENCIA = /(?<![A-Za-zÀ-ÿ])(?:pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad)/i;
+  // Aba ALARMES: o comentário traz o resultado da coleta. Alarmes listados (porta aberta, alta temperatura...) NÃO são pendência por si só: se "os alarmes externaram", o sistema os recebeu.
+  // Pendência é quando o próprio comentário diz que algum alarme não está chegando/externando.
+  const RE_ALARME_ATIVO = /(?<![A-Za-zÀ-ÿ])(?:n[aã]o (?:est[aã]o |esta |foram |foi |sao |são )?(?:extern|sinaliz|chegand|chegaram|chegou|transmit|comunic)|nenhum alarme (?:extern|chegou)|sem comunica[cç][aã]o)/i;
   // Motivos de zeladoria que exigem chamado de escalonamento com a detentora.
   const RE_ZELADORIA = /(?<![A-Za-zÀ-ÿ])(?:mato(?![A-Za-zÀ-ÿ])|vegeta[cç]|capim|ro[cç]ad|[aá]rvore|bicho|animal|colmeia|abelha|cobra(?![A-Za-zÀ-ÿ])|escorpi|invas[aã]o de|desmat)/i;   // entulho, lixo e terreno ficaram de fora: remover entulho não é vegetação
 
@@ -1277,6 +1280,10 @@
     if (txt && fechadaOk) {
       const mp = txt.match(RE_PENDENCIA);
       if (mp) a.push("Comentário indica pendência, mas a aba foi fechada como OK||O técnico escreveu \"" + (txt.length > 160 ? txt.slice(0, 160) + "..." : txt) + "\" (palavra: " + mp[0] + "). Se há pendência, a aba não pode ficar OK e o cliente pode recusar; a aba precisa ser refeita.");
+    }
+    if (txt && fechadaOk && l.segKey === "ALARMES" && !txt.match(RE_PENDENCIA)) {
+      const ma = txt.match(RE_ALARME_ATIVO);
+      if (ma) a.push("Comentário da aba Alarmes aponta alarme que não externa, mas a aba foi fechada como OK||O técnico escreveu \"" + (txt.length > 160 ? txt.slice(0, 160) + "..." : txt) + "\" (termo: " + ma[0] + "). Alarme que não está sendo externado é pendência: a aba não pode ficar OK e precisa ser refeita com a pendência apontada.");
     }
     if (l.segKey === "ZELADORIA") {
       const restrito = /RESTRI|NAO OK/.test(semAcento(fatoAba).toUpperCase());
