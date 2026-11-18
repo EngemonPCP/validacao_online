@@ -1351,7 +1351,7 @@
     }
     if (l.segKey === "ALARMES") {
       const bi = fotos.findIndex(function (f) { return /\bQIT\b/i.test(f.legenda); });
-      if (bi < 0) { if (fotos.length) a.push("Foto dos bornes (QIT) não encontrada no relatório||O relatório de Alarmes deve ter uma foto com a legenda QIT (bornes) para conferir os jumps."); }
+      if (bi < 0) { /* QIT ausente já aparece em "Foto obrigatória ausente: QIT" */ }
       else {
         const b = E.bornes[rep.arquivo];
         if (b && (b.resultado === "Tipo A" || b.resultado === "Tipo B" || b.resultado === "Suspeito")) a.push("Jump nos bornes: " + b.resultado + (b.comentario ? " (" + b.comentario + ")" : ""));
