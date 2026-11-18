@@ -530,9 +530,9 @@
     return out;
   }
   // Palavras que indicam pendência no comentário (ajuste aqui conforme a operação).
-  const RE_PENDENCIA = /pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad/i;
+  const RE_PENDENCIA = /(?<![A-Za-zÀ-ÿ])(?:pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad)/i;
   // Motivos de zeladoria que exigem chamado de escalonamento com a detentora.
-  const RE_ZELADORIA = /mato|vegeta[cç]|capim|ro[cç]ad|[aá]rvore|entulho|lixo|terreno|bicho|animal|colmeia|abelha|cobra|escorpi|invas|desmat/i;
+  const RE_ZELADORIA = /(?<![A-Za-zÀ-ÿ])(?:mato(?![A-Za-zÀ-ÿ])|vegeta[cç]|capim|ro[cç]ad|[aá]rvore|bicho|animal|colmeia|abelha|cobra(?![A-Za-zÀ-ÿ])|escorpi|invas[aã]o de|desmat)/i;   // entulho, lixo e terreno ficaram de fora: remover entulho não é vegetação
 
   // Checklist de alarmes (itens numerados com Inicial e Final).
   function extrairAlarmes(linhas) {
