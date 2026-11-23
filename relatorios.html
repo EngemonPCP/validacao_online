@@ -1446,6 +1446,15 @@
       })[0];
       if (p) { usados[p.arquivo] = true; l.rep = p; l.segTrocado = p.segmentoTxt || p.segmento; }
     });
+    // mesmo segmento trocado, relatório com tag "NA"/vazia: ocupa a aba prevista que ainda ficou sem relatório (ex.: "Trocador de calor FCC" lançado como TROCADOR DE CALOR - NA)
+    esp.forEach(function (l) {
+      if (l.rep || l.obrig !== "Sim") return;
+      const trocadas = esp.filter(function (o) { return o !== l && o.bloco === l.bloco && o.segKey === l.segKey && o.segTrocado && o.rep; });
+      if (!trocadas.length) return;
+      const segNovo = trocadas[0].rep.segmento;
+      const p = E.pdfs.filter(function (q) { return !usados[q.arquivo] && q.segmento === segNovo && (!q.tag || /^(N\/?A|-+)$/i.test(String(q.tag).trim())); })[0];
+      if (p) { usados[p.arquivo] = true; l.rep = p; l.segTrocado = p.segmentoTxt || p.segmento; }
+    });
     // PLC só é obrigatório onde existe Clima de verdade: se todo o Clima da WO foi aceito como outro segmento (ex.: Trocador de Calor), o PLC deixa de ser cobrado
     esp.forEach(function (l) {
       if (l.segKey !== "PLC" || l.rep || l.obrig !== "Sim") return;
