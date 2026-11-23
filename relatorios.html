@@ -79,6 +79,22 @@
   .msec { padding:16px 24px; }
   .msec h4 { font-size:14px; font-weight:600; margin-bottom:10px; }
   .ach { border-left:3px solid var(--laranja); background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
+  .dc { border:1px solid var(--cinza3,#e0e0e0); border-left:4px solid var(--laranja); background:#fff; padding:12px 16px; margin-bottom:12px; }
+  .dc.just { border-left-color:#0f62fe; background:#f4f8ff; }
+  .dc.nao { border-left-color:#c6c6c6; background:#f4f4f4; }
+  .dc .tp { display:inline-block; font-size:11px; padding:1px 8px; border-radius:10px; background:#ffe8d4; color:#8a3800; margin-right:8px; font-weight:600; }
+  .dc.just .tp { background:#d0e2ff; color:#0043ce; } .dc.nao .tp { background:#e0e0e0; color:#525252; }
+  .dc .tt { font-size:15px; font-weight:600; } .dc.nao .tt { text-decoration:line-through; color:#6f6f6f; font-weight:400; }
+  .dc .ds { color:#525252; font-size:13px; margin-top:6px; line-height:1.45; }
+  .dc .sug { margin-top:10px; background:#edf5ff; border:1px solid #a6c8ff; padding:8px 12px; font-size:13px; display:flex; align-items:center; gap:12px; }
+  .dc .sug button { margin-left:auto; background:#0f62fe; color:#fff; border:0; padding:6px 14px; font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .dc .dec { margin-top:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; } .dc .l { font-size:12px; color:#6f6f6f; }
+  .sg3 { display:flex; border:1px solid #8d8d8d; font-size:13px; } .sg3 button { padding:7px 14px; color:#525252; background:#fff; border:0; font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; } .sg3 button+button { border-left:1px solid #8d8d8d; } .sg3 button.on { background:#0f62fe; color:#fff; }
+  .dc .mot { margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .dc .pill { font-size:12px; border:1px solid #8d8d8d; padding:4px 12px; border-radius:14px; background:#fff; color:#161616; cursor:pointer; font-family:inherit; } .dc .pill.on { background:#0f62fe; color:#fff; border-color:#0f62fe; }
+  .dc .todas { margin-top:8px; font-size:12px; color:#0f62fe; background:none; border:0; cursor:pointer; padding:0; font-family:inherit; }
+  .dcres { margin-left:auto; font-weight:400; font-size:12px; color:#525252; } .dcres b { color:#b34e00; }
+  .dcrod { padding:12px 16px; background:#f4f4f4; border-left:4px solid #0f62fe; font-size:13px; line-height:1.6; }
   .alinfo { border-left:3px solid #0f62fe; background:var(--cinza1); padding:10px 14px; margin-bottom:8px; }
   .etq { display:inline-block; font-size:11px; font-weight:400; background:#d0e2ff; color:#0043ce; padding:1px 8px; border-radius:10px; margin-left:8px; }
   .etq.cz { background:#e0e0e0; color:#393939; }
@@ -540,6 +556,7 @@
   const RE_PENDENCIA = /(?<![A-Za-zÀ-ÿ])(?:pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad)/i;
   // Aba ALARMES: o comentário traz o resultado da coleta. Alarmes listados (porta aberta, alta temperatura...) NÃO são pendência por si só: se "os alarmes externaram", o sistema os recebeu.
   // Pendência é quando o próprio comentário diz que algum alarme não está chegando/externando.
+  const RE_DESATIVADO = /(?<![a-z])(desativad|desativa[cç]|substituid|desinstalad|retirad|removid|inativ|fora de operacao|excluir aba|excluir a aba|vandaliz|furtad|furto|roubad|roubo|depredad|depredac)/;
   // Técnico informa que não conseguiu executar/medir (acesso, ninguém para atender, local fechado...).
   const RE_IMPEDIDO = /(?<![a-z])(nao foi possivel|nao consegui|nao conseguimos|sem acesso|nao tive acesso|nao tivemos acesso|impossibilitad|acesso negado|nao tem ninguem|nao havia ninguem|nao ha ninguem|local fechado|portao fechado|sem chave|nao permitiu|nao autoriz)/;
   const RE_ALARME_ATIVO = /(?<![A-Za-zÀ-ÿ])(?:n[aã]o (?:est[aã]o |esta |foram |foi |sao |são )?(?:extern|sinaliz|chegand|chegaram|chegou|transmit|comunic)|nenhum alarme (?:extern|chegou)|sem comunica[cç][aã]o)/i;
@@ -557,7 +574,7 @@
   }
 
   // ==== ESTADO =============================================================
-  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {}, escal: null, lt: null, comentarios: {} };
+  const E = { siteTxt: "", siteChave: "", mes: "", wos: [], equip: [], vals: [], regras: [], pdfs: [], ignorados: [], linhas: [], usuario: "", bornes: {}, escal: null, lt: null, comentarios: {}, decisoes: {} };
 
   // ==== LOGIN ==============================================================
   async function iniciar() {
@@ -661,6 +678,7 @@
     carregarAlarmeSite();
     carregarLinhaTempo();
     carregarComentarios();
+    await carregarDecisoes();
     E.snapModo = false;
     try { await restaurarTela(); } catch (e) { E.snapModo = false; }
     if (!E.snapModo) recalcular();
@@ -1271,7 +1289,7 @@
     const rep = l.rep;
     // Equipamento desativado/substituído/removido: medições zeradas e fotos de limpeza etc. não são cobradas.
     const txtEq = semAcento(((rep && rep.comentario) || "") + " " + ((rep && rep.justificativa) || "")).toLowerCase();
-    l.equipDesativado = !!rep && /(?<![a-z])(desativad|desativa[cç]|substituid|desinstalad|retirad|removid|inativ|fora de operacao|excluir aba|excluir a aba)/.test(txtEq);
+    l.equipDesativado = !!rep && RE_DESATIVADO.test(txtEq);
     let candsTodas = acharValidacao(l.segKey, l.tag || (rep && rep.tag), rep);
     // O técnico informou outro segmento (ex.: previsto CLIMA, relatório de TROCADOR DE CALOR): a planilha do cliente usa o segmento do relatório
     // (a ficha certa é a do segmento e da tag do relatório; usar a do segmento previsto pegaria a ficha de outro equipamento)
@@ -1422,12 +1440,12 @@
     alarmesOk.forEach(function (a) {
       a.achados.push("Pendência de alarme não apontada na aba Alarmes||O técnico relatou problema de alarmes em outra aba (" + origens.join("; ") + "), mas a aba ALARMES foi fechada como OK, sem apontar a pendência. A aba ALARMES precisa ser refeita com a pendência.");
     });
-    todas.forEach(function (l) { l.refazer = (l.achados || []).some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+    todas.forEach(function (l) { l.refazer = calcRefazer(l); });
   }
 
   function recalcular() {
     if (E.snapModo) {   // mostrando a análise gravada: reavalia as abas gravadas, sem PDFs
-      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+      E.linhas.forEach(function (l) { l.achados = analisarLinha(l); l.refazer = calcRefazer(l); });
       alarmeEmOutraAba(E.linhas);
       desenhar();
       return;
@@ -1481,7 +1499,7 @@
       return { bloco: "Fora do Cronograma", tipoWo: null, wo: null, seg: rg ? rg.segmento : p.segmentoTxt, segKey: p.segmento, tag: p.tag, obrig: "—", doCrono: false, regra: rg, rep: p, extra: true };
     });
     const todas = esp.concat(extras);
-    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); l.refazer = l.achados.some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); });
+    todas.forEach(function (l) { l.achados = analisarLinha(l); if (l.extra && l.rep && !l.regra) l.achados.push("Segmento " + (l.rep.segmentoTxt || "") + " não está no cadastro de segmentos"); l.refazer = calcRefazer(l); });
     E.linhas = todas;
     alarmeEmOutraAba(E.linhas);
     desenhar();
@@ -1813,6 +1831,7 @@
       const g = gruposDeAlarmes();
       if (g.length) itens.push(["Muitos alarmes externaram no mesmo horário", g.map(function (x, i) { return (i ? "outros " : "") + x.length + " alarmes às " + hmsDe(x[0].eqp); }).join(" e ") + ". Confira com o comentário do técnico e com a análise acima."]);
     }
+    (l.achados || []).forEach(function (t) { const d = l.rep && E.decisoes[chDec(l, t)]; if (d && d.d === "justificado") itens.push([tituloAch(t), "Justificado" + (d.m ? ": " + d.m : "")]); });
     if (!itens.length) return "";
     return '<div class="msec"><h4>Alertas (' + itens.length + ') <span class="etq">Alerta Informativo</span></h4>' + itens.map(function (x) { return '<div class="alinfo"><div>' + esc(x[0]) + '</div>' + (x[1] ? '<div class="g" style="margin-top:4px">' + esc(x[1]) + "</div>" : "") + "</div>"; }).join("") + "</div>";
   }
@@ -1836,6 +1855,83 @@
     } catch (e) { /* coluna ainda não existe: segue sem comentários */ }
   }
 
+  // ==== DECISÃO SOBRE CADA ACHADO: Cobrar / Justificado / Não se aplica ====
+  const MOTIVOS = ["Equipamento vandalizado / fora de operação", "Sem acesso ao local", "Explicado no comentário", "Outro"];
+  function tituloAch(t) { return String(t).split("||")[0]; }
+  function chDec(l, t) { return chaveRel(l) + "§" + tituloAch(t); }
+  function decAch(l, t) { const d = l.rep && E.decisoes[chDec(l, t)]; return d ? d.d : "cobrar"; }
+  function achCobrar(l) { return (l.achados || []).filter(function (t) { return decAch(l, t) === "cobrar"; }); }
+  function calcRefazer(l) { return achCobrar(l).some(function (t) { return !/^Segmento informado incorretamente/.test(t); }); }
+  function tipoAch(t) {
+    const x = semAcento(tituloAch(t)).toLowerCase();
+    if (/foto|imagem|legenda/.test(x)) return "FOTO";
+    if (/alarm|jump|qit|borne/.test(x)) return "ALARME";
+    if (/tensao|corrente|medi|leitura|potencia|temperatura|disjuntor/.test(x)) return "MEDIÇÃO";
+    if (/fato|diverg|ticket|data|segmento|cronograma|valida|preench/.test(x)) return "VALIDAÇÃO";
+    return "OUTRO";
+  }
+  function sugestaoDe(l) {
+    const r = l.rep; if (!r) return null;
+    const x = semAcento((r.comentario || "") + " " + (r.justificativa || "")).toLowerCase();
+    let m = x.match(RE_DESATIVADO);
+    if (m) return { motivo: MOTIVOS[0], frase: m[0] };
+    m = x.match(RE_IMPEDIDO);
+    if (m) return { motivo: MOTIVOS[1], frase: m[0] };
+    return null;
+  }
+  function achadosHtml(l) {
+    const ro = !l.rep || E.snapModo;   // análise já gravada: só mostra (sem mexer nos casos registrados)
+    const suj = sugestaoDe(l);
+    let nc = 0, nj = 0, nn = 0;
+    const cards = (l.achados || []).map(function (t, i) {
+      const q = String(t).split("||"), d = decAch(l, t), dd = l.rep && E.decisoes[chDec(l, t)];
+      if (d === "cobrar") nc++; else if (d === "justificado") nj++; else nn++;
+      const cls = d === "justificado" ? " just" : d === "nao_aplica" ? " nao" : "";
+      let h = '<div class="dc' + cls + '"><div><span class="tp">' + tipoAch(t) + '</span><span class="tt">' + esc(q[0]) + "</span></div>" + (q[1] ? '<div class="ds">' + esc(q[1]) + "</div>" : "");
+      if (!ro && d === "cobrar" && suj) h += '<div class="sug"><div>💡 <b>Sugestão:</b> Justificado. O técnico escreveu “' + esc(suj.frase) + '”.</div><button data-dc="' + i + '" data-v="sug">Aceitar sugestão</button></div>';
+      if (!ro) h += '<div class="dec"><span class="l">Decisão</span><div class="sg3">' + [["cobrar", "Cobrar"], ["justificado", "Justificado"], ["nao_aplica", "Não se aplica"]].map(function (o) { return '<button data-dc="' + i + '" data-v="' + o[0] + '"' + (d === o[0] ? ' class="on"' : "") + ">" + o[1] + "</button>"; }).join("") + "</div></div>";
+      else if (d !== "cobrar") h += '<div class="ds"><b>' + (d === "justificado" ? "Justificado" : "Não se aplica") + "</b>" + (dd && dd.m ? " · " + esc(dd.m) : "") + "</div>";
+      if (!ro && d === "justificado") {
+        h += '<div class="mot"><span class="l">Motivo</span>' + MOTIVOS.map(function (m) { return '<button class="pill' + (dd && dd.m === m ? " on" : "") + '" data-dc="' + i + '" data-v="mot" data-m="' + esc(m) + '">' + esc(m) + "</button>"; }).join("") + "</div>";
+        h += '<div class="ds" style="font-size:12px">Justificado: não vira pendência. Aparece só como <b>Alerta Informativo</b> com o motivo escolhido.</div>';
+      }
+      if (!ro && d !== "cobrar") {
+        const outros = E.linhas.filter(function (o) { return o !== l && o.rep && (o.achados || []).some(function (u) { return tipoAch(u) === tipoAch(t) && decAch(o, u) === "cobrar"; }); }).length;
+        if (outros) h += '<button class="todas" data-dc="' + i + '" data-v="todas">↻ Usar esta decisão nos outros achados parecidos deste site (' + outros + (outros === 1 ? " aba" : " abas") + ")</button>";
+      }
+      return h + "</div>";
+    }).join("");
+    const resumo = (!l.achados || !l.achados.length) ? "" : '<div class="dcrod"><b>Ao gravar a análise</b><br>' + nc + (nc === 1 ? " pendência cobrada" : " pendências cobradas") + " · " + nj + (nj === 1 ? " justificada (vira alerta informativo)" : " justificadas (viram alerta informativo)") + " · " + nn + " não se aplica" + (nn === 1 ? "" : "m") + "<br>A decisão e o motivo ficam gravados com a análise e saem no Excel.</div>";
+    return '<div class="msec"><h4>Achados (' + (l.achados || []).length + ')' + (l.achados && l.achados.length ? '<span class="dcres">Resultado da aba: <b>' + (l.refazer ? "Refazer" : "OK") + "</b> · " + nc + (nc === 1 ? " pendência cobrada" : " pendências cobradas") + "</span>" : "") + "</h4>" +
+      ((l.achados || []).length ? '<div class="g" style="margin:2px 0 12px">' + (ro ? "Decisões gravadas com a análise." : "Para cada achado, escolha o que fazer. O sistema já sugere quando o comentário do técnico explica o motivo.") + "</div>" + cards + resumo : '<div class="g">Nenhum achado.</div>') + "</div>";
+  }
+  function ligarDecisoes(l) {
+    const reabrir = function () { recalcular(); const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0]; if (l2) abrirDetalhe(l2); };
+    Array.prototype.forEach.call(document.querySelectorAll("#modCorpo [data-dc]"), function (b) {
+      b.addEventListener("click", function () {
+        const i = Number(b.getAttribute("data-dc")), v = b.getAttribute("data-v"), t = l.achados[i], k = chDec(l, t), atual = E.decisoes[k];
+        if (v === "cobrar") delete E.decisoes[k];
+        else if (v === "justificado") E.decisoes[k] = { d: "justificado", m: (atual && atual.m) || (sugestaoDe(l) || {}).motivo || MOTIVOS[2] };
+        else if (v === "nao_aplica") E.decisoes[k] = { d: "nao_aplica", m: "" };
+        else if (v === "sug") E.decisoes[k] = { d: "justificado", m: sugestaoDe(l).motivo };
+        else if (v === "mot") E.decisoes[k] = { d: "justificado", m: b.getAttribute("data-m") };
+        else if (v === "todas") {
+          const dec = atual; if (!dec) return;
+          E.linhas.forEach(function (o) { if (o === l || !o.rep) return; (o.achados || []).forEach(function (u) { if (tipoAch(u) === tipoAch(t) && decAch(o, u) === "cobrar") E.decisoes[chDec(o, u)] = { d: dec.d, m: dec.m }; }); });
+        }
+        reabrir();
+      });
+    });
+  }
+  async function carregarDecisoes() {
+    E.decisoes = {};
+    try {
+      const r = await banco.from("relatorios_analise").select("chave,decisoes_achados").eq("site_chave", E.siteChave).eq("mes", E.mes + "-01").eq("tipo_linha", "relatorio");
+      if (r.error) return;
+      (r.data || []).forEach(function (x) { (x.decisoes_achados || []).forEach(function (d) { E.decisoes[x.chave + "§" + d.t] = { d: d.d, m: d.m || "" }; }); });
+    } catch (e) { /* coluna ainda não existe */ }
+  }
+
   function abrirDetalhe(l) {
     const r = l.rep, v = l.val;
     function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
@@ -1845,13 +1941,13 @@
       kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Aba prevista pela regra do segmento (não tem equipamento próprio no Cronograma)" : "")) +
       kv("Data e hora do relatório", r && r.dataInicio ? r.dataInicio + " " + r.horaInicio : "") + kv("Realizada por", r && r.realizadaPor) + "</div>" +
       linhaTempoHtml(l) + comentarioHtml(r) + escalHtml(l) + medicoesHtml(r) + fotosHtml(l) + alertasHtml(l) +
-      '<div class="msec"><h4>Achados (' + (l.faltando ? 1 : (l.achados || []).length) + ")</h4>" +
-      (l.faltando ? '<div class="ach"><div>Aba obrigatória sem preenchimento no sistema do cliente</div><div class="g" style="margin-top:4px">O Cronograma pede esta aba para a WO, mas ela não consta na Validação do mês. Confira em "No Cronograma" se o equipamento realmente se aplica.</div></div>' : (l.achados || []).length ? l.achados.map(achHtml).join("") : '<div class="g">Nenhum achado.</div>') + "</div>" + comentarioValHtml(l);
+      (l.faltando ? '<div class="msec"><h4>Achados (1)</h4><div class="ach"><div>Aba obrigatória sem preenchimento no sistema do cliente</div><div class="g" style="margin-top:4px">O Cronograma pede esta aba para a WO, mas ela não consta na Validação do mês. Confira em "No Cronograma" se o equipamento realmente se aplica.</div></div></div>' : achadosHtml(l)) + comentarioValHtml(l);
     $("modal").classList.remove("oculto");
     $("fecharModal").addEventListener("click", function () { $("modal").classList.add("oculto"); });
     ligarBornes(l);
     ligarEscal(l);
     ligarComentarioVal(l);
+    ligarDecisoes(l);
     const imgs = Array.prototype.slice.call(document.querySelectorAll(".fto img"));
     imgs.forEach(function (im, k) { im.addEventListener("click", function () { ampliar(imgs, k); }); });
     Array.prototype.forEach.call(document.querySelectorAll(".inad"), function (cb) {
@@ -1988,7 +2084,7 @@
         return;
       }
       const alarmes = [];
-      (l.achados || []).forEach(function (a) {
+      achCobrar(l).forEach(function (a) {
         const q = String(a).split("||"), t = pendTipo(q[0]);
         if (/^Alarme \d+\s*-/i.test(q[0])) { alarmes.push(q[0].replace(/^Alarme\s+/i, "")); return; }   // alarmes ficam juntos, numa pendência só
         out.push(Object.assign({}, base, { chave: pendChave(l.segTrocado || l.seg, tag, q[0]), tipo: t[0], texto: q[0], evidencia: { arquivo: l.rep ? l.rep.arquivo : null, detalhe: q[1] || null, fotos: l.rep && l.rep.fotos ? l.rep.fotos.length : 0, wo: l.wo || null } }));
@@ -2047,11 +2143,11 @@
 
   // ==== EXPORTAR E GRAVAR ==================================================
   $("botaoExcel").addEventListener("click", function () {
-    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico", "Comentário"];
+    const cab = ["Bloco", "Segmento", "Tag", "Obrigatória", "Arquivo", "Resultado", "Fato na validação", "Status", "Ticket", "Alerta", "Achados", "Comentário do técnico", "Comentário", "Decisões sobre achados"];
     const linhas = E.linhas.map(function (l) {
       const r = l.rep, v = l.val;
       return [l.bloco, l.segTrocado || l.seg, (r && r.tag) || l.tag || "", l.obrig, r ? r.arquivo : "", r ? r.situacaoFinal : "", v ? v.fato : "", v ? v.status : "", r ? r.ticket : "",
-        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : (l.achados || []).join(" | ").replace(/\|\|/g, " — "), r ? ((r.comentario || "") + (r.justificativa ? " | Justificativa: " + r.justificativa : "")) : "", (l.rep && E.comentarios[chaveRel(l)]) || ""];
+        l.faltando ? "Faltando" : l.refazer ? "Refazer" : l.semPdf ? "Sem PDF" : "", l.faltando ? "Aba obrigatória sem preenchimento" : achCobrar(l).join(" | ").replace(/\|\|/g, " — "), r ? ((r.comentario || "") + (r.justificativa ? " | Justificativa: " + r.justificativa : "")) : "", (l.rep && E.comentarios[chaveRel(l)]) || "", (l.achados || []).filter(function (t) { return decAch(l, t) !== "cobrar"; }).map(function (t) { const d = E.decisoes[chDec(l, t)]; return tituloAch(t) + ": " + (d.d === "justificado" ? "Justificado" + (d.m ? " (" + d.m + ")" : "") : "Não se aplica"); }).join(" | ")];
     });
     const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas));
     const wb = XLSX.utils.book_new();
@@ -2070,8 +2166,9 @@
         site: E.siteTxt.toUpperCase(), site_chave: E.siteChave, mes: E.mes + "-01", segmento: l.seg, tag: r.tag || null, arquivo: r.arquivo,
         wo: l.wo || null, ticket: r.ticket || null, situacao_final: r.situacaoFinal || null,
         data_relatorio: iso ? iso + "T" + (r.horaInicio || "00:00:00") + "-03:00" : null,
-        fotos_qtd: (r.fotos || []).length, achados: (l.achados || []).map(function (t) { return { texto: String(t).replace("||", " — ") }; }), refazer: !!l.refazer,
+        fotos_qtd: (r.fotos || []).length, achados: achCobrar(l).map(function (t) { return { texto: String(t).replace("||", " — ") }; }), refazer: !!l.refazer,
         tipo_linha: "relatorio", analisado_por: E.usuario, analisado_em: agora,
+        decisoes_achados: (function () { const o = (l.achados || []).filter(function (t) { return decAch(l, t) !== "cobrar"; }).map(function (t) { const d = E.decisoes[chDec(l, t)]; return { t: tituloAch(t), d: d.d, m: d.m || "" }; }); return o.length ? o : null; })(),
         comentario_aba: (l.refazer && E.comentarios[[E.siteChave, E.mes, l.segKey, chaveTag(r.tag), r.arquivo].join("|")]) || null
       };
     });
@@ -2096,9 +2193,9 @@
     let semColunaCom = false;
     if (!erro && todos.length) {
       let up = await banco.from("relatorios_analise").upsert(todos, { onConflict: "chave" });
-      if (up.error && /comentario_aba/.test(String(up.error.message))) {   // coluna ainda não criada: grava sem o comentário
+      if (up.error && /comentario_aba|decisoes_achados/.test(String(up.error.message))) {   // coluna ainda não criada: grava sem o comentário
         semColunaCom = true;
-        up = await banco.from("relatorios_analise").upsert(todos.map(function (x) { const y = Object.assign({}, x); delete y.comentario_aba; return y; }), { onConflict: "chave" });
+        up = await banco.from("relatorios_analise").upsert(todos.map(function (x) { const y = Object.assign({}, x); delete y.comentario_aba; delete y.decisoes_achados; return y; }), { onConflict: "chave" });
       }
       if (up.error) erro = up.error;
     }
