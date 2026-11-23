@@ -6141,12 +6141,37 @@
       const fx = faixaDoPeriodo();
       const abertas = conferir(await banco.from("pendencias").select("*").in("estado", ["Nova", "Em tratativa"]).order("id").limit(5000));
       const conc = conferir(await banco.from("pendencias").select("*").in("estado", ["Resolvida", "Não resolvida"]).gte("mes", fx[0].slice(0, 7) + "-01").lte("mes", fx[1]).order("id").limit(5000));
-      estado.pd.itens = await pdAplicarCorte(abertas.concat(conc));
+      estado.pd.itens = await pdSemExpurgo(await pdAplicarCorte(abertas.concat(conc)));
       let sc = [];
       try { sc = conferir(await banco.from("pendencias_sites").select("*").limit(5000)); } catch (e) { sc = []; }
       estado.pd.sitesConcl = {}; sc.forEach(function (s) { estado.pd.sitesConcl[s.site_chave + "|" + String(s.mes).slice(0, 7)] = s; });
     } catch (e) { $("pdCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui carregar as pendências: ' + esc(e.message) + " (o SQL pendencias_sql.txt já foi rodado?)</div>"; return; }
     desenharPendencias();
+  }
+  // Expurgo: WO expurgada não gera pendência. Fica de fora a pendência cuja WO foi expurgada e a de site/mês em que todas as WOs MOP (Energia e Climatização) foram expurgadas.
+  async function pdSemExpurgo(lista) {
+    try {
+      await carregarExpurgos();
+      const exp = estado.expurgadas || {};
+      if (!Object.keys(exp).length || !lista.length) return lista;
+      const meses = []; lista.forEach(function (p) { const m = String(p.mes).slice(0, 7); if (meses.indexOf(m) < 0) meses.push(m); });
+      const porSite = {};
+      for (let de = 0; ; de += 1000) {
+        const r = conferir(await banco.from("base_preventiva").select("wo,clr_sdr_site_helix,programado_infratel,tipo,mes").in("mes", meses).order("wo").range(de, de + 999));
+        r.forEach(function (l) {
+          if (grupoDaPreventiva(l.tipo) !== "MOP") return;
+          const k = limparSite(l.programado_infratel || l.clr_sdr_site_helix) + "|" + l.mes;
+          const o = porSite[k] || (porSite[k] = { tot: 0, exp: 0 }); o.tot++; if (exp[l.wo]) o.exp++;
+        });
+        if (r.length < 1000) break;
+      }
+      return lista.filter(function (p) {
+        const w = p.evidencia && p.evidencia.wo;
+        if (w && exp[w]) return false;
+        const o = porSite[pdChaveSite(p)];
+        return !(o && o.tot > 0 && o.exp === o.tot);
+      });
+    } catch (e) { return lista; }   // sem expurgos/base: não esconde nada
   }
   // Corte: tudo cuja visita registrada seja anterior a REGRAS.validacao.inicio fica fora do sistema (continua guardado no banco).
   async function pdAplicarCorte(lista) {

@@ -630,6 +630,15 @@
     const falha = [wos, eq, va, rg].filter(function (r) { return r.error; })[0];
     if (falha) { $("msg").innerHTML = '<span class="erro">Não consegui consultar: ' + esc(falha.error.message) + "</span>"; return; }
     E.wos = wos.data || []; E.equip = eq.data || []; E.vals = va.data || []; E.regras = rg.data || [];
+    // WO expurgada não tem relatório para conferir: sai da análise (e as abas dela deixam de ser cobradas)
+    let expurgadasSite = [];
+    if (E.wos.length) {
+      try {
+        const ex = await banco.from("expurgos").select("wo").in("wo", E.wos.map(function (w) { return w.wo; }));
+        if (!ex.error && (ex.data || []).length) { const set = {}; ex.data.forEach(function (x) { set[x.wo] = true; }); expurgadasSite = E.wos.filter(function (w) { return set[w.wo]; }); E.wos = E.wos.filter(function (w) { return !set[w.wo]; }); }
+      } catch (e) { /* tabela de expurgos ainda não existe */ }
+    }
+    if (expurgadasSite.length && !E.wos.length) { $("msg").textContent = "Todas as WOs deste site neste mês estão como expurgo (" + expurgadasSite.map(function (w) { return w.wo; }).join(", ") + "): não há relatório a analisar."; return; }
     E.bornes = {}; E.escal = null;
     try {
       const es = await banco.from("escalonamentos").select("*").eq("site_chave", E.siteChave).eq("mes", mes + "-01");
@@ -639,7 +648,7 @@
       const bo = await banco.from("bornes_conferencia").select("*").eq("site_chave", E.siteChave).eq("mes", mes + "-01");
       if (!bo.error) (bo.data || []).forEach(function (b) { E.bornes[b.arquivo] = { resultado: b.resultado, comentario: b.comentario, circulos: b.circulos || [], por: b.conferido_por, gravado: true }; });
     } catch (e) { /* tabela ainda não criada */ }
-    $("msg").textContent = "";
+    $("msg").textContent = expurgadasSite.length ? "WO em expurgo fora da análise: " + expurgadasSite.map(function (w) { return w.wo; }).join(", ") + "." : "";
     const tipos = {};
     E.wos.forEach(function (w) { tipos[tipoWO(w.tipo)] = (tipos[tipoWO(w.tipo)] || []).concat(w.wo); });
     $("cabSite").innerHTML = '<div class="cab"><h2>' + esc(E.siteTxt.toUpperCase()) + '</h2>' +
@@ -761,13 +770,14 @@
     try {
       const p = await banco.from("pendencias").select("id,estado,concluida_por,concluida_em,resposta").eq("site_chave", E.siteChave).eq("mes", E.mes + "-01").eq("tipo", "Alarmes não analisados").limit(1);
       if (consulta !== E.siteChave + E.mes) return;
-      if (p.error || !(p.data || []).length) { desenharAlarmeSite(); return; }
-      AL.pend = p.data[0];
+      AL.pend = !p.error && (p.data || [])[0] || null;
       const ini = E.mes + "-01", fim = new Date(Number(E.mes.slice(0, 4)), Number(E.mes.slice(5, 7)), 1);
       const fimIso = fim.getFullYear() + "-" + String(fim.getMonth() + 1).padStart(2, "0") + "-01";
-      const v = await banco.from("validacoes").select("id,alarmes,setor,site,site_chave,data").eq("site_chave", E.siteChave).gte("data", ini).lt("data", fimIso).order("data", { ascending: false }).order("id", { ascending: false }).limit(1);
+      const v = await banco.from("validacoes").select("id,alarmes,setor,site,site_chave,data").eq("site_chave", E.siteChave).neq("situacao", "cancelada").gte("data", ini).lt("data", fimIso).order("data", { ascending: false }).order("id", { ascending: false }).limit(20);
       if (consulta !== E.siteChave + E.mes) return;
-      AL.val = !v.error && (v.data || [])[0] || null;
+      const lv = !v.error && (v.data || []) || [];
+      // prefere a validação que já tem alarmes registrados; senão a mais recente
+      AL.val = lv.filter(function (x) { const a = x.alarmes || {}; return a.hist || a.semConfig; })[0] || lv[0] || null;
     } catch (e) { AL.pend = null; }
     desenharAlarmeSite();
   }
@@ -781,8 +791,15 @@
   }
   function desenharAlarmeSite() {
     const el = $("alarmeSite"); if (!el) return;
-    const p = AL.pend; if (!p || !AL.val) { el.innerHTML = ""; return; }
-    const al = AL.val.alarmes || {}, aberta = p.estado === "Nova" || p.estado === "Em tratativa";
+    const p = AL.pend;
+    const al = (AL.val && AL.val.alarmes) || {};
+    // Sem pendência: se a validação online não registrou os alarmes (site "Não validada"/"Não passou"), eles são registrados aqui, na análise do relatório.
+    const manual = !p, jaTem = !!(al.hist || al.semConfig);
+    if (manual) {
+      const temMop = (E.wos || []).some(function (w) { return ehMOP(w.tipo); });
+      if (!temMop || (AL.val && String(AL.val.setor || "").toUpperCase() === "VOLANTE")) { el.innerHTML = ""; return; }
+    }
+    const aberta = manual ? !jaTem : (p.estado === "Nova" || p.estado === "Em tratativa");
     if (!aberta) {
       const reg = al.registradoRelatorios;
       if (!reg) { el.innerHTML = ""; return; }
@@ -798,12 +815,12 @@
     const dc = c && c.total ? c.blocos.length + " blocos · " + c.total + " portas" : "Copie no sistema do cliente a tela com os alarmes configurados do site.";
     const dh = AL.vazio ? "Nenhum alarme externou" : h && h.eventos.length ? h.eventos.length + " alarmes lidos" : "Copie o que externou durante a visita.";
     const okC = !!(c && c.total), okH = AL.vazio || !!(h && h.eventos.length);
-    let t = '<div class="al-tit">Alarmes do site <span class="g" style="font-weight:400;font-size:12px">A validação online não registrou os alarmes deste site. Cole abaixo e grave.</span></div><div class="al-slots">' +
+    let t = '<div class="al-tit">Alarmes do site <span class="g" style="font-weight:400;font-size:12px">' + (manual ? "Os alarmes deste site ainda não foram registrados. Cole abaixo e grave: a análise de alarmes é feita aqui nos Relatórios." : "A validação online não registrou os alarmes deste site. Cole abaixo e grave.") + '</span></div><div class="al-slots">' +
       alSlot(1, "Configuração do site", dc, okC, okC ? '<span class="vl-ok">✓ Pronto para gravar</span>' : '<span class="vl-mu">Ainda não colado</span>', '<button class="bt' + (okC ? "" : " p") + '" data-al="colar" data-t="config"' + (AL.sem ? " disabled" : "") + ">" + (okC ? "Colar de novo" : "Colar configuração") + "</button>") +
       alSlot(2, "Histórico de alarmes", dh, okH, okH ? '<span class="vl-ok">✓ Pronto para gravar</span>' : '<span class="vl-mu">Ainda não colado</span>', '<button class="bt' + (okH ? "" : " p") + '" data-al="colar" data-t="hist"' + (AL.sem ? " disabled" : "") + ">" + (okH ? "Colar de novo" : "Colar histórico") + '</button><button class="bt" data-al="vazio"' + (AL.sem ? " disabled" : "") + ">" + (AL.vazio ? "Desmarcar “nenhum alarme”" : "Nenhum alarme externou") + "</button>") + "</div>";
     t += '<div class="al-ck"><input type="checkbox" id="alSem" data-al="sem"' + (AL.sem ? " checked" : "") + '><label for="alSem">Site sem configuração de alarme para conferir</label></div>';
     if (AL.colar) t += '<div class="al-colar"><b>' + (AL.colar === "config" ? "Colar configuração" : "Colar histórico") + '</b><div class="vl-mu" style="margin:4px 0 6px">Cole o texto aqui (Ctrl+V).</div><textarea id="alTexto"></textarea><div style="margin-top:8px"><button class="bt p" data-al="usar">Usar texto</button> <button class="bt" data-al="cancelar">Cancelar</button></div></div>';
-    t += '<div style="margin:12px 0 16px"><button class="btn" id="alGravar" data-al="gravar">Gravar alarmes</button> <span id="alMsg" style="font-size:12px;margin-left:8px">' + (AL.msg || '<span class="g">Ao gravar, a pendência “Alarmes não analisados na validação online” fica Resolvida, com o seu nome e a data.</span>') + "</span></div>";
+    t += '<div style="margin:12px 0 16px"><button class="btn" id="alGravar" data-al="gravar">Gravar alarmes</button> <span id="alMsg" style="font-size:12px;margin-left:8px">' + (AL.msg || (manual ? "" : '<span class="g">Ao gravar, a pendência “Alarmes não analisados na validação online” fica Resolvida, com o seu nome e a data.</span>')) + "</span></div>";
     el.innerHTML = t;
     const ta = $("alTexto"); if (ta) ta.focus();
   }
@@ -835,7 +852,14 @@
     }
     const b = $("alGravar"); b.disabled = true; msg("Gravando...");
     try {
-      const agora = new Date().toISOString(), al = Object.assign({}, AL.val.alarmes || {});
+      const agora = new Date().toISOString();
+      if (!AL.val) {
+        // Nenhuma validação no mês (ex.: visita registrada depois): cria um registro só para guardar os alarmes (SV-REL: fica fora da Validação online e da Fila)
+        const ins = await banco.from("validacoes").insert({ visita_id: "SV-REL-" + E.siteChave + "-" + E.mes, data: E.mes + "-01", site: E.siteTxt.toUpperCase(), site_chave: E.siteChave, wos: [], situacao: "encerrada", resultado: "offline", motivo: "Alarmes registrados nos Relatórios", atualizado_por: E.usuario, atualizado_em: agora }).select("id,site,site_chave,alarmes,setor,data").single();
+        if (ins.error) throw new Error(ins.error.message);
+        AL.val = ins.data;
+      }
+      const al = Object.assign({}, AL.val.alarmes || {});
       if (AL.sem) { al.semConfig = true; }
       else {
         delete al.semConfig;
@@ -847,10 +871,14 @@
       if (u.error) throw new Error(u.error.message);
       if (!AL.sem) { try { await banco.from("alarmes_site").upsert({ site_chave: AL.val.site_chave, site: AL.val.site, config_texto: AL.cfg, config_em: agora, atualizado_por: E.usuario }, { onConflict: "site_chave" }); } catch (e) { /* só guarda a configuração para a próxima visita */ } }
       AL.val.alarmes = al;
-      const r = await banco.rpc("pendencias_resolver_alarmes", { p_site_chave: E.siteChave, p_mes: E.mes + "-01", p_resposta: "Alarmes registrados na tela de Relatórios por " + String(E.usuario || "").split("@")[0] + " em " + new Date().toLocaleDateString("pt-BR") + "." });
-      if (r.error) throw new Error(r.error.message + " (o SQL alarmes_relatorios_sql.txt já foi rodado?)");
-      AL.pend.estado = "Resolvida";
+      if (AL.pend) {
+        const r = await banco.rpc("pendencias_resolver_alarmes", { p_site_chave: E.siteChave, p_mes: E.mes + "-01", p_resposta: "Alarmes registrados na tela de Relatórios por " + String(E.usuario || "").split("@")[0] + " em " + new Date().toLocaleDateString("pt-BR") + "." });
+        if (r.error) throw new Error(r.error.message + " (o SQL alarmes_relatorios_sql.txt já foi rodado?)");
+        AL.pend.estado = "Resolvida";
+      }
+      await carregarLinhaTempo();
       desenharAlarmeSite();
+      if (E.linhas && E.linhas.length) recalcular();
     } catch (e) { b.disabled = false; msg("Não consegui gravar: " + String((e && e.message) || e), true); }
   }
 
@@ -1707,7 +1735,7 @@
       const fimIso = fim.getFullYear() + "-" + String(fim.getMonth() + 1).padStart(2, "0") + "-01";
       const v = await banco.from("validacoes").select("id,visita_id,alarmes,situacao,data").eq("site_chave", E.siteChave).gte("data", ini).lt("data", fimIso).order("data", { ascending: false }).order("id", { ascending: false });
       if (v.error || consulta !== E.siteChave + E.mes) return;
-      const reg = (v.data || []).filter(function (x) { return x.situacao !== "cancelada" && String(x.visita_id || "").indexOf("SV-") !== 0 && x.alarmes && x.alarmes.hist && !x.alarmes.hist.vazio && x.alarmes.hist.texto; })[0];
+      const reg = (v.data || []).filter(function (x) { return x.situacao !== "cancelada" && (String(x.visita_id || "").indexOf("SV-") !== 0 || String(x.visita_id || "").indexOf("SV-REL") === 0) && x.alarmes && x.alarmes.hist && !x.alarmes.hist.vazio && x.alarmes.hist.texto; })[0];
       if (!reg) return;
       const ev = lerHistoricoAlarmes(reg.alarmes.hist.texto).eventos.filter(function (e) { return e.eqp != null; }).sort(function (a, b) { return a.eqp - b.eqp; });
       let ent = null, sai = null;
