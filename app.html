@@ -4557,7 +4557,7 @@
     inicio: "2026-10-30",                       // a validação só enxerga visitas a partir deste dia (nada de backlog)
     inicioPendencias: "2026-11-11",             // só a tela Pendências (e a pendência da Ficha) ignora visitas anteriores a este dia; as visitas do Painel não mudam
     fotos: ["Ok", "Ilegível", "Faltando", "De outro equipamento", "Data/Hora não correspondente", "Local diferente do site", "Inventário excluído"],
-    pendencias: ["Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"],
+    pendencias: ["OK", "Pendência indevida", "Não inventariado", "Jump", "Inventário excluído", "Foto fora do Padrão", "Pendência não apontada no Relatório"],
     inventarioCritico: ["PLC do ar-condicionado"],      // só conta para a WO de climatização
     inventarioOpcoes: ["Inventariado", "Não inventariado", "Não se aplica"],
     toleranciaPermanenciaMin: 15,
@@ -4719,6 +4719,9 @@
   }
   // Tudo o que, até agora, impede a WO de ser validada limpa.
   const DUPS = ["Aba duplicada", "Inventário duplicado", "Inventário excluído"];
+  // "OK" e "Pendência indevida" são respostas da analista: não geram pendência nem pedem comentário.
+  const PEND_NEUTRA = ["OK", "Pendência indevida"];
+  const ehPendReal = function (v) { return !!v && PEND_NEUTRA.indexOf(v) < 0; };
   function fotoComProblema(e) { return !!(e && e.fotos && e.fotos !== "Ok" && DUPS.indexOf(e.fotos) < 0 && DUPS.indexOf(e.pend) < 0); }
   function obsFotoDe(e) { return String((e && (e.obs_foto != null ? e.obs_foto : e.obs)) || "").trim(); }
   function obsPendDe(e) { return String((e && (e.obs_pend != null ? e.obs_pend : e.obs)) || "").trim(); }
@@ -4757,7 +4760,7 @@
     const alW = wosDosAlarmes(reg);
     Object.keys(eq).forEach(function (k) {
       const e = eq[k], wk = wosDoEquip(reg, k), n0 = p.length;
-      if (e.pend) p.push({ tipo: tipoPendNovo(e.pend), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e), por: e.obs_pend_por || estado.usuarioEmail });
+      if (ehPendReal(e.pend)) p.push({ tipo: tipoPendNovo(e.pend), texto: (e.tag || k) + " · " + e.pend, eq: e.tag || k, obs: obsPendDe(e), por: e.obs_pend_por || estado.usuarioEmail });
       if (e.fotos && e.fotos !== "Ok" && e.fotos !== "Aba duplicada" && e.fotos !== "Inventário duplicado" && e.fotos !== "Inventário excluído" && e.pend !== "Aba duplicada" && e.pend !== "Inventário duplicado" && e.pend !== "Inventário excluído") p.push({ tipo: "Foto fora do Padrão", texto: (e.tag || k) + " · foto " + e.fotos.toLowerCase(), eq: e.tag || k, obs: obsFotoDe(e), por: e.obs_foto_por || estado.usuarioEmail });
       for (let i = n0; i < p.length; i++) p[i].wos = wk;
     });
@@ -4807,7 +4810,7 @@
     const sem = linhasEquip.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !(e && (e.fotos || e.pend)); }).length;
     if (sem > 0) f.push("Equipamentos e fotos: faltam conferir " + sem);
     let semCom = 0;
-    linhasEquip.forEach(function (r) { if (ehNA(r)) return; const e = eq[chaveEquip(r)]; if (!e) return; if (fotoComProblema(e) && !obsFotoDe(e)) semCom++; if (e.pend && DUPS.indexOf(e.pend) < 0 && !obsPendDe(e)) semCom++; });
+    linhasEquip.forEach(function (r) { if (ehNA(r)) return; const e = eq[chaveEquip(r)]; if (!e) return; if (fotoComProblema(e) && !obsFotoDe(e)) semCom++; if (ehPendReal(e.pend) && DUPS.indexOf(e.pend) < 0 && !obsPendDe(e)) semCom++; });
     if (semCom > 0) f.push("Equipamentos: faltam " + semCom + " comentário(s) de foto ou pendência");
     if ((reg.wos || []).some(ehClima)) {
       REGRAS.validacao.inventarioCritico.forEach(function (i) { if (!(reg.inventario || {})[i]) f.push("Inventário crítico: " + i); });
@@ -5422,7 +5425,7 @@
             '<td><select data-sv="eq" data-c="fotos" class="' + (e.fotos === "Ok" ? "fok" : "") + '">' + opcoesHtml(REGRAS.validacao.fotos, e.fotos) + "</select></td>" +
             '<td><select data-sv="eq" data-c="pend">' + opcoesHtml(REGRAS.validacao.pendencias, e.pend) + "</select></td>" +
             "</tr>";
-          const cf = fotoComProblema(e), cp = !!e.pend && DUPS.indexOf(e.pend) < 0;
+          const cf = fotoComProblema(e), cp = ehPendReal(e.pend) && DUPS.indexOf(e.pend) < 0;
           if (cf || cp) {
             const caixa = function (rot, campo, val) { return '<div class="vl-cx"><label>' + rot + ' <span class="req">*</span></label><textarea class="auto" rows="2" data-sv="eq" data-c="' + campo + '">' + esc(val) + "</textarea></div>"; };
             t += '<tr class="vl-ex" data-k="' + esc(k) + '" data-tag="' + esc(r.tag || r.segmento || "") + '" data-seg="' + esc(r.segmento || "") + '"><td colspan="6"><div class="vl-cxs">' + (cf ? caixa("Comentário da foto", "obs_foto", obsFotoDe(e)) : "") + (cp ? caixa("Comentário da pendência", "obs_pend", obsPendDe(e)) : "") + "</div></td></tr>";
@@ -6691,7 +6694,7 @@
     if (!v) return '<div class="of-box" style="margin-bottom:24px;padding:16px"><div class="vl-mu">Carregando a validação online…</div></div>';
     const ro = resultadoOnline(c), vz = (O.valsLista || {})[c.validacao_id];
     const eq = v.equipamentos || {}, ks = Object.keys(eq);
-    const apont = function (e) { return !!((e.fotos && e.fotos !== "Ok") || e.pend || e.obs || e.obs_foto || e.obs_pend); };
+    const apont = function (e) { return !!((e.fotos && e.fotos !== "Ok") || ehPendReal(e.pend) || e.obs || e.obs_foto || e.obs_pend); };
     const nAp = v.linhas ? v.linhas.filter(function (r) { if (ehNA(r)) return false; const e = eq[chaveEquip(r)]; return !e || !(e.fotos || e.pend) || apont(e); }).length : ks.filter(function (k) { return apont(eq[k]); }).length;
     let bat = null; try { bat = batimentoDoRegistro({ alarmes: v.alarmes, wos: v.wos || c.wos || [] }); } catch (e) { bat = null; }
     const nApAl = bat ? bat.itens.filter(function (i) { return i.apontamento && i.apontamento !== "Sem apontamento"; }).length : 0;
