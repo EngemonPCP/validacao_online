@@ -5110,7 +5110,7 @@
       Object.keys(campo).forEach(function (wo) {
         if (analisadas[wo]) return;
         const l = porWo[wo];
-        d.semVal.push({ l: baseMapa[wo], cat: l ? l.categoria : "campo", motivo: l ? l.motivo : (offSem[wo] ? "Enviada para validação offline sem análise online" : "Executada em campo, sem validação"), equipe: campo[wo].equipe || "" });
+        d.semVal.push({ l: baseMapa[wo], cat: l ? l.categoria : "campo", motivo: l ? l.motivo : (offSem[wo] ? "Executada em campo, sem validação" : "Executada em campo, sem validação"), equipe: campo[wo].equipe || "" });
       });
       res.linhas.forEach(function (l) {
         if (campo[l.wo] || analisadas[l.wo] || !baseMapa[l.wo]) return;
@@ -5125,9 +5125,9 @@
     const L = estado.val.rvLista, fmt = function (n) { return Number(n).toLocaleString("pt-BR"); };
     const nomeP = estado.periodo.mes ? NOMES_MES[estado.periodo.mes - 1] + "/" + estado.periodo.ano : "ano " + estado.periodo.ano;
     const rotEscopo = L.escopo === "dia" ? "Dia " + dataBR(d.dia).slice(0, 5) : esc(nomeP);
-    let rows = (L.escopo === "dia" ? d.listaDia : d.listaPeriodo).slice().sort(function (a, b) { return String(b.e.em).localeCompare(String(a.e.em)); });
-    let ROT = { validada: "Sem ressalva", ressalva: "Com ressalva", devolvida: "Devolvidas", offline: "Offline", todas: "Todas" };
-    if (L.modo === "pend") { rows = rows.filter(function (x) { return x.e.resultado !== "validada"; }); ROT = { todas: "Todas", ressalva: "Com ressalva", devolvida: "Devolvidas", offline: "Offline" }; }
+    let rows = (L.escopo === "dia" ? d.listaDia : d.listaPeriodo).map(function (x) { return x.e.resultado === "offline" || x.e.resultado === "devolvida" ? Object.assign({}, x, { e: Object.assign({}, x.e, { resultado: "ressalva" }) }) : x; }).slice().sort(function (a, b) { return String(b.e.em).localeCompare(String(a.e.em)); });
+    let ROT = { validada: "Sem ressalva", ressalva: "Com ressalva", todas: "Todas" };
+    if (L.modo === "pend") { rows = rows.filter(function (x) { return x.e.resultado !== "validada"; }); ROT = { todas: "Todas", ressalva: "Com ressalva" }; }
     const cont = function (k) { return rows.filter(function (x) { return k === "todas" || x.e.resultado === k; }).length; };
     const voltar = '<a class="rv-lk" data-vl="resumo">← Voltar para o resumo</a>';
     if (L.modo === "exec" || L.modo === "campo") {
@@ -5145,7 +5145,7 @@
           "Data da visita": x.v && x.v.data_execucao ? dataBR(x.v.data_execucao) : "", "Entrada no site": x.v && x.v.hora_entrada ? dataBR(dataLocalDe(x.v.hora_entrada)) + " " + horaDe(x.v.hora_entrada) : "",
           "Saída registrada em": x.v && x.v.hora_saida ? dataBR(dataLocalDe(x.v.hora_saida)) + " " + horaDe(x.v.hora_saida) : "",
           "Situação na base": x.l.status_final || "", "Data na base": x.l.data_fim ? dataBR(x.l.data_fim) : "", "Campo": x.emCampo ? "Visita de campo" : "Sem visita de campo",
-          "Análise": x.ult ? (REGRAS.validacao.resultados[x.ult.resultado] || x.ult.resultado) : "Sem análise", "Análise registrada em": x.ult ? dataBR(dataLocalDe(x.ult.em)) + " " + horaDe(x.ult.em) : "" };
+          "Análise": x.ult ? (x.ult.resultado === "offline" || x.ult.resultado === "devolvida" ? "Validada com ressalva" : (REGRAS.validacao.resultados[x.ult.resultado] || x.ult.resultado)) : "Sem análise", "Análise registrada em": x.ult ? dataBR(dataLocalDe(x.ult.em)) + " " + horaDe(x.ult.em) : "" };
       }) };
       return '<div class="rv-bl"><div class="rv-hd"><span>' + voltar + "</span><span>" + (L.modo === "exec" ? "Total executadas" : "Executadas em campo") + " · " + esc(nomeP) + " · " + fmt(itens.length) + ' WOs · <a class="rv-lk" data-vl="excel">Exportar Excel →</a></span></div>' +
         '<div class="rv-chips">' + Object.keys(R2).map(function (k) { return '<button data-vl="filtro" data-f="' + k + '"' + (L.filtro === k ? ' class="ativo"' : "") + ">" + R2[k] + " · " + itens.filter(function (x) { return ok2(x, k); }).length + "</button>"; }).join("") + "</div>" +
@@ -5215,7 +5215,7 @@
     if (aba === "exec") {
       const cob = d.cobertura;
       t += '<div class="rv-bl"><div class="rv-hd">Eficiência da validação <span>' + esc(nomeP) + '</span></div><div class="rv-ef"><div><div class="l">Cobertura da validação</div><div class="g">' + (cob === null ? "—" : cob.toLocaleString("pt-BR") + "%") + '</div>' +
-        '<div class="rv-meta"><i style="width:' + Math.min(100, cob || 0) + '%"></i><u style="left:' + REGRAS.validacao.metaCobertura + '%"></u></div><div class="f">Meta ' + REGRAS.validacao.metaCobertura + "% · " + (d.campoSem ? "de " + fmt(d.campo) + " executadas em campo: <b>" + fmt(d.campo - d.campoSem) + "</b> analisadas · <b>" + fmt(d.campoOffSem) + "</b> enviadas para offline sem análise · <b>" + fmt(d.campoSem - d.campoOffSem) + "</b> ainda sem análise " + lk("ver lista", "semval") : (d.campo ? "todas as WOs executadas em campo foram analisadas" : "nenhuma WO executada em campo no período")) + '</div></div>' +
+        '<div class="rv-meta"><i style="width:' + Math.min(100, cob || 0) + '%"></i><u style="left:' + REGRAS.validacao.metaCobertura + '%"></u></div><div class="f">Meta ' + REGRAS.validacao.metaCobertura + "% · " + (d.campoSem ? "de " + fmt(d.campo) + " executadas em campo: <b>" + fmt(d.campo - d.campoSem) + "</b> analisadas · <b>" + fmt(d.campoSem) + "</b> ainda sem análise online " + lk("ver lista", "semval") : (d.campo ? "todas as WOs executadas em campo foram analisadas" : "nenhuma WO executada em campo no período")) + '</div></div>' +
         '<div><div class="l">Aprovação direta</div><div class="m">' + (d.aprovDireta === null ? "—" : d.aprovDireta.toLocaleString("pt-BR") + "%") + '</div><div class="f">' + fmt(A.sem) + " sem ressalva de " + fmt(A.exec) + " analisadas<br>" + fmt(pendTot) + " voltaram com pendências</div></div></div></div>";
       t += barras;
       const tp = Object.keys(d.tiposP).sort(function (x, y) { return d.tiposP[y] - d.tiposP[x]; }), totP = tp.reduce(function (s2, k) { return s2 + d.tiposP[k]; }, 0);
@@ -5231,13 +5231,12 @@
       const nm = function (n, rot, nota, neg) { return '<div><div class="l">' + rot + '</div><div class="v' + (neg ? " neg" : "") + '">' + fmt(n) + '</div><div class="n">' + (nota || "") + "</div></div>"; };
       t += '<div class="rv-bl"><div class="rv-hd">' + esc(nomeP) + ' · acumulado <span>MOP · em WOs · base do período ' + fmt(d.mopTotal) + '</span></div><div class="rv-m rv-m5">' +
         nm(d.mopExec, "Total executadas", fmt(d.campoNaBase) + " em campo" + (d.execSemCampo ? " · " + fmt(d.execSemCampo) + " sem visita de campo " + lk("ver", "wlista", "exec:semcampo") : "") + "<br>" + lk("ver lista", "wlista", "exec:todas")) +
-        nm(d.campo, "Executadas em campo", (d.campo ? lk("ver todas as visitas", "wlista", "campo:todas") + "<br>" + fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise " + lk("ver", "semval") : "")) +
+        nm(d.campo, "Executadas em campo", (d.campo ? lk("ver todas as visitas", "wlista", "campo:todas") + "<br>" + fmt(d.campoNaBase) + " já executadas na base" + (d.campoBasePend ? "<br>" + fmt(d.campoBasePend) + " com a base ainda pendente " + lk("ver", "wlista", "campo:basepend") : "") : "") + (d.campoSem ? "<br>" + fmt(d.campoSem) + " sem análise online " + lk("ver", "semval") : "")) +
         nm(A.exec, "Analisadas", pctDe(A.exec, d.campo, 0) + " das em campo" + (A.exec ? "<br>" + lk("ver lista", "vlista", "periodo:todas") : "")) + nm(A.sem, "Sem ressalva", pctDe(A.sem, A.exec, 0) + " das analisadas" + (A.sem ? "<br>" + lk("ver lista", "vlista", "periodo:validada") : "")) +
-        nm(pendTot, "Com pendências", fmt(A.res + A.off) + " com ressalva ou offline" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : "") + "<br>" + fmt(d.offAbertos) + " casos offline em aberto " + lk("ver", "Pendencias"), true) + "</div></div>";
+        nm(pendTot, "Com pendências", fmt(A.res + A.off + A.dev) + " com ressalva" + (pendTot ? " " + lk("ver lista", "plista", "periodo:todas") : ""), true) + "</div></div>";
       t += barras;
-      t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m4">' +
-        nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva", d.sem ? lk("ver lista", "vlista", "dia:validada") : "") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) +
-        nm(d.filaOff, "Para validação offline", (d.filaOffSem ? fmt(d.filaOffSem) + " sem análise online<br>" : "") + lk("ver", "Pendencias")) + "</div></div>";
+      t += '<div class="rv-bl"><div class="rv-hd">' + (d.dia === hoje() ? "Hoje" : "Dia") + " · " + dataBR(d.dia).slice(0, 5) + ' <span>em WOs</span></div><div class="rv-m rv-m3">' +
+        nm(d.exec, "Analisadas no dia", d.ev.length ? d.ev.length + (d.ev.length === 1 ? " site" : " sites") : "Nenhuma análise no dia") + nm(d.sem, "Sem ressalva", d.sem ? lk("ver lista", "vlista", "dia:validada") : "") + nm(d.com, "Com pendências", pctDe(d.com, d.exec, 0) + " das analisadas", true) + "</div></div>";
       const tk = Object.keys(d.tipos).sort(function (x, y) { return d.tipos[y] - d.tipos[x]; }), mx = tk.length ? d.tipos[tk[0]] : 1;
       t += '<div class="rv-2 rv-2b"><div class="rv-bl"><div class="rv-hd">Pendências por tipo · ' + (d.dia === hoje() ? "hoje" : "no dia") + '</div>' + (tk.length ? '<div style="padding:6px 0">' + tk.map(function (k) {
         return '<div class="rv-pr"><span>' + esc(k) + '</span><div class="t"><div style="width:' + Math.max(4, Math.round(d.tipos[k] * 100 / mx)) + '%"></div></div><b>' + d.tipos[k] + "</b></div>";
@@ -5289,8 +5288,7 @@
     const tk = Object.keys(d.tipos).sort(function (a, b) { return d.tipos[b] - d.tipos[a]; });
     return "Resumo da validação · " + dataBR(d.dia).slice(0, 5) + (s ? " · " + NOME_SETOR[s] : "") + "\n" +
       "WOs analisadas: " + d.exec + "\nValidadas sem pendência: " + d.sem + "\nCom pendência: " + d.com +
-      " (" + d.res + " com ressalva · " + d.off + " para validação offline)" +
-      "\nPara validação offline: " + d.filaOff + (d.filaOffSem ? " (" + d.filaOffSem + " sem análise online)" : "") +
+      "" +
       (tk.length ? "\nPendências: " + tk.map(function (k) { return k + " " + d.tipos[k]; }).join(" · ") : "");
   }
   $("rvCorpo").addEventListener("click", function (e) {
