@@ -540,6 +540,8 @@
   const RE_PENDENCIA = /(?<![A-Za-zÀ-ÿ])(?:pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad)/i;
   // Aba ALARMES: o comentário traz o resultado da coleta. Alarmes listados (porta aberta, alta temperatura...) NÃO são pendência por si só: se "os alarmes externaram", o sistema os recebeu.
   // Pendência é quando o próprio comentário diz que algum alarme não está chegando/externando.
+  // Técnico informa que não conseguiu executar/medir (acesso, ninguém para atender, local fechado...).
+  const RE_IMPEDIDO = /(?<![a-z])(nao foi possivel|nao consegui|nao conseguimos|sem acesso|nao tive acesso|nao tivemos acesso|impossibilitad|acesso negado|nao tem ninguem|nao havia ninguem|nao ha ninguem|local fechado|portao fechado|sem chave|nao permitiu|nao autoriz)/;
   const RE_ALARME_ATIVO = /(?<![A-Za-zÀ-ÿ])(?:n[aã]o (?:est[aã]o |esta |foram |foi |sao |são )?(?:extern|sinaliz|chegand|chegaram|chegou|transmit|comunic)|nenhum alarme (?:extern|chegou)|sem comunica[cç][aã]o)/i;
   // Motivos de zeladoria que exigem chamado de escalonamento com a detentora.
   const RE_ZELADORIA = /(?<![A-Za-zÀ-ÿ])(?:mato(?![A-Za-zÀ-ÿ])|vegeta[cç]|capim|ro[cç]ad|[aá]rvore|bicho|animal|colmeia|abelha|cobra(?![A-Za-zÀ-ÿ])|escorpi|invas[aã]o de|desmat)/i;   // entulho, lixo e terreno ficaram de fora: remover entulho não é vegetação
@@ -1387,8 +1389,15 @@
       }
     }
     // análise técnica
-    if (rep.medicoes && !l.equipDesativado) analisarMedicoes(rep.medicoes).forEach(function (t) { a.push(t); });
-    if (rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura + "||Números em sequência, repetidos ou curtos demais sugerem leitura digitada sem olhar o medidor; compare com a foto do medidor.");
+    // O técnico explicou que não conseguiu medir (sem acesso, ninguém para atender...): o que não foi medido não vira achado, só um alerta informativo com a justificativa.
+    l.alertasInfo = [];
+    const impedido = RE_IMPEDIDO.test(txtEq) && !l.equipDesativado;
+    if (impedido) {
+      const itensMed = (rep.medicoes ? analisarMedicoes(rep.medicoes) : []).concat(rep.leitura && leituraSuspeita(rep.leitura) ? ["x"] : []);
+      if (itensMed.length) l.alertasInfo.push("Medição não realizada: o técnico justificou que não foi possível executar||" + String((rep.comentario || rep.justificativa || "")).slice(0, 220) + (String(rep.comentario || rep.justificativa || "").length > 220 ? "..." : ""));
+    }
+    if (rep.medicoes && !l.equipDesativado && !impedido) analisarMedicoes(rep.medicoes).forEach(function (t) { a.push(t); });
+    if (!impedido && rep.leitura && leituraSuspeita(rep.leitura)) a.push("Leitura do medidor suspeita: " + rep.leitura + "||Números em sequência, repetidos ou curtos demais sugerem leitura digitada sem olhar o medidor; compare com a foto do medidor.");
     (rep.alarmes || []).forEach(function (it) { if (it.fim === "NÃO OK" || it.fim === "NAO OK") a.push("Alarme " + it.n + " - " + it.nome + ": final NÃO OK||O item terminou com NÃO OK no checklist de alarmes, ou seja, ficou alarme sem normalizar."); });
     return a;
   }
@@ -1799,10 +1808,13 @@
     return '<div class="msec"><h4>Análise da validação online</h4><div class="g" style="margin-bottom:6px">Mesma linha do tempo da Validação online: entrada, saída e horário de cada alarme' + (ent == null || sai == null ? " (a visita não tem entrada e saída registradas)" : " (vermelho = fora da permanência, tolerância de 15 min)") + '.</div>' + svg + '<div class="ltleg">' + leg + "</div></div>";
   }
   function alertasHtml(l) {
-    if (l.segKey !== "ALARMES") return "";
-    const g = gruposDeAlarmes(); if (!g.length) return "";
-    const txt = g.map(function (x, i) { return (i ? "outros " : "") + x.length + " alarmes às " + hmsDe(x[0].eqp); }).join(" e ");
-    return '<div class="msec"><h4>Alertas (1) <span class="etq">Alerta Informativo</span></h4><div class="alinfo"><div>Muitos alarmes externaram no mesmo horário</div><div class="g" style="margin-top:4px">' + esc(txt) + ". Confira com o comentário do técnico e com a análise acima.</div></div></div>";
+    const itens = (l.alertasInfo || []).map(function (t) { const i = t.indexOf("||"); return [i < 0 ? t : t.slice(0, i), i < 0 ? "" : t.slice(i + 2)]; });
+    if (l.segKey === "ALARMES") {
+      const g = gruposDeAlarmes();
+      if (g.length) itens.push(["Muitos alarmes externaram no mesmo horário", g.map(function (x, i) { return (i ? "outros " : "") + x.length + " alarmes às " + hmsDe(x[0].eqp); }).join(" e ") + ". Confira com o comentário do técnico e com a análise acima."]);
+    }
+    if (!itens.length) return "";
+    return '<div class="msec"><h4>Alertas (' + itens.length + ') <span class="etq">Alerta Informativo</span></h4>' + itens.map(function (x) { return '<div class="alinfo"><div>' + esc(x[0]) + '</div>' + (x[1] ? '<div class="g" style="margin-top:4px">' + esc(x[1]) + "</div>" : "") + "</div>"; }).join("") + "</div>";
   }
   function comentarioValHtml(l) {
     if (!l.rep || !l.refazer) return "";
