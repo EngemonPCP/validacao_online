@@ -1767,14 +1767,21 @@
   }
 
   // Outras siglas que dividem o endereço com este site, com as WOs de cada uma na base.
-  function outrasSiglasDoEndereco(chaveBusca) {
-    const ids = estado.enderecoPorSigla[chaveBusca];
+  // Sites com final "_001" (ex.: SMSAMI6_001): se a sigla inteira não está no cadastro, procura pela sigla sem esse final (SMSAMI6).
+  function chaveNoCadastro(chaveBusca) {
+    if (estado.enderecoPorSigla[chaveBusca]) return chaveBusca;
+    const sem = String(chaveBusca).replace(/0\d{2}$/, "");
+    return sem !== chaveBusca && sem.length >= 4 && estado.enderecoPorSigla[sem] ? sem : null;
+  }
+  function outrasSiglasDoEndereco(chaveOriginal) {
+    const chaveBusca = chaveNoCadastro(chaveOriginal);
+    const ids = chaveBusca && estado.enderecoPorSigla[chaveBusca];
     if (!ids) return [];
     const vistas = {};
     const irmas = [];
     ids.forEach(function (id) {
       estado.siglasPorEndereco[id].forEach(function (s) {
-        if (s.chave_busca !== chaveBusca && !vistas[s.chave_busca]) { vistas[s.chave_busca] = true; irmas.push(s); }
+        if (s.chave_busca !== chaveBusca && s.chave_busca !== chaveOriginal && !vistas[s.chave_busca]) { vistas[s.chave_busca] = true; irmas.push(s); }
       });
     });
     return irmas.map(function (s) {
@@ -3084,7 +3091,7 @@
       ? estado.base.filter(function (l) { return l.chaveSite === estado.siteEscolhido.busca; }) : [];
     const mostrar = comPreventiva && estado.siteEscolhido;
     $("blocoWOs").classList.toggle("oculto", !mostrar);
-    $("avisoEndereco").innerHTML = mostrar ? htmlOutrasSiglas(estado.siteEscolhido.busca) : "";
+    $("avisoEndereco").innerHTML = mostrar ? htmlEnderecoResumo(estado.siteEscolhido.busca) : "";
     if (!mostrar) return;
 
     consultarWosRegistradas(wos, estado.siteEscolhido.busca);
@@ -3181,7 +3188,7 @@
 
   // Aviso sobre outras siglas no mesmo endereço (sempre responde, com ou sem outras siglas).
   function htmlEnderecoResumo(chave) {
-    if (!estado.enderecoPorSigla[chave]) {
+    if (!chaveNoCadastro(chave)) {
       return '<div class="faixa">Este site não está no cadastro de endereços; não é possível saber se há outras siglas no mesmo endereço.</div>';
     }
     return htmlOutrasSiglas(chave) || '<div class="faixa">Neste endereço existe somente esta sigla.</div>';
