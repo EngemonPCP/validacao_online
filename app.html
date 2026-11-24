@@ -52,7 +52,7 @@
     aside .marca { display:flex; align-items:center; gap:10px; font-weight:600; font-size:16px; letter-spacing:.01em; padding:0 20px 16px; margin-bottom:8px; border-bottom:1px solid #33465c; }
     nav { display:flex; flex-direction:column; flex:1; }
     nav button { background:transparent; color:#aab9cb; border:0; border-left:3px solid transparent; text-align:left; width:100%;
-                 padding:11px 20px; font:inherit; font-size:14px; cursor:pointer; }
+                 padding:8px 20px; font:inherit; font-size:12px; cursor:pointer; }
     nav button:hover { color:#fff; background:#1d2c3e; }
     nav button.ativo { color:#fff; font-weight:500; border-left-color:#6aa3e8; background:#1d2c3e; }
     nav button.grupo { display:flex; justify-content:space-between; align-items:center; }
@@ -116,7 +116,14 @@
     .faixa-endereco .fe-t { font-weight:600; color:#0f62fe; font-size:13px; margin-bottom:2px; }
     .faixa-endereco .sigla-linha { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid #e0e0e0; color:var(--texto); }
     .faixa-endereco .fe-t + .sigla-linha { border-top:0; }
-    .faixa-endereco .fe-lista { max-height:150px; overflow-y:auto; }
+    .faixa-endereco .fe-lista { max-height:150px; overflow-y:auto; padding-right:18px; scrollbar-width:thin; scrollbar-color:#a8a8a8 #f4f4f4; }
+    .faixa-endereco .fe-lista::-webkit-scrollbar { width:5px; }
+    .faixa-endereco .fe-lista::-webkit-scrollbar-thumb { background:#a8a8a8; border-radius:3px; }
+    .faixa-endereco .fe-lista::-webkit-scrollbar-track { background:#f4f4f4; }
+    aside { scrollbar-width:thin; scrollbar-color:#4a5d74 transparent; }
+    aside::-webkit-scrollbar { width:5px; }
+    aside::-webkit-scrollbar-thumb { background:#4a5d74; border-radius:3px; }
+    aside::-webkit-scrollbar-track { background:transparent; }
     .faixa-endereco .fe-mais { font-size:12px; color:#525252; border-top:1px solid #e0e0e0; padding-top:4px; }
     .faixa-endereco .fe-p { width:8px; height:8px; border-radius:50%; flex:none; }
     .faixa-endereco .fe-o { color:#525252; }
@@ -265,6 +272,7 @@
     #telaResumoDia .rd-azul { background:#d0e2ff; }
     #telaResumoDia .rd-vermelho { background:#ffd7d9; }
     #telaResumoDia .rd-roxo { background:#d4bbff; }
+    #telaResumoDia .rd-parcial { box-shadow:inset 0 -6px 0 #8a3ffc; }
     #telaResumoDia .rd-seqt { grid-column:1 / -1; text-align:center; padding:8px 0; border-left:1px solid #c6c6c6; }
     #telaResumoDia .rd-cab2 { background:#e8e8e8; font-weight:400; font-size:11px; color:#525252; }
     #telaResumoDia .rd-cab2 > div { padding-top:3px; padding-bottom:3px; }
@@ -551,6 +559,7 @@
     #telaExpurgos .ex-mh h2 { font-size:18px; font-weight:400; margin:0; }
     #telaExpurgos .ex-x { background:none; border:0; font-size:16px; cursor:pointer; color:#525252; padding:4px 8px; }
     #telaExpurgos .ex-mlin { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin-bottom:10px; }
+    .ex-req { color:#9f1239; font-weight:600; }
     #telaExpurgos .ex-lb { color:#525252; font-size:11px; margin-bottom:4px; }
     #telaExpurgos .ex-md input[type=month], #telaExpurgos .ex-md input[type=date] { font:inherit; font-size:12px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:7px 8px; width:auto; margin:0; color:#161616; }
     #telaExpurgos .ex-md textarea { font:inherit; font-size:13px; border:0; border-bottom:1px solid #8d8d8d; background:#f4f4f4; padding:8px 10px; resize:vertical; min-height:110px; color:#161616; }
@@ -880,7 +889,7 @@
   </header>
   <div id="cortina" class="oculto"></div>
   <aside id="topo" class="oculto">
-    <div class="marca"><svg width="32" height="32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0f2a4a"/><g transform="translate(0,1.5)"><polygon points="6,10 15.5,10 20,23.5 24.5,10 34,10 20,52" fill="#7fb2ee"/><path fill-rule="evenodd" fill="#ffffff" d="M39 22 H50 A8.5 8.5 0 0 1 50 39 H47 V52 H39 Z M47 28.5 H50 A2.5 2.5 0 0 1 50 33.5 H47 Z"/></g></svg><span>Controle de Preventivas</span><button class="fechar" id="botaoFecharMenu" aria-label="Fechar menu" style="margin-left:auto">✕</button></div>
+    <div class="marca"><svg width="32" height="32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0f62fe"/><g fill="#ffffff"><polygon points="8,14 17,14 21.5,37 26,14 35,14 26,50 17,50"/><path fill-rule="evenodd" d="M38 14 H49 A9 9 0 0 1 49 32 H46.5 V50 H38 Z M46.5 21 H49 A2 2 0 0 1 49 25 H46.5 Z"/></g></svg><span>Controle de Preventivas</span><button class="fechar" id="botaoFecharMenu" aria-label="Fechar menu" style="margin-left:auto">✕</button></div>
     <nav>
       <div class="nav-titulo">Validação</div>
       <button data-tela="ResumoVal" data-grupo="" data-setor="">Resumo do dia</button>
@@ -1231,13 +1240,13 @@
           <div id="exMMsg" class="ex-msg"></div>
           <div id="exMWos"></div>
           <div class="ex-mlin" style="margin-top:14px">
-            <div><div class="ex-lb">Motivo *</div><select id="exMMotivo"></select></div>
-            <div><div class="ex-lb">Data *</div><input type="date" id="exMData"></div>
+            <div><div class="ex-lb">Motivo <span class="ex-req">*</span></div><select id="exMMotivo"></select></div>
+            <div><div class="ex-lb">Data <span class="ex-req">*</span></div><input type="date" id="exMData"></div>
             <div><div class="ex-lb">Equipe (opcional)</div><select id="exMEquipe"></select></div>
           </div>
-          <div class="ex-lb">Relato *</div>
+          <div class="ex-lb">Relato <span class="ex-req">*</span></div>
           <textarea id="exMRelato" rows="5" style="width:100%"></textarea>
-          <label class="ex-ck"><input type="checkbox" id="exMEmail"> Evidenciado via e-mail *</label>
+          <label class="ex-ck"><input type="checkbox" id="exMEmail"> Evidenciado via e-mail <span class="ex-req">*</span></label>
           <div class="ex-mrod"><span id="exMResumo" class="ex-msg"></span><span><button type="button" class="sec" id="exMCancelar">Cancelar</button> <button type="button" class="prim" id="exMOk" disabled>Registrar expurgo</button></span></div>
         </div>
       </div>
@@ -4136,7 +4145,7 @@
           const entrada = desloc ? '<span title="Avisou no grupo às ' + hh(v.hora_aviso) + '; chegada ainda não confirmada">av. ' + hh(v.hora_aviso) + "</span>" : hh(v.hora_entrada || v.hora_aviso);
           const exps = (v.wos_visita || []).filter(function (w) { return grupoDaPreventiva(w.tipo) === "MOP" && estado.expurgadas[w.wo]; });
           const todaExpurgada = !v.motivo_nao_execucao && exps.length > 0 && exps.length === nMop(v);
-          sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : todaExpurgada ? "rd-roxo" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : exps.length ? "Expurgo: " + estado.expurgadas[exps[0].wo].motivo : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
+          sites += '<div class="rd-site ' + (v.motivo_nao_execucao ? "rd-vermelho" : todaExpurgada ? "rd-roxo" : saiu ? "rd-verde" : desloc ? "rd-azul" : "rd-amarelo") + (!v.motivo_nao_execucao && !todaExpurgada && exps.length > 0 ? " rd-parcial" : "") + '" title="' + esc(v.motivo_nao_execucao ? "Saiu sem executar: " + v.motivo_nao_execucao : exps.length ? "Expurgo: " + estado.expurgadas[exps[0].wo].motivo : "") + '"><div class="a">' + esc(v.site) + '</div><div class="b">' +
             entrada + (v.hora_saida ? " – " + hh(v.hora_saida) : "") + (ePrev ? " · " + nMop(v) + " WO" : "") + "</div></div>";
         });
         const unidades = itens.reduce(function (n, it) { return n + (it.tipo === "a" && !it.a.inicio && !it.a.fim ? 2 : 1); }, 0);
