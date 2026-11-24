@@ -566,7 +566,7 @@
     return out;
   }
   // Palavras que indicam pendência no comentário (ajuste aqui conforme a operação).
-  const RE_PENDENCIA = /(?<![A-Za-zÀ-ÿ])(?:pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad)/i;
+  const RE_PENDENCIA = /(?<![A-Za-zÀ-ÿ])(?:pend[eê]ncia|pendente|n[aã]o (foi )?(poss[ií]vel|realiz|execut|consegu|funciona|aceit)|necess(it|ári|idade)|precis(a|ou)|defeito|defeituos|danific|quebrad|oxid|avaria|falt(a|ou|ando|ante)|vazamento|irregular|inoperante|n[aã]o (?:existe|existem|possui|possuem|tem|t[eê]m|h[aá]) mais|n[aã]o existe|inexistente|troc(?:ad[oa]s?|ou) por|inativ|desativ|desligad|substitu|trocar|aguardando|solicit|mato alto|vegeta[cç][aã]o|furt|vandal|rompid|cortad)/i;
   // Aba ALARMES: o comentário traz o resultado da coleta. Alarmes listados (porta aberta, alta temperatura...) NÃO são pendência por si só: se "os alarmes externaram", o sistema os recebeu.
   // Pendência é quando o próprio comentário diz que algum alarme não está chegando/externando.
   const RE_DESATIVADO = /(?<![a-z])(desativad|desativa[cç]|substituid|desinstalad|retirad|removid|inativ|fora de operacao|excluir aba|excluir a aba|vandaliz|furtad|furto|roubad|roubo|depredad|depredac)/;
