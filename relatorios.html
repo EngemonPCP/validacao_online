@@ -295,6 +295,8 @@
     if (/\d$/.test(y) && !/\d$/.test(x)) return tira(y) === x && x.length >= 6;
     return false;
   }
+  // Nome da aba que aparece na tela: o do relatório do técnico, igual ao da tabela (o do Cronograma só quando não há relatório).
+  function tagMostrada(l) { const r = l && l.rep && l.rep.tag; return (r && !/^(N\/?A|-+)$/i.test(String(r).trim()) ? r : (l && l.tag)) || ""; }
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function soDigitos(t) { return String(t == null ? "" : t).replace(/\D/g, "").replace(/^0+/, ""); }
   function dataIso(br) { const m = String(br || "").match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? m[3] + "-" + m[2] + "-" + m[1] : null; }
@@ -1442,7 +1444,7 @@
       if (!l.rep || l.segKey === "ALARMES" || !/RESTRI|NAO OK/.test(fatoDe(l))) return;
       const txt = ((l.rep.comentario || "") + " " + (l.rep.justificativa || "")).trim();
       if (!/alarm/i.test(txt)) return;
-      const nome = (l.segTrocado || l.seg) + (l.tag || l.rep.tag ? " – " + (l.tag || l.rep.tag) : "");
+      const nome = (l.segTrocado || l.seg) + (tagMostrada(l) ? " – " + tagMostrada(l) : "");
       const resumo = txt.length > 160 ? txt.slice(0, 160) + "..." : txt;
       l.achados.push("Alarme apontado na aba errada (" + nome + ")||O técnico relatou problema de alarmes nesta aba (\"" + resumo + "\") e fechou como " + (l.val && l.val.fato || l.rep.situacaoFinal) + ", mas este equipamento não tem pendência própria. O alarme deve ser apontado na aba ALARMES; a aba precisa ser refeita.");
       origens.push(nome);
@@ -1946,7 +1948,7 @@
   function abrirDetalhe(l) {
     const r = l.rep, v = l.val;
     function kv(k, val) { return '<div><div class="k">' + k + '</div><div class="v">' + (val == null || val === "" ? "—" : esc(val)) + "</div></div>"; }
-    $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.segTrocado || l.seg) + (l.tag ? " – " + esc(l.tag) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
+    $("modCorpo").innerHTML = '<div class="mh"><div><h3>' + esc(l.segTrocado || l.seg) + (tagMostrada(l) ? " – " + esc(tagMostrada(l)) : "") + '</h3><div class="g" style="margin-top:4px">' + esc(E.siteTxt.toUpperCase()) + (r ? " · " + esc(r.arquivo) : " · Sem relatório") + '</div></div><button class="x" id="fecharModal">✕</button></div>' +
       '<div class="mkv">' + kv("WO", l.wo ? l.tipoWo + " · " + l.wo : "Fora do Cronograma") + kv("Ticket", r && r.ticket) + kv("Resultado no relatório", r && r.situacaoFinal) +
       kv("Fato na validação", v && v.fato) + kv("Status", v && v.status) + kv("Início na validação", v && dataBr(v.inicio)) + kv("Fim na validação", v && dataBr(v.fim)) +
       kv("No Cronograma", l.eq ? [l.eq.tag || "sem tag", "status " + (l.eq.status_eqpto || "—"), "prevent. " + (l.eq.situacao_prev || "—")].join(" · ") : (l.doCrono === false && l.bloco !== "Fora do Cronograma" ? "Aba prevista pela regra do segmento (não tem equipamento próprio no Cronograma)" : "")) +
