@@ -277,7 +277,7 @@
   }
   function chaveTag(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   // Mesma tag? "Trocador de calor 1" (Cronograma) e "1" (relatório) são o mesmo equipamento: compara também só pelo número final.
-  function tagCasaNum(a, b) {
+  function tagCasa(a, b) {
     const x = chaveTag(a), y = chaveTag(b);
     if (x === y) return true;
     const nx = (x.match(/(\d+)$/) || [])[1], ny = (y.match(/(\d+)$/) || [])[1];
@@ -285,7 +285,8 @@
     return /^\d+$/.test(x) || /^\d+$/.test(y);
   }
   // Mesma tag, mas o técnico não digitou o número: "TROCADOR GABINETE GPON 3" (Cronograma) e "TROCADOR GABINETE GPON" (relatório).
-  function tagCasa(a, b) { return tagCasaNum(a, b) || tagSemNumero(a, b); }
+  // Só para ligar a aba esperada ao relatório do técnico (nunca para achar a ficha no cliente, onde "FCC" e "FCC 3" são fichas diferentes).
+  function tagCasaFlex(a, b) { return tagCasa(a, b) || tagSemNumero(a, b); }
   function tagSemNumero(a, b) {
     const x = chaveTag(a), y = chaveTag(b);
     if (!x || !y || x === y) return false;
@@ -1478,7 +1479,7 @@
     esp.forEach(function (l) {
       if (l.rep || !l.tag || l.obrig !== "Sim") return;
       const p = E.pdfs.filter(function (q) {
-        if (usados[q.arquivo] || q.segmento === l.segKey || !q.tag || !tagCasa(q.tag, l.tag)) return false;
+        if (usados[q.arquivo] || q.segmento === l.segKey || !q.tag || !tagCasaFlex(q.tag, l.tag)) return false;
         return !esp.some(function (o) { return o !== l && o.segKey === q.segmento && o.tag && tagCasa(o.tag, q.tag); });
       })[0];
       if (p) { usados[p.arquivo] = true; l.rep = p; l.segTrocado = p.segmentoTxt || p.segmento; }
