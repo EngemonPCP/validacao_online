@@ -1780,7 +1780,7 @@
     return irmas.map(function (s) {
       const wos = (estado.wosPorChave[s.chave_busca] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
       const pendentes = wos.filter(function (l) { return String(l.status_final || "").trim().toLowerCase() !== "executada"; });
-      return { sigla: s.chave, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
+      return { sigla: s.chave, busca: s.chave_busca, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
                total: wos.length, pendentes: pendentes.map(function (l) { return l.wo; }) };
     });
   }
@@ -6088,16 +6088,21 @@
     const de1 = ano + "-" + (mes || "01") + "-01", ate1 = ano + "-" + (mes || "12") + "-01";
     $("rpCorpo").innerHTML = '<div class="vl-vazio">Pesquisando...</div>';
     const todos = [];
+    // Siglas que dividem o endereço com o site pesquisado (pelo cadastro de sites): entram na mesma pesquisa.
+    const tk = limparSite(txt), irmas = tk ? outrasSiglasDoEndereco(tk).filter(function (x) { return x.busca && /^[A-Z0-9]+$/.test(x.busca); }) : [];
+    const irmaDe = {};
+    irmas.forEach(function (x) { irmaDe[x.busca] = x.sigla; });
+    const filtroSite = "site.ilike.%" + txt + "%,site_chave.ilike.%" + txt + "%" + irmas.map(function (x) { return ",site_chave.eq." + x.busca; }).join("");
     try {
       for (let de = 0; ; de += 1000) {
-        const d = conferir(await banco.from("relatorios_analise").select("*").or("site.ilike.%" + txt + "%,site_chave.ilike.%" + txt + "%").gte("mes", de1).lte("mes", ate1).order("id").range(de, de + 999));
+        const d = conferir(await banco.from("relatorios_analise").select("*").or(filtroSite).gte("mes", de1).lte("mes", ate1).order("id").range(de, de + 999));
         for (const x of d) todos.push(x);
         if (d.length < 1000) break;
       }
     } catch (e) { $("rpCorpo").innerHTML = '<div class="vl-vazio vl-no">Não consegui pesquisar: ' + esc(e.message) + "</div>"; return; }
     const grupos = {};
     todos.forEach(function (r) {
-      const k = r.site_chave + "|" + r.mes, g = grupos[k] = grupos[k] || { site: r.site, chave: r.site_chave, mes: r.mes, abas: 0, refazer: 0, faltando: 0, semPdf: 0, por: "", em: "" };
+      const k = r.site_chave + "|" + r.mes, g = grupos[k] = grupos[k] || { site: r.site, chave: r.site_chave, irma: !!irmaDe[r.site_chave] && r.site_chave.indexOf(tk) < 0, mes: r.mes, abas: 0, refazer: 0, faltando: 0, semPdf: 0, por: "", em: "" };
       const t = rpTipo(r);
       if (!r.tipo_linha || r.tipo_linha === "relatorio") g.abas++;
       if (t === "Refazer") g.refazer++; else if (t === "Faltando") g.faltando++; else if (t === "Sem PDF") g.semPdf++;
@@ -6105,6 +6110,7 @@
     });
     estado.rp.itens = Object.keys(grupos).map(function (k) { return grupos[k]; }).sort(function (a, b) { return String(a.site).localeCompare(String(b.site)) || String(b.mes).localeCompare(String(a.mes)); });
     estado.rp.pesquisou = true;
+    estado.rp.irmasTxt = irmas.length ? irmas.map(function (x) { return x.sigla; }).join(", ") : "";
     desenharRelatorios();
   }
   function desenharRelatorios() {
@@ -6114,10 +6120,10 @@
     it.forEach(function (g) {
       const pend = g.refazer + g.faltando + g.semPdf;
       const quem = String(g.por || "").split("@")[0], quando = g.em ? new Date(g.em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
-      t += '<tr><td><a class="rv-lk" style="font-weight:600;cursor:pointer" data-fi="' + esc(g.chave + "|" + g.mes) + '">' + esc(g.site) + "</a></td><td>" + esc(mesRel(g.mes)) + "</td><td>" + g.abas + "</td><td>" + (g.refazer ? '<b style="color:#ff832b">' + g.refazer + "</b>" : "0") + "</td><td>" + g.faltando + "</td><td>" + g.semPdf + "</td><td>" +
+      t += '<tr><td><a class="rv-lk" style="font-weight:600;cursor:pointer" data-fi="' + esc(g.chave + "|" + g.mes) + '">' + esc(g.site) + "</a>" + (g.irma ? '<div class="vl-mu" style="font-size:11px">mesmo endereço de ' + esc(String($("rpSite").value || "").trim().toUpperCase()) + "</div>" : "") + "</td><td>" + esc(mesRel(g.mes)) + "</td><td>" + g.abas + "</td><td>" + (g.refazer ? '<b style="color:#ff832b">' + g.refazer + "</b>" : "0") + "</td><td>" + g.faltando + "</td><td>" + g.semPdf + "</td><td>" +
         (pend ? '<span class="fi-tg a">' + pend + (pend === 1 ? " pendência" : " pendências") + "</span>" : '<span class="fi-tg g">Sem pendências</span>') + '</td><td class="vl-mu">' + esc(quem) + (quando ? " · " + quando : "") + "</td></tr>";
     });
-    $("rpCorpo").innerHTML = t + "</table>";
+    $("rpCorpo").innerHTML = (estado.rp.irmasTxt ? '<div class="vl-mu" style="margin-bottom:8px">Pesquisa inclui também as siglas do mesmo endereço: <b>' + esc(estado.rp.irmasTxt) + "</b></div>" : "") + t + "</table>";
   }
 
   // ==== FICHA DO SITE (somente consulta): reúne o que já está gravado, não grava nada ====
