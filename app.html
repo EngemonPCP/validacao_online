@@ -3478,7 +3478,7 @@
     const motivos = REGRAS.naoExecucao.motivos.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
     return '<details class="notas"><summary>Não conseguiu executar (ex.: problema de acesso)</summary>' +
       '<div class="detalhe" style="margin:6px 0 0">A equipe sai do site e as WOs desta visita <b>não</b> contam como realizadas.</div>' +
-      '<label>Motivo</label><select data-campo="motivo">' + motivos + "</select>" +
+      '<label>Motivo</label><select data-campo="motivo"><option value="">-</option>' + motivos + "</select>" +
       '<label>Horário em que saiu do site (vazio = agora)</label><input type="time" data-campo="saidasem">' +
       '<textarea data-campo="obssem" rows="2" placeholder="Detalhe (opcional): o que aconteceu, para onde foi"></textarea>' +
       '<div class="linha-botoes"><button class="secundario" data-acao="semexec" data-id="' + esc(v.id) + '">Registrar saída sem execução</button></div></details>';
@@ -3494,7 +3494,7 @@
     }).join("");
     return '<details class="notas expurgo"><summary>Expurgo</summary>' +
       '<div class="detalhe" style="margin:6px 0 0">As WOs marcadas saem das realizadas e das divergências e vão para a aba Expurgos.</div>' +
-      '<label>Motivo</label><select data-campo="expmotivo">' + motivos + "</select>" +
+      '<label>Motivo</label><select data-campo="expmotivo"><option value="">-</option>' + motivos + "</select>" +
       "<label>WOs expurgadas</label>" + lista +
       '<label>Observação (o que a equipe encontrou)</label><textarea data-campo="expobs" rows="2" placeholder="Mato alto"></textarea>' +
       '<div class="linha-botoes"><button class="secundario" data-acao="expurgo" data-id="' + esc(v.id) + '">Registrar expurgo</button></div></details>';
@@ -3615,6 +3615,7 @@
     const caixa = botao.closest("details");
     const motivo = caixa.querySelector("[data-campo=expmotivo]").value;
     const obs = caixa.querySelector("[data-campo=expobs]").value.trim();
+    if (!motivo) { mostrarAviso("Escolha o motivo do expurgo.", "erro"); return; }
     const marcadas = Array.prototype.slice.call(caixa.querySelectorAll("input[type=checkbox][data-wo]:checked"));
     if (marcadas.length === 0) { mostrarAviso("Marque ao menos uma WO para expurgar.", "erro"); return; }
     if (!window.confirm("Expurgar " + marcadas.length + " WO(s) de " + visita.site + " (" + motivo + ")?\n\nElas saem das realizadas e das divergências.")) return;
@@ -3692,6 +3693,7 @@
     } else if (botao.dataset.acao === "semexec") {
       const caixa = botao.closest("details");
       const motivo = caixa.querySelector("[data-campo=motivo]").value;
+      if (!motivo) { mostrarAviso("Escolha o motivo: sem ele não dá para registrar a saída sem execução.", "erro"); return; }
       const hm = caixa.querySelector("[data-campo=saidasem]").value;
       const detalhe = caixa.querySelector("[data-campo=obssem]").value.trim();
       let quando = new Date();
@@ -3826,7 +3828,7 @@
   function exMAbrir() {
     estado.exNovo = { wos: [], site: "" };
     $("exMSite").value = ""; $("exMMes").value = paraAAAAMMDD(new Date()).slice(0, 7); $("exMData").value = paraAAAAMMDD(new Date());
-    $("exMMotivo").innerHTML = REGRAS.expurgo.motivos.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
+    $("exMMotivo").innerHTML = '<option value="">-</option>' + REGRAS.expurgo.motivos.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
     $("exMEquipe").innerHTML = '<option value="">— nenhuma —</option>' + (estado.equipes || []).map(function (e) { return "<option>" + esc(e.nome) + "</option>"; }).join("");
     $("exMRelato").value = ""; $("exMEmail").checked = false; $("exMWos").innerHTML = ""; exMMsg("");
     $("exModal").classList.remove("oculto"); exMConferir(); $("exMSite").focus();
