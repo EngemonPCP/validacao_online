@@ -277,12 +277,22 @@
   }
   function chaveTag(t) { return semAcento(t).toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   // Mesma tag? "Trocador de calor 1" (Cronograma) e "1" (relatório) são o mesmo equipamento: compara também só pelo número final.
-  function tagCasa(a, b) {
+  function tagCasaNum(a, b) {
     const x = chaveTag(a), y = chaveTag(b);
     if (x === y) return true;
     const nx = (x.match(/(\d+)$/) || [])[1], ny = (y.match(/(\d+)$/) || [])[1];
     if (!nx || !ny || nx.replace(/^0+/, "") !== ny.replace(/^0+/, "")) return false;
     return /^\d+$/.test(x) || /^\d+$/.test(y);
+  }
+  // Mesma tag, mas o técnico não digitou o número: "TROCADOR GABINETE GPON 3" (Cronograma) e "TROCADOR GABINETE GPON" (relatório).
+  function tagCasa(a, b) { return tagCasaNum(a, b) || tagSemNumero(a, b); }
+  function tagSemNumero(a, b) {
+    const x = chaveTag(a), y = chaveTag(b);
+    if (!x || !y || x === y) return false;
+    const tira = function (t) { return t.replace(/\d+$/, ""); };
+    if (/\d$/.test(x) && !/\d$/.test(y)) return tira(x) === y && y.length >= 6;
+    if (/\d$/.test(y) && !/\d$/.test(x)) return tira(y) === x && x.length >= 6;
+    return false;
   }
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function soDigitos(t) { return String(t == null ? "" : t).replace(/\D/g, "").replace(/^0+/, ""); }
