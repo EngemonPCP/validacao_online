@@ -3837,10 +3837,16 @@
     if (txt.length < 2 || !mes) { exMMsg("Informe o site e o mês.", true); return; }
     exMMsg("Procurando…"); $("exMWos").innerHTML = "";
     try {
-      const pad = siteEscolhido ? txt : "%" + txt.replace(/[%_,]/g, "") + "%";
+      const limpo = txt.replace(/[%,\\]/g, "");
+      const pad = siteEscolhido ? txt : "%" + limpo.replace(/_/g, "\\_") + "%";        // o "_" digitado vale como "_" mesmo (ex.: SMSAMI6_002)
+      const padFlex = "%" + limpo.replace(/[_\-\s]+/g, "%") + "%";                    // se não achar, aceita com ou sem separador
       const cols = "wo,tipo,status_final,programado_infratel,clr_sdr_site_helix";
-      let r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("programado_infratel", pad).limit(300));
-      if (!r.length) r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("clr_sdr_site_helix", pad).limit(300));
+      let r = [];
+      for (const padrao of (siteEscolhido ? [pad] : [pad, padFlex])) {
+        r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("programado_infratel", padrao).limit(300));
+        if (!r.length) r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("clr_sdr_site_helix", padrao).limit(300));
+        if (r.length) break;
+      }
       r = r.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
       const nomes = {}; r.forEach(function (l) { const n = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim().toUpperCase(); if (n) nomes[n] = true; });
       const lista = Object.keys(nomes);
