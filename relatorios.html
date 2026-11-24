@@ -1667,12 +1667,19 @@
         else if (c.manual) extra = '<div class="g" style="margin-top:4px"><b>Data informada:</b> <input type="date" class="campo dtm" data-i="' + i + '" value="' + c.data + '" style="padding:3px 6px;font-size:12px"> <button type="button" class="dtl" data-i="' + i + '" style="margin-left:4px;font-size:12px">Remover</button></div>';
         else if ((dif || c.incerta) && !c.manual && !c.mantida) extra = '<div class="g" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;padding:5px 7px;margin-top:4px;color:#92400e"><b>' + (dif ? "Data diferente das demais fotos</b> (" + dataBr(base) + "). A leitura automática pode ter errado: confira o carimbo na foto." : "Leitura incerta</b>. Não deu para ler todos os dígitos com segurança: confira o carimbo na foto.") + '<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input type="date" class="campo dtc" data-i="' + i + '" value="' + c.data + '" style="padding:4px 6px;font-size:12px"><button type="button" class="dta" data-i="' + i + '" style="font-size:12px">Aplicar correção</button><button type="button" class="dtk" data-i="' + i + '" style="font-size:12px">Manter ' + dataBr(c.data).slice(0, 5) + '</button></div></div>';
         else if (dif && c.mantida) extra = '<div class="g" style="margin-top:4px">Data confirmada como diferente das demais.</div>';
+        if (!c.manual && !extra) extra = '<div class="g" style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b>Ajustar data:</b><input type="date" class="campo dtc" data-i="' + i + '" value="' + c.data + '" style="padding:3px 6px;font-size:12px"><button type="button" class="dta" data-i="' + i + '" style="font-size:12px">Aplicar</button></div>';
       }
       if (!(f.carimbo && f.carimbo.data) && (r.ocrFeito || E.snapModo)) sel.push('<span class="refazer">Data não identificada</span> <input type="date" class="campo dtm" data-i="' + i + '" style="padding:4px 6px;font-size:12px">');
       if (f.invalida) sel.unshift('<span class="refazer">Marcada como inadequada</span>');
       return '<div class="fto"><img src="' + f.url + '" alt=""><div>Foto ' + (i + 1) + (f.legenda ? " · " + esc(f.legenda) : "") + '</div><div class="g">' + sel.join(" · ") + '</div>' + extra + '<label class="g" style="display:block;margin-top:2px"><input type="checkbox" class="inad" data-i="' + i + '"' + (f.invalida ? " checked" : "") + '> Foto inadequada</label></div>';
     }).join("");
-    return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4><div class="fotos">' + cards + "</div></div>" + obrigHtml(l, r.fotos) + (bi >= 0 ? bornesHtml(l, bi) : "");
+    const manuais = {};
+    r.fotos.forEach(function (f) { if (f.carimbo && f.carimbo.manual && f.carimbo.data) manuais[f.carimbo.data] = true; });
+    const lote = Object.keys(manuais).sort().map(function (d) {
+      const n = r.fotos.filter(function (f) { return f.carimbo && f.carimbo.data && f.carimbo.data !== d; }).length;
+      return n ? '<button type="button" class="dtt" data-d="' + d + '" style="font-size:12px;margin-right:6px">Aplicar ' + dataBr(d) + " às outras " + n + (n === 1 ? " foto com data diferente" : " fotos com data diferente") + "</button>" : "";
+    }).join("");
+    return '<div class="msec"><h4>Fotos (' + r.fotos.length + ')</h4>' + (lote ? '<div style="margin:0 0 8px">' + lote + "</div>" : "") + '<div class="fotos">' + cards + "</div></div>" + obrigHtml(l, r.fotos) + (bi >= 0 ? bornesHtml(l, bi) : "");
   }
   // segmento trocado: as fotos cobradas são as do segmento em que o técnico realmente preencheu o relatório
   function segFoto(l) { return l.segTrocado && l.rep && l.rep.segmento ? l.rep.segmento : l.segKey; }
@@ -1971,23 +1978,22 @@
         if (l2) abrirDetalhe(l2);
       });
     });
-    // Ao ajustar a data de uma foto: se a nova data difere de qualquer outra data do relatório, pede confirmação.
-    function confirmarDataAjustada(i, nova) {
-      const dif = [];
-      l.rep.fotos.forEach(function (g, k) { if (k !== i && g.carimbo && g.carimbo.data && g.carimbo.data !== nova) dif.push("Foto " + (k + 1) + ": " + dataBr(g.carimbo.data)); });
-      const di = dataIso(l.rep.dataInicio), df = dataIso(l.rep.dataFim) || di;
-      if (di && (nova < di || nova > df)) dif.push("Período do ticket: " + dataBr(di) + (df !== di ? " a " + dataBr(df) : ""));
-      if (nova.slice(0, 7) !== E.mes) dif.push("Mês da preventiva: " + nomeMes(E.mes));
-      if (!dif.length) return true;
-      return window.confirm("Você está ajustando a Foto " + (i + 1) + " para " + dataBr(nova) + ", mas esta data é diferente de:\n\n" + dif.join("\n") + "\n\nConfirmar o ajuste?");
-    }
     function reabrir() { recalcular(); const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0]; if (l2) abrirDetalhe(l2); }
     Array.prototype.forEach.call(document.querySelectorAll(".dta"), function (b) {
       b.addEventListener("click", function () {
         const i = Number(b.dataset.i), inp = document.querySelector('.dtc[data-i="' + i + '"]'), f = l.rep.fotos[i];
         if (!inp || !inp.value) return;
-        if (!confirmarDataAjustada(i, inp.value)) return;
         f.carimbo = { data: inp.value, hora: f.carimbo.hora || null, manual: true, auto: f.carimbo.auto || f.carimbo.data };
+        reabrir();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".dtt"), function (b) {
+      b.addEventListener("click", function () {
+        const d = b.dataset.d;
+        l.rep.fotos.forEach(function (f) {
+          if (!f.carimbo || !f.carimbo.data || f.carimbo.data === d) return;
+          f.carimbo = { data: d, hora: f.carimbo.hora || null, manual: true, auto: f.carimbo.auto || f.carimbo.data };
+        });
         reabrir();
       });
     });
@@ -2004,7 +2010,6 @@
       inp.addEventListener("change", function () {
         if (!inp.value) return;
         const ff = l.rep.fotos[Number(inp.dataset.i)], ant = ff.carimbo && ff.carimbo.data ? ff.carimbo : null;
-        if (!confirmarDataAjustada(Number(inp.dataset.i), inp.value)) { inp.value = ant ? ant.data : ""; return; }
         ff.carimbo = { data: inp.value, hora: ant ? ant.hora || null : null, manual: true };
         if (ant && ant.auto) ff.carimbo.auto = ant.auto;
         recalcular();
