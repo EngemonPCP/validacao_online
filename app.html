@@ -1577,7 +1577,7 @@
     const passo = 1000;
     for (let de = 0; ; de += passo) {
       const dados = conferir(await banco.from("sites")
-        .select("chave_busca,chave,id_endereco,origem_id").order("chave_busca").range(de, de + passo - 1));
+        .select("chave_busca,chave,id_endereco,origem_id,endereco_cep,municipio,estado").order("chave_busca").range(de, de + passo - 1));
       for (const linha of dados) todas.push(linha);
       if (dados.length < passo) break;
     }
@@ -1758,12 +1758,34 @@
 
   // Monta: sigla -> endereço, e endereço -> siglas.
   function prepararCadastro() {
-    estado.enderecoPorSigla = {};          // sigla -> lista de ids (uma sigla pode estar em mais de um endereço)
+    estado.enderecoPorSigla = {};          // sigla -> lista de endereços (uma sigla pode estar em mais de um endereço)
     estado.siglasPorEndereco = {};
+    // O mesmo endereço pode vir em várias linhas da lista, cada uma com um ID diferente (ex.: SMSAMI6, SMSAMI6_001... no mesmo prédio).
+    // Une os IDs que têm o mesmo texto de endereço, para as siglas aparecerem juntas.
+    const pai = {};
+    const raiz = function (x) { while (pai[x] !== undefined && pai[x] !== x) x = pai[x]; return x; };
+    const unir = function (a, b) { const ra = raiz(a), rb = raiz(b); if (ra !== rb) pai[rb] = ra; };
+    const textoEnd = {};
     (estado.cadastroSites || []).forEach(function (s) {
-      (estado.enderecoPorSigla[s.chave_busca] = estado.enderecoPorSigla[s.chave_busca] || []).push(s.id_endereco);
-      (estado.siglasPorEndereco[s.id_endereco] = estado.siglasPorEndereco[s.id_endereco] || []).push(s);
+      if (pai[s.id_endereco] === undefined) pai[s.id_endereco] = s.id_endereco;
+      const t = chaveEnderecoTexto(s);
+      if (!t) return;
+      if (textoEnd[t] === undefined) textoEnd[t] = s.id_endereco; else unir(textoEnd[t], s.id_endereco);
     });
+    (estado.cadastroSites || []).forEach(function (s) {
+      const g = raiz(s.id_endereco);
+      const lista = estado.enderecoPorSigla[s.chave_busca] = estado.enderecoPorSigla[s.chave_busca] || [];
+      if (lista.indexOf(g) < 0) lista.push(g);
+      (estado.siglasPorEndereco[g] = estado.siglasPorEndereco[g] || []).push(s);
+    });
+  }
+  // Texto do endereço para comparar. Endereço vazio, sem número ou "S/N" não serve para juntar siglas (poderia juntar lugares diferentes).
+  function chaveEnderecoTexto(s) {
+    const e = limparSite(s.endereco_cep || "");
+    const bruto = String(s.endereco_cep || "").toUpperCase();
+    if (e.length < 15 || /(^|[^A-Z0-9])(S\/?N|SEM NUMERO)([^A-Z0-9]|$)/.test(bruto)) return "";
+    if (!/\d/.test(bruto.replace(/\d{5}-?\d{3}\s*$/, ""))) return "";   // além do CEP, precisa ter o número do imóvel
+    return e + "|" + limparSite(s.municipio || "") + "|" + limparSite(s.estado || "");
   }
 
   // Outras siglas que dividem o endereço com este site, com as WOs de cada uma na base.
