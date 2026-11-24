@@ -112,8 +112,13 @@
     .p-cinza { background:var(--cinza-fundo); color:#3a4654; }
 
     /* Avisos com barra lateral */
-    .faixa-endereco { background:var(--laranja-fundo); color:var(--laranja); border-left:3px solid #c58a1b; border-radius:4px; padding:10px 12px; margin:10px 0 0; font-size:14px; }
-    .faixa-endereco .sigla-linha { margin-top:4px; color:var(--texto); }
+    .faixa-endereco { background:#fff; color:#525252; border:1px solid #0f62fe; border-radius:4px; padding:10px 14px; margin:10px 0 0; font-size:14px; }
+    .faixa-endereco .fe-t { font-weight:600; color:#0f62fe; font-size:13px; margin-bottom:2px; }
+    .faixa-endereco .sigla-linha { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid #e0e0e0; color:var(--texto); }
+    .faixa-endereco .fe-t + .sigla-linha { border-top:0; }
+    .faixa-endereco .fe-p { width:8px; height:8px; border-radius:50%; flex:none; }
+    .faixa-endereco .fe-o { color:#525252; }
+    .faixa-endereco .fe-s { margin-left:auto; color:#525252; font-size:13px; text-align:right; }
     .faixa { background:var(--azul-fundo); border-left:3px solid var(--azul); border-radius:4px; padding:10px 14px; margin-bottom:14px; font-size:14px; }
     .faixa.alerta { background:var(--laranja-fundo); color:var(--laranja); border-left-color:#c58a1b; }
 
@@ -1758,6 +1763,8 @@
 
   // Monta: sigla -> endereço, e endereço -> siglas.
   function prepararCadastro() {
+    // A chave de busca é sempre a sigla sem espaços, traços ou sublinhado (SMSAMI6_001 -> SMSAMI6001), igual à usada nas WOs.
+    (estado.cadastroSites || []).forEach(function (x) { if (x.chave) x.chave_busca = limparSite(x.chave); });
     estado.enderecoPorSigla = {};          // sigla -> lista de endereços (uma sigla pode estar em mais de um endereço)
     estado.siglasPorEndereco = {};
     // O mesmo endereço pode vir em várias linhas da lista, cada uma com um ID diferente (ex.: SMSAMI6, SMSAMI6_001... no mesmo prédio).
@@ -1807,7 +1814,7 @@
       });
     });
     return irmas.map(function (s) {
-      const wos = (estado.wosPorChave[s.chave_busca] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
+      const wos = (estado.wosPorChave[s.chave_busca] || []).filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && !estado.expurgadas[l.wo]; });
       const pendentes = wos.filter(function (l) { return String(l.status_final || "").trim().toLowerCase() !== "executada"; });
       return { sigla: s.chave, busca: s.chave_busca, origem: String(s.origem_id || "").replace(/^ID_/, "").replace(/_/g, " "),
                total: wos.length, pendentes: pendentes.map(function (l) { return l.wo; }) };
@@ -1818,12 +1825,13 @@
   function htmlOutrasSiglas(chaveBusca) {
     const outras = outrasSiglasDoEndereco(chaveBusca);
     if (outras.length === 0) return "";
-    return '<div class="faixa-endereco"><b>Mesmo endereço: mais ' + outras.length + (outras.length === 1 ? " sigla" : " siglas") + "</b>" +
+    return '<div class="faixa-endereco"><div class="fe-t">Mesmo endereço · mais ' + outras.length + (outras.length === 1 ? " sigla" : " siglas") + "</div>" +
       outras.map(function (s) {
-        const situacao = s.total === 0 ? "Sem WO MOP na base"
-          : s.total + (s.total === 1 ? " WO MOP" : " WOs MOP") + " na base, " +
-            (s.pendentes.length === 0 ? "todas executadas" : s.pendentes.length + " pendente(s)");
-        return '<div class="sigla-linha"><b>' + esc(s.sigla) + "</b> (" + esc(s.origem) + ") · " + situacao + "</div>";
+        const situacao = s.total === 0 ? "sem WO MOP na base"
+          : s.total + (s.total === 1 ? " WO MOP" : " WOs MOP") + " · " +
+            (s.pendentes.length === 0 ? "todas executadas" : s.pendentes.length + (s.pendentes.length === 1 ? " pendente" : " pendentes"));
+        const cor = s.total === 0 ? "#a8a8a8" : s.pendentes.length === 0 ? "#198038" : "#0f62fe";
+        return '<div class="sigla-linha"><span class="fe-p" style="background:' + cor + '"></span><b>' + esc(s.sigla) + '</b><span class="fe-o">' + esc(s.origem) + '</span><span class="fe-s">' + situacao + "</span></div>";
       }).join("") + "</div>";
   }
 
@@ -3211,9 +3219,38 @@
   // Aviso sobre outras siglas no mesmo endereço (sempre responde, com ou sem outras siglas).
   function htmlEnderecoResumo(chave) {
     if (!chaveNoCadastro(chave)) {
-      return '<div class="faixa">Este site não está no cadastro de endereços; não é possível saber se há outras siglas no mesmo endereço.</div>';
+      return '<div class="faixa-endereco">Este site não está no cadastro de endereços; não é possível saber se há outras siglas no mesmo endereço.</div>';
     }
-    return htmlOutrasSiglas(chave) || '<div class="faixa">Neste endereço existe somente esta sigla.</div>';
+    const faixa = htmlOutrasSiglas(chave) || '<div class="faixa-endereco">Neste endereço existe somente esta sigla.</div>';
+    return '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:280px">' + faixa + "</div>" + htmlResumoEndereco(chave) + "</div>";
+  }
+  // Resumo do endereço (todas as siglas dele, incluindo a que está sendo registrada). WOs expurgadas ficam fora da conta.
+  function htmlResumoEndereco(chave) {
+    const base = chaveNoCadastro(chave);
+    const chaves = {}; chaves[chave] = true;
+    (estado.enderecoPorSigla[base] || []).forEach(function (id) { (estado.siglasPorEndereco[id] || []).forEach(function (x) { chaves[x.chave_busca] = true; }); });
+    let total = 0, feitas = 0, expurg = 0, energia = 0, clima = 0; const siglasComPend = {};
+    Object.keys(chaves).forEach(function (k) {
+      const vistas = {};
+      (estado.wosPorChave[k] || []).forEach(function (l) {
+        if (grupoDaPreventiva(l.tipo) !== "MOP" || vistas[l.wo]) return;
+        vistas[l.wo] = true;
+        if (estado.expurgadas[l.wo]) { expurg++; return; }
+        total++;
+        if (String(l.status_final || "").trim().toLowerCase() === "executada") { feitas++; return; }
+        siglasComPend[k] = true;
+        if (/energia/i.test(l.tipo || "")) energia++; else if (/climatiza/i.test(l.tipo || "")) clima++;
+      });
+    });
+    const pend = total - feitas, nSiglas = Object.keys(siglasComPend).length;
+    const lin = function (r, v) { return '<div style="display:flex;justify-content:space-between;line-height:1.9"><span>' + r + "</span><b>" + v + "</b></div>"; };
+    return '<div style="width:250px;background:#fff;border:1px solid #c6c6c6;padding:12px 14px;font-size:13px">' +
+      '<div style="font-size:12px;color:#525252">Neste endereço (' + Object.keys(chaves).length + " siglas)</div>" +
+      '<div style="font-size:30px;font-weight:300;line-height:1.2">' + pend + ' <span style="font-size:13px;color:#525252">' + (pend === 1 ? "WO pendente" : "WOs pendentes") + "</span></div>" +
+      '<div style="color:#525252;margin-top:2px">' + energia + " de energia · " + clima + " de climatização</div>" +
+      '<div style="border-top:1px solid #e0e0e0;margin:10px 0 6px"></div>' + lin("WOs MOP no endereço", total) + lin("Já executadas", feitas) + lin("Pendentes", pend) +
+      (expurg ? '<div style="color:#8d8d8d;font-size:12px;margin-top:2px">' + expurg + (expurg === 1 ? " WO expurgada fora da conta" : " WOs expurgadas fora da conta") + "</div>" : "") +
+      (pend ? '<div style="border-top:1px solid #e0e0e0;margin:10px 0 6px"></div><div style="line-height:1.5">Numa só visita ao endereço dá para fechar as <b>' + pend + (pend === 1 ? " pendente" : " pendentes") + "</b> de <b>" + nSiglas + (nSiglas === 1 ? " sigla" : " siglas") + "</b>.</div>" : "") + "</div>";
   }
 
   function pillAlarme(alarme) {
