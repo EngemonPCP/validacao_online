@@ -1971,11 +1971,22 @@
         if (l2) abrirDetalhe(l2);
       });
     });
+    // Ao ajustar a data de uma foto: se a nova data difere de qualquer outra data do relatório, pede confirmação.
+    function confirmarDataAjustada(i, nova) {
+      const dif = [];
+      l.rep.fotos.forEach(function (g, k) { if (k !== i && g.carimbo && g.carimbo.data && g.carimbo.data !== nova) dif.push("Foto " + (k + 1) + ": " + dataBr(g.carimbo.data)); });
+      const di = dataIso(l.rep.dataInicio), df = dataIso(l.rep.dataFim) || di;
+      if (di && (nova < di || nova > df)) dif.push("Período do ticket: " + dataBr(di) + (df !== di ? " a " + dataBr(df) : ""));
+      if (nova.slice(0, 7) !== E.mes) dif.push("Mês da preventiva: " + nomeMes(E.mes));
+      if (!dif.length) return true;
+      return window.confirm("Você está ajustando a Foto " + (i + 1) + " para " + dataBr(nova) + ", mas esta data é diferente de:\n\n" + dif.join("\n") + "\n\nConfirmar o ajuste?");
+    }
     function reabrir() { recalcular(); const l2 = E.linhas.filter(function (x) { return x.rep === l.rep; })[0]; if (l2) abrirDetalhe(l2); }
     Array.prototype.forEach.call(document.querySelectorAll(".dta"), function (b) {
       b.addEventListener("click", function () {
         const i = Number(b.dataset.i), inp = document.querySelector('.dtc[data-i="' + i + '"]'), f = l.rep.fotos[i];
         if (!inp || !inp.value) return;
+        if (!confirmarDataAjustada(i, inp.value)) return;
         f.carimbo = { data: inp.value, hora: f.carimbo.hora || null, manual: true, auto: f.carimbo.auto || f.carimbo.data };
         reabrir();
       });
@@ -1993,6 +2004,7 @@
       inp.addEventListener("change", function () {
         if (!inp.value) return;
         const ff = l.rep.fotos[Number(inp.dataset.i)], ant = ff.carimbo && ff.carimbo.data ? ff.carimbo : null;
+        if (!confirmarDataAjustada(Number(inp.dataset.i), inp.value)) { inp.value = ant ? ant.data : ""; return; }
         ff.carimbo = { data: inp.value, hora: ant ? ant.hora || null : null, manual: true };
         if (ant && ant.auto) ff.carimbo.auto = ant.auto;
         recalcular();
