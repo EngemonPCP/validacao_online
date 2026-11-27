@@ -860,8 +860,8 @@
     .pd-e1:before,.pd-e2:before,.pd-e3:before,.pd-e4:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
     .pd-e1:before{background:#f1c21b}.pd-e2:before{background:#0f62fe}.pd-e3:before{background:#24a148}.pd-e4:before{background:#da1e28}
     .pd-o1,.pd-o2,.pd-o3{background:#fff;color:#393939}
-    .pd-rail{width:160px;flex:0 0 160px;align-items:stretch;padding:0;gap:0}
-    .pd-rg{display:flex;justify-content:space-between;gap:6px;padding:9px 10px;font-size:12px;font-weight:600;border-bottom:1px solid #e0e0e0;cursor:pointer}
+    .pd-rail{width:190px;flex:0 0 190px;align-items:stretch;padding:0;gap:0}
+    .pd-rg{display:flex;justify-content:space-between;gap:6px;padding:11px 12px;font-size:14px;font-weight:600;border-bottom:1px solid #e0e0e0;cursor:pointer}
     .pd-rg i{font-style:normal;font-weight:400;color:#525252}.pd-rg.at{background:#edf5ff;box-shadow:inset 3px 0 0 #0f62fe}.pd-rg.lk{color:#0f62fe;font-weight:400}
     .pd-rs{display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px 9px;border-bottom:1px solid #e0e0e0}.pd-rs>span{cursor:pointer}
     .pd-nb{display:inline-block;width:22px;height:22px;line-height:19px;border-radius:50%;border:1.5px solid #8d8d8d;text-align:center;font-size:11px;background:#fff;color:#161616}
@@ -899,18 +899,15 @@
       <button class="grupo" data-sub="Divergencias" aria-expanded="false">Divergências <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuDivergencias">
         <button data-tela="Divergencias" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Divergencias" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
       <div class="nav-titulo">Operação</div>
       <button class="grupo" data-sub="Registrar" aria-expanded="false">Registro/Acompanhamento <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuRegistrar">
         <button data-tela="Registrar" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="Registrar" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
       <button class="grupo" data-sub="EPS" aria-expanded="false">EPS <span class="seta">▾</span></button>
       <div class="submenu oculto" id="submenuEPS">
         <button data-tela="EPS" data-grupo="" data-setor="MÓVEL">Móvel</button>
-        <button data-tela="EPS" data-grupo="" data-setor="VOLANTE">Volante</button>
       </div>
       <button data-tela="Expurgos" data-grupo="" data-setor="">Expurgos</button>
       <button data-tela="ResumoDia" data-grupo="" data-setor="">Resumo Dia</button>
@@ -966,7 +963,7 @@
       <div class="vl-topo">
         <div><h1 id="rvTitulo">Resumo da validação</h1><div class="sub" id="rvSub"></div></div>
         <div class="vl-ferr">
-          <select id="rvSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select>
+          <select id="rvSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option></select>
           <input type="date" id="rvData">
           <button class="bt" id="rvAtualizar">Atualizar</button>
           <button class="bt p" id="rvCopiar">Copiar resumo</button>
@@ -981,7 +978,7 @@
       <div class="vl-topo">
         <div><h1>Validação offline</h1><div class="sub">Casos que a validação online não conseguiu fechar.</div></div>
         <div class="vl-ferr">
-          <select id="ofSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select>
+          <select id="ofSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option></select>
           <select id="ofResp"></select>
           <button class="bt" id="ofAtualizar">Atualizar</button>
         </div>
@@ -1025,7 +1022,7 @@
       <div class="vl-topo">
         <div><h1>Validação preventiva</h1><div class="sub">Sites registrados, em ordem de chegada.</div></div>
         <div class="vl-ferr">
-          <select id="flSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select>
+          <select id="flSetor"><option value="">Todos os setores</option><option value="MÓVEL">Móvel</option></select>
           <button class="bt" id="flAtualizar">Atualizar</button>
         </div>
       </div>
@@ -1197,7 +1194,7 @@
         <h1>Acompanhamento de MP · Preventiva</h1>
         <div class="rd-barra">
           <button id="rdDiaAntes" class="sec" title="Dia anterior">&lt;</button>
-          <label>Setor <select id="rdSetor"><option value="">Todos</option><option value="MÓVEL">Móvel</option><option value="VOLANTE">Volante</option></select></label>
+          <label>Setor <select id="rdSetor"><option value="">Todos</option><option value="MÓVEL">Móvel</option></select></label>
           <label>Dia <input type="date" id="rdData"></label>
           <button id="rdDiaDepois" class="sec" title="Próximo dia">&gt;</button>
           <button id="rdAtualizar">Atualizar</button>
@@ -1579,7 +1576,7 @@
         resp = await consulta.order("wo").range(de, de + passo - 1);
       }
       const dados = conferir(resp);
-      for (const linha of dados) todas.push(linha);
+      for (const linha of dados) if (setorDe(linha) !== "VOLANTE") todas.push(linha);   // Volante fora do sistema por enquanto
       if (dados.length < passo) break;
     }
     estado.baseTodas = todas;
@@ -1977,10 +1974,10 @@
   $("cortina").addEventListener("click", fecharMenu);
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") fecharMenu(); });
 
-  const NOME_SETOR = { "MÓVEL": "Móvel", "VOLANTE": "Volante", "OUTROS": "Outros setores" };
-  // "OUTROS" reúne o que não é Móvel nem Volante (Residencial ou setor em branco), para nenhuma WO ficar de fora da soma.
+  const NOME_SETOR = { "MÓVEL": "Móvel", "OUTROS": "Outros setores" };
+  // "OUTROS" reúne o que não é Móvel (Residencial ou setor em branco), para nenhuma WO ficar de fora da soma.
   function casaSetor(valor, alvo) {
-    if (alvo === "OUTROS") return valor !== "MÓVEL" && valor !== "VOLANTE";
+    if (alvo === "OUTROS") return valor !== "MÓVEL";
     return valor === alvo;
   }
   function setorDe(l) { return String(l && l.equipe_engemon || "").trim().toUpperCase(); }
@@ -3851,14 +3848,14 @@
       const limpo = txt.replace(/[%,\\]/g, "");
       const pad = siteEscolhido ? txt : "%" + limpo.replace(/_/g, "\\_") + "%";        // o "_" digitado vale como "_" mesmo (ex.: SMSAMI6_002)
       const padFlex = "%" + limpo.replace(/[_\-\s]+/g, "%") + "%";                    // se não achar, aceita com ou sem separador
-      const cols = "wo,tipo,status_final,programado_infratel,clr_sdr_site_helix";
+      const cols = "wo,tipo,status_final,programado_infratel,clr_sdr_site_helix,equipe_engemon";
       let r = [];
       for (const padrao of (siteEscolhido ? [pad] : [pad, padFlex])) {
         r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("programado_infratel", padrao).limit(300));
         if (!r.length) r = conferir(await banco.from("base_preventiva").select(cols).eq("mes", mes).ilike("clr_sdr_site_helix", padrao).limit(300));
         if (r.length) break;
       }
-      r = r.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP"; });
+      r = r.filter(function (l) { return grupoDaPreventiva(l.tipo) === "MOP" && setorDe(l) !== "VOLANTE"; });
       const nomes = {}; r.forEach(function (l) { const n = String(l.programado_infratel || l.clr_sdr_site_helix || "").trim().toUpperCase(); if (n) nomes[n] = true; });
       const lista = Object.keys(nomes);
       if (!r.length) { exMMsg("Nenhuma WO de MOP (Energia ou Climatização) encontrada para esse site neste mês.", true); exMConferir(); return; }
@@ -5982,7 +5979,7 @@
       itens.push({ chave: pendChave(aba, "", t[1] === "FOTO" || t[1] === "OUTRO" ? texto : t[0]), aba: aba, tag: null, tipo: t[0], texto: texto || t[0], setor: reg.setor || null, evidencia: { validacao_id: reg.id, obs: p.obs || null, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
     });
     const al = reg.alarmes || {};
-    if (!al.hist && !al.semConfig && String(reg.setor || "").toUpperCase() !== "VOLANTE") itens.push({ chave: pendChave("Alarmes", "", "Alarmes não analisados"), aba: "Alarmes", tag: null, tipo: "Alarmes não analisados", texto: "Alarmes não analisados na validação online", setor: reg.setor || null, evidencia: { validacao_id: reg.id, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
+    if (!al.hist && !al.semConfig) itens.push({ chave: pendChave("Alarmes", "", "Alarmes não analisados"), aba: "Alarmes", tag: null, tipo: "Alarmes não analisados", texto: "Alarmes não analisados na validação online", setor: reg.setor || null, evidencia: { validacao_id: reg.id, wo: (reg.wos && reg.wos[0] && reg.wos[0].wo) || null } });
     if (!itens.length) return;
     const g = await banco.rpc("pendencias_sincronizar", { p_site_chave: reg.site_chave, p_site: String(reg.site || "").toUpperCase(), p_mes: String(reg.data).slice(0, 7) + "-01", p_origem: "validacao_online", p_itens: itens, p_resolver: false });
     if (g.error) throw new Error(g.error.message);
@@ -6227,6 +6224,7 @@
   function pdDias(p) { return Math.max(0, Math.floor((Date.now() - new Date(p.criado_em).getTime()) / 86400000)); }
   function pdChaveSite(p) { return p.site_chave + "|" + String(p.mes).slice(0, 7); }
   function pdTagEstado(e) { const c = { "Nova": "pd-e1", "Em tratativa": "pd-e2", "Resolvida": "pd-e3", "Não resolvida": "pd-e4" }[e] || ""; return '<span class="pd-tg ' + c + '">' + esc(e) + "</span>"; }
+  function pdTagClass(p) { return p.classificacao ? '<span class="pd-tg pd-o3">' + esc(p.classificacao) + "</span>" : ""; }
   function pdTagsOrigem(p) { return (p.origens || []).map(function (o) { const x = PD_ORIG[o] || [o, "pd-o3"]; return '<span class="pd-tg ' + x[1] + '">' + esc(x[0]) + "</span>"; }).join(" "); }
   function pdCorEstado(e) { return { "Nova": "#e0a800", "Em tratativa": "#0f62fe", "Resolvida": "#198038", "Não resolvida": "#da1e28" }[e] || "#8d8d8d"; }
   function pdQuando(iso) { return iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""; }
@@ -6252,9 +6250,9 @@
       const meses = []; lista.forEach(function (p) { const m = String(p.mes).slice(0, 7); if (meses.indexOf(m) < 0) meses.push(m); });
       const porSite = {};
       for (let de = 0; ; de += 1000) {
-        const r = conferir(await banco.from("base_preventiva").select("wo,clr_sdr_site_helix,programado_infratel,tipo,mes").in("mes", meses).order("wo").range(de, de + 999));
+        const r = conferir(await banco.from("base_preventiva").select("wo,clr_sdr_site_helix,programado_infratel,tipo,mes,equipe_engemon").in("mes", meses).order("wo").range(de, de + 999));
         r.forEach(function (l) {
-          if (grupoDaPreventiva(l.tipo) !== "MOP") return;
+          if (grupoDaPreventiva(l.tipo) !== "MOP" || setorDe(l) === "VOLANTE") return;
           const k = limparSite(l.programado_infratel || l.clr_sdr_site_helix) + "|" + l.mes;
           const o = porSite[k] || (porSite[k] = { tot: 0, exp: 0 }); o.tot++; if (exp[l.wo]) o.exp++;
         });
@@ -6402,8 +6400,7 @@
     const gs = pdGrupos(its), gCur = pdKGrupo(cur);
     h += '<div class="pd-wrap"><div class="pd-rail">' + gs.map(function (g) {
       const ab = g.itens.filter(pdAberta), alvo = (g.k === gCur ? cur : (ab[0] || g.itens[0]));
-      return '<div class="pd-rg' + (g.k === gCur ? " at" : "") + '" data-pdp="' + alvo.id + '" title="' + esc(g.nome) + '"><span>' + esc(g.nome) + "</span><i>" + (ab.length || "✔") + "</i></div>" +
-        (g.k === gCur ? '<div class="pd-rs">' + g.itens.map(function (p, i) { return '<span data-pdp="' + p.id + '" title="' + esc(p.texto) + '">' + pdNb(p, i, cur.id) + "</span>"; }).join("") + "</div>" : "");
+      return '<div class="pd-rg' + (g.k === gCur ? " at" : "") + '" data-pdp="' + alvo.id + '" title="' + esc(g.nome) + '"><span>' + esc(g.nome) + "</span><i>" + (ab.length || "✔") + "</i></div>";
     }).join("") + '<div class="pd-rg lk" data-pda="gaveta">▶ Lista completa</div><div class="pd-rg lk" data-pda="nova">＋ Registrar nova</div></div>';
     const gA = gs.find(function (g) { return g.k === gCur; });
     const segBl = '<div class="pd-seg"><div class="sh">' + esc(gA.nome) + "<span>" + gA.itens.filter(pdAberta).length + " abertas · " + gA.itens.filter(function (p) { return !pdAberta(p); }).length + " concluídas</span></div>" +
@@ -6426,27 +6423,31 @@
   }
   function pdDetalhe(p, idx, me, coord) {
     const P = estado.pd, ev = P.ev[p.id] || [], minha = p.responsavel === me, livre = !p.responsavel, aberta = pdAberta(p);
-    const pode = aberta && (minha || coord);
+    const pode = aberta && (minha || coord || livre);
     const etapa = !aberta ? 3 : p.estado === "Em tratativa" ? 2 : 1;
     const ev_ = p.evidencia || {}, rasc = P.rasc[p.id] || "";
     const roti = { criada: "Pendência criada", assumida: "Assumida", liberada: "Liberada", reatribuida: "Reatribuída", estado: "Estado alterado", concluida: "Concluída", reaberta: "Reaberta", origem: "Origem atualizada", andamento: "Andamento", visita: "Visita de tratativa" };
-    let h = '<div class="pd-dh"><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + " · " + esc(p.texto) + "</b><span>" + pdTagsOrigem(p) + " " + pdTagEstado(p.estado) + "</span></div>" +
-      '<div class="pd-steps"><div class="' + (etapa > 1 ? "ok" : "at") + '">' + (etapa > 1 ? "✔ " : "") + '1 Entender</div><div class="' + (etapa > 2 ? "ok" : etapa === 2 ? "at" : "") + '">' + (etapa > 2 ? "✔ " : "") + '2 Tratar</div><div class="' + (etapa === 3 ? "at" : "") + '">3 Concluir</div></div><div class="pd-dois"><div>' +
+    let h = '<div class="pd-dh"><b>' + esc(p.aba + (p.tag ? " " + p.tag : "")) + " · " + esc(p.texto) + "</b><span>" + pdTagsOrigem(p) + " " + pdTagClass(p) + " " + pdTagEstado(p.estado) + "</span></div>" +
+      '<div class="pd-dois" style="grid-template-columns:1fr"><div>' +
       '<div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe).replace(/\n/g, "<br>") + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
       (ev_.arquivo ? '<div class="lb" style="margin-top:10px">Evidência</div><div id="pdFotos" class="pd-fotos vl-mu">Carregando fotos…</div><div style="margin-top:6px"><a class="rv-lk" href="relatorios.html?site=' + encodeURIComponent(p.site) + "&mes=" + String(p.mes).slice(0, 7) + '" target="_blank">Abrir análise completa com fotos</a></div>' : "") +
-      (p.tipo === "Alarmes não analisados" && aberta ? '<div style="margin-top:12px"><button class="bt p" data-pda="alarmes">Registrar alarmes nos Relatórios</button><div class="vl-mu" style="font-size:12px;margin-top:4px">Abre a tela de Relatórios deste site. Cole a configuração e o histórico de alarmes e grave: a pendência fica resolvida sozinha.</div></div>' : "") + "</div><div>" +
-      '<div class="lb">Responsável</div><div class="pd-resp"><b>' + (p.responsavel ? esc(nomeDoEmail(p.responsavel)) : "Sem responsável") + "</b>" +
-      (aberta && livre ? ' <button class="bt p peq" data-pda="assumir">Assumir</button>' : "") + (aberta && minha ? ' <button class="bt peq" data-pda="liberar">Liberar</button>' : "") +
-      (aberta && coord && !livre ? ' <button class="bt peq" data-pda="reatribuir">Reatribuir…</button>' : "") + (aberta && coord && livre ? ' <button class="bt peq" data-pda="reatribuir">Atribuir a…</button>' : "") + "</div>" +
+      (p.tipo === "Alarmes não analisados" && aberta ? '<div style="margin-top:12px"><button class="bt p" data-pda="alarmes">Registrar alarmes nos Relatórios</button><div class="vl-mu" style="font-size:12px;margin-top:4px">Abre a tela de Relatórios deste site. Cole a configuração e o histórico de alarmes e grave: a pendência fica resolvida sozinha.</div></div>' : "") + "</div></div>";
+    const dis = pode ? "" : " disabled";
+    const btnResp = (aberta && minha ? '<button class="bt peq" data-pda="liberar">Liberar</button> ' : "") + (aberta && coord ? '<button class="bt peq" data-pda="reatribuir">' + (livre ? "Atribuir a…" : "Reatribuir…") + "</button>" : "");
+    const tr = (btnResp ? '<div class="pd-resp">' + btnResp + "</div>" : "") +
       (P.reat === p.id ? '<div class="pd-reat"><select id="pdReatSel">' + pdEmails().map(function (e) { return '<option value="' + esc(e) + '">' + esc(nomeDoEmail(e) + " · " + e) + "</option>"; }).join("") + '</select> <button class="bt p peq" data-pda="reatok">Confirmar</button> <button class="bt peq" data-pda="reatno">Cancelar</button></div>' : "") +
       (aberta && !pode && !livre ? '<div class="pd-av">Esta pendência está com ' + esc(nomeDoEmail(p.responsavel)) + ". Só ela ou a coordenação pode alterá-la.</div>" : "") +
-      (aberta && livre ? '<div class="pd-av">Clique em Assumir para tratar esta pendência. O responsável é sempre quem está logado.</div>' : "") +
-      '<div class="lb" style="margin-top:12px">O que foi feito</div><textarea id="pdFeito" rows="3" placeholder="Escreva a tratativa (ex.: respondido ao cliente, técnico acionado)…"' + (pode ? "" : " disabled") + ">" + esc(rasc) + "</textarea>" +
-      '<div style="margin:8px 0"><button class="bt p" data-pda="andamento"' + (pode ? "" : " disabled") + ">Registrar andamento</button></div>" +
-      '<div class="lb" style="margin-top:12px">Histórico</div><div class="pd-tl">' + (ev.length ? ev.map(function (e) { return "<div><b>" + esc(roti[e.tipo] || e.tipo) + "</b>" + (e.tipo === "andamento" || e.tipo === "concluida" || e.tipo === "visita" ? "<br>" + esc(String(e.texto || "").replace(/^[^\n]*\n/, e.tipo === "concluida" ? "" : "")) : "") + "<small>" + esc(e.por === "sistema" ? "Sistema" : nomeDoEmail(e.por)) + " · " + esc(pdQuando(e.em)) + "</small></div>"; }).join("") : '<span class="vl-mu">Sem registros.</span>') + "</div>" +
-      (!aberta && (minha || coord) ? '<div style="margin-top:8px"><button class="bt peq" data-pda="reabrir">Reabrir pendência</button></div>' : "") + "</div></div>" +
-      '<div class="pd-rod"><span class="vl-mu">' + (aberta ? "Para concluir, escreva a resposta em “O que foi feito”." : "Concluída" + (p.concluida_por ? " por " + esc(p.concluida_por === "sistema" ? "sistema" : nomeDoEmail(p.concluida_por)) : "") + (p.resposta ? ": " + esc(p.resposta) : "")) + '</span><span style="margin-left:auto"></span>' +
-      '<button class="bt pd-ok" data-pda="resolvida"' + (pode ? "" : " disabled") + '>✔ Resolvida</button><button class="bt pd-no" data-pda="nao"' + (pode ? "" : " disabled") + '>✖ Não resolvida</button><button class="bt" data-pda="anterior">‹ Anterior</button><button class="bt" data-pda="proxima">Próxima ›</button></div>';
+      ("classificacao" in p ? (aberta ? '<div class="lb" style="margin-top:12px">Classificação <span class="ex-req">*</span></div><div><button class="bt' + (p.classificacao === "Retorno a campo" ? " p" : "") + '" style="margin-right:-1px" data-pda="classrc"' + dis + '>Retorno a campo</button><button class="bt' + (p.classificacao === "Administrativo" ? " p" : "") + '" data-pda="classad"' + dis + ">Administrativo</button></div>" : (p.classificacao ? '<div class="lb" style="margin-top:12px">Classificação</div><div>' + esc(p.classificacao) + "</div>" : "")) : "") +
+      (aberta ? '<div class="lb" style="margin-top:12px">O que foi feito <span class="ex-req">*</span></div><textarea id="pdFeito" rows="10" style="min-height:240px;resize:vertical"' + dis + ">" + esc(rasc) + "</textarea>" : "") +
+      (aberta ? '<div style="margin:8px 0"><button class="bt p" data-pda="andamento"' + dis + '>Registrar andamento</button> <button class="bt pd-ok" data-pda="resolvida"' + dis + '>✔ Resolvida</button> <button class="bt pd-no" data-pda="nao"' + dis + ">✖ Não resolvida</button></div>" : "") +
+      '<details class="pd-hd"><summary class="lb" style="margin-top:12px;cursor:pointer">Histórico (' + ev.length + ')</summary><div class="pd-tl">' + (ev.length ? ev.map(function (e) { return "<div><b>" + esc(e.tipo === "andamento" && /^Motivo da reabertura:/.test(e.texto || "") ? "Motivo da reabertura" : e.tipo === "andamento" && /^Classificação:/.test(e.texto || "") ? "Classificação" : (roti[e.tipo] || e.tipo)) + "</b>" + (e.tipo === "andamento" || e.tipo === "concluida" || e.tipo === "visita" ? "<br>" + esc(String(e.texto || "").replace(/^[^\n]*\n/, e.tipo === "concluida" ? "" : "")) : "") + "<small>" + esc(e.por === "sistema" ? "Sistema" : nomeDoEmail(e.por)) + " · " + esc(pdQuando(e.em)) + "</small></div>"; }).join("") : '<span class="vl-mu">Sem registros.</span>') + "</div></details>" +
+      (!aberta && (minha || coord) ? (P.reab === p.id ? '<div style="margin-top:12px"><div class="lb">Motivo da reabertura (opcional)</div><textarea id="pdReabMotivo" rows="3" placeholder="Descreva por que está reabrindo (ex.: cliente contestou, foto não comprova o ajuste)…"></textarea><div style="margin-top:8px"><button class="bt p peq" data-pda="reabok">Reabrir</button> <button class="bt peq" data-pda="reabno">Cancelar</button></div></div>' : '<div style="margin-top:8px"><button class="bt peq" data-pda="reabrir">Reabrir pendência</button></div>') : "") + "";
+    const achM = '<div style="font-weight:600;margin-bottom:8px">' + esc(p.aba + (p.tag ? " " + p.tag : "")) + '</div><div class="lb">O que foi encontrado</div><div class="pd-ev">' + esc(p.texto) + (ev_.detalhe ? "<br><span class='vl-mu'>" + esc(ev_.detalhe).replace(/\n/g, "<br>") + "</span>" : "") + (ev_.obs ? "<br><span class='vl-mu'>Observação: " + esc(ev_.obs) + "</span>" : "") + "</div>" +
+      (ev_.arquivo ? '<div class="lb" style="margin-top:10px">Evidência</div><div id="pdFotosM" class="pd-fotos vl-mu">Carregando fotos…</div>' : "") + '<div style="border-top:1px solid #e0e0e0;margin:16px 0 4px"></div>';
+    const modal = P.modal === p.id ? '<div class="pd-veu" style="z-index:5"></div><div class="pd-mod" style="width:1000px;top:9vh;max-height:86vh;overflow:auto"><div class="pd-gh">' + (aberta ? "Tratar pendência" : "Tratativa da pendência") + '<a class="rv-lk" data-pda="tratarno" style="font-weight:400">✕</a></div><div class="pd-dois" style="display:block;padding:16px 18px">' + achM + tr + "</div></div>" : "";
+    const rod = '<div class="pd-rod"><span class="vl-mu">' + (aberta ? (p.responsavel ? "Responsável: " + esc(nomeDoEmail(p.responsavel)) : "") : "Concluída" + (p.concluida_por ? " por " + esc(p.concluida_por === "sistema" ? "sistema" : nomeDoEmail(p.concluida_por)) : "") + (p.resposta ? ": " + esc(p.resposta) : "")) + '</span><span style="margin-left:auto"></span>' +
+      '<button class="bt p" data-pda="tratar">' + (aberta ? "Tratar esta pendência" : "Ver tratativa") + '</button><button class="bt" data-pda="anterior">‹ Anterior</button><button class="bt" data-pda="proxima">Próxima ›</button></div>';
+    h += rod + modal;
     return h;
   }
   function pdEmails() {
@@ -6478,8 +6479,9 @@
         imgs.push(URL.createObjectURL(await r.blob()));
       }
       if (estado.pd.pend !== p.id || !$("pdFotos")) return;
-      $("pdFotos").innerHTML = imgs.length ? imgs.map(function (u) { return '<img src="' + u + '" style="height:88px;margin:0 6px 6px 0;cursor:zoom-in" onclick="window.open(this.src)">'; }).join("") : "Sem fotos gravadas para esta análise.";
-    } catch (e) { if ($("pdFotos")) $("pdFotos").textContent = ""; }
+      const htmlF = imgs.length ? imgs.map(function (u) { return '<img src="' + u + '" style="height:88px;margin:0 6px 6px 0;cursor:zoom-in" onclick="window.open(this.src)">'; }).join("") : "Sem fotos gravadas para esta análise.";
+      $("pdFotos").innerHTML = htmlF; if ($("pdFotosM")) $("pdFotosM").innerHTML = htmlF;
+    } catch (e) { if ($("pdFotos")) $("pdFotos").textContent = ""; if ($("pdFotosM")) $("pdFotosM").textContent = ""; }
   }
   async function pdRecarregar(manter) {
     const P = estado.pd, sel = P.sel, pend = P.pend;
@@ -6508,24 +6510,43 @@
       if (a === "reatribuir") { P.reat = cur.id; pdLerRascunho(); desenharSitePend(); return; }
       if (a === "reatno") { P.reat = null; desenharSitePend(); return; }
       if (a === "reatok") { const e = $("pdReatSel").value; conferir(await banco.from("pendencias").update({ responsavel: e, estado: "Em tratativa" }).eq("id", cur.id).select()); P.reat = null; await pdRecarregar(true); return; }
+      if ((a === "andamento" || a === "resolvida" || a === "nao") && "classificacao" in cur && !cur.classificacao) { mostrarAviso("Escolha a classificação: Retorno a campo ou Administrativo.", "erro"); return; }
       if (a === "andamento") {
         const tx = ($("pdFeito").value || "").trim(); if (!tx) { mostrarAviso("Escreva o andamento.", "erro"); return; }
+        if (!cur.responsavel) conferir(await banco.from("pendencias").update({ responsavel: me, estado: "Em tratativa" }).eq("id", cur.id).is("responsavel", null).select());
         conferir(await banco.from("pendencias_eventos").insert({ pendencia_id: cur.id, tipo: "andamento", texto: tx }).select());
         P.rasc[cur.id] = ""; await pdCarregarEventos(cur.id); desenharSitePend(); mostrarAviso("Andamento registrado."); return;
       }
       if (a === "resolvida" || a === "nao") {
         const tx = ($("pdFeito").value || "").trim(); if (!tx) { mostrarAviso("Para concluir, escreva a resposta em “O que foi feito”.", "erro"); return; }
-        conferir(await banco.from("pendencias").update({ estado: a === "resolvida" ? "Resolvida" : "Não resolvida", resposta: tx }).eq("id", cur.id).select());
-        P.rasc[cur.id] = ""; await pdRecarregar(true); mostrarAviso("Pendência concluída."); return;
+        conferir(await banco.from("pendencias").update(Object.assign({ estado: a === "resolvida" ? "Resolvida" : "Não resolvida", resposta: tx }, cur.responsavel ? {} : { responsavel: me })).eq("id", cur.id).select());
+        P.rasc[cur.id] = ""; P.modal = null; await pdRecarregar(true); mostrarAviso("Pendência concluída."); return;
       }
-      if (a === "reabrir") { conferir(await banco.from("pendencias").update({ estado: "Em tratativa" }).eq("id", cur.id).select()); await pdRecarregar(true); return; }
+      if (a === "classrc" || a === "classad") {
+        const v = a === "classrc" ? "Retorno a campo" : "Administrativo";
+        if (cur.classificacao === v) return;
+        pdLerRascunho();
+        conferir(await banco.from("pendencias").update({ classificacao: v }).eq("id", cur.id).select());
+        try { conferir(await banco.from("pendencias_eventos").insert({ pendencia_id: cur.id, tipo: "andamento", texto: "Classificação: " + v }).select()); } catch (er) { /* o histórico é só registro */ }
+        await pdRecarregar(true); await pdCarregarEventos(cur.id); desenharSitePend(); return;
+      }
+      if (a === "tratar") { P.modal = cur.id; desenharSitePend(); return; }
+      if (a === "tratarno") { pdLerRascunho(); P.modal = null; P.reab = null; desenharSitePend(); return; }
+      if (a === "reabrir") { pdLerRascunho(); P.reab = cur.id; desenharSitePend(); return; }
+      if (a === "reabno") { P.reab = null; desenharSitePend(); return; }
+      if (a === "reabok") {
+        const mot = (($("pdReabMotivo") || {}).value || "").trim();
+        conferir(await banco.from("pendencias").update({ estado: "Em tratativa" }).eq("id", cur.id).select());
+        if (mot) { try { conferir(await banco.from("pendencias_eventos").insert({ pendencia_id: cur.id, tipo: "andamento", texto: "Motivo da reabertura: " + mot }).select()); } catch (er) { mostrarAviso("Pendência reaberta, mas o motivo não foi gravado: " + er.message, "erro"); } }
+        P.reab = null; await pdRecarregar(true); await pdCarregarEventos(cur.id); desenharSitePend(); return;
+      }
       if (a === "anterior") {
         pdLerRascunho(); const ab = its.filter(pdAberta), base = ab.length ? ab : its, i = base.findIndex(function (p) { return p.id === cur.id; }), nx = base[(i - 1 + base.length) % base.length];
-        P.pend = nx.id; await pdCarregarEventos(nx.id); desenharSitePend(); return;
+        P.pend = nx.id; P.modal = null; await pdCarregarEventos(nx.id); desenharSitePend(); return;
       }
       if (a === "proxima") {
         pdLerRascunho(); const ab = its.filter(pdAberta), base = ab.length ? ab : its, i = base.findIndex(function (p) { return p.id === cur.id; }), nx = base[(i + 1) % base.length];
-        P.pend = nx.id; await pdCarregarEventos(nx.id); desenharSitePend(); return;
+        P.pend = nx.id; P.modal = null; await pdCarregarEventos(nx.id); desenharSitePend(); return;
       }
       if (a === "concluirsite") { const k = P.sel.split("|"); conferir(await banco.from("pendencias_sites").insert({ site_chave: k[0], mes: k[1] + "-01" }).select()); await pdRecarregar(true); mostrarAviso("Site concluído."); return; }
       if (a === "alarmes") {   // os alarmes que a validação online deixou passar são registrados na tela de Relatórios
